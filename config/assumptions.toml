@@ -1,0 +1,115 @@
+# Assumptions the engine applies, each a switch. A reply from the company changes one line and the run re-executes.
+# `alternative` states what changes if the assumption is wrong; sensitivities are filled by `whatif` (Wave 2).
+# Basis: "Email Q1/Q2/Q3" = the three clarifying questions sent; "Own" = our judgment, to be recorded in DECISIONS.md.
+
+[[assumption]]
+id = "A1"
+key = "journals_in_tb"
+value = false
+basis = "Email Q1"
+status = "ASSUMED"
+alternative = "true: the 20 journals are already in the trial balances, so none are posted"
+
+[[assumption]]
+id = "A1b"
+key = "journals_018_020_overlap_monthly_pl"
+value = false
+basis = "Email Q1"
+status = "ASSUMED"
+alternative = "true: India Jul-Dec profit rises by 4,950,000 INR (about 45,921.86 GBP)"
+
+[[assumption]]
+id = "A2"
+key = "uk_goodwill"
+value = "none"
+basis = "Email Q2"
+status = "ASSUMED"
+alternative = "n/a: UK investment eliminated in full"
+
+[[assumption]]
+id = "A3"
+key = "nci_translation_share"
+value = "proportionate"
+basis = "Email Q3"
+status = "ASSUMED"
+alternative = "other split moves NCI and the reserve, not total equity; goodwill difference stays 100% with owners"
+
+[[assumption]]
+id = "A4"
+key = "india_journal_tax"
+value = "none"
+basis = "Own"
+status = "ASSUMED"
+alternative = "tax on the India journals would reduce India profit"
+
+[[assumption]]
+id = "A5"
+key = "je017"
+value = "reject"
+basis = "Own: dated 2025-01-06, outside FY2024"
+status = "ASSUMED"
+alternative = "post: group revenue falls by about 17,214.40 GBP"
+
+[[assumption]]
+id = "A6"
+key = "duplicate_survivor"
+value = "earliest_id"
+basis = "Own: JE-014 kept, JE-019 rejected"
+status = "ASSUMED"
+alternative = "arbitrary; profit unchanged either way"
+
+[[assumption]]
+id = "A7"
+key = "map_uk_2310"
+value = "remap_2300"
+basis = "Rule-confirmed: local name exactly matches group 2300 Deferred income"
+status = "ASSUMED"
+alternative = "left as supplied: revenue and profit overstated by 180,000 GBP"
+
+[[assumption]]
+id = "A8"
+key = "sgd_carrying"
+value = "booked"
+basis = "Brief appendix: say how a missing input was treated"
+status = "ASSUMED"
+alternative = "n/a: sgd_bank_gbp is null; total assets carries 23,010 and is marked provisional"
+
+[[assumption]]
+id = "A9"
+key = "held_journals_posted"
+value = false
+basis = "Own: JE-009 exceeds the accrual balance, JE-016 has no mapped account"
+status = "ASSUMED"
+alternative = "posting JE-009 flips UK accruals to a debit balance"
+
+[[assumption]]
+id = "A10"
+key = "india_journal_window"
+value = "post_acquisition"
+basis = "Dated 31 Dec, after the 1 Jul acquisition"
+status = "ASSUMED"
+alternative = "n/a"
+
+[[assumption]]
+id = "A11"
+key = "retained_earnings_roll"
+value = "opening_re_plus_owners_profit"
+basis = "Own: no dividends supplied"
+status = "ASSUMED"
+alternative = "n/a"
+
+[[assumption]]
+id = "A12"
+key = "oracle_tolerance"
+value = "0.01"
+basis = "Supplied opening equity is rounded to the cent"
+status = "ASSUMED"
+alternative = "n/a"
+
+[[assumption]]
+id = "A13"
+key = "rounding_mode"
+value = "half_up"
+basis = "Own: the brief fixes 2 decimals but not the rounding mode"
+status = "ASSUMED"
+alternative = "half-even changes at most one cent on a figure"

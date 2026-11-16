@@ -1,0 +1,12 @@
+# Human decisions on findings. Each is stored against a hash of the evidence it was made on; if the input changes the
+# decision is stale and the item returns to the review queue. Appended by `python run.py review` or by hand.
+#
+# Example (commented out):
+#
+# [[override]]
+# target = "mapping:UK:2310"
+# decision = "remap"
+# to = "2300"
+# approver = "p.bhatt"
+# reason = "Deferred income is a liability"
+# evidence_sha256 = "<hash of the mapping row and its COA entries>"

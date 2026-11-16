@@ -1,0 +1,40 @@
+# Group policy decisions the engine reads, taken from Northwind_TakeHome_v2/data/group_policies.md (clauses 1 to 7).
+# The engine reads ONLY this file. If the policy text changes, source_sha256 stops matching and policy-dependent
+# steps block until this file is re-approved.
+# Rates and amounts are quoted strings, read as Decimal. Account codes are quoted strings.
+
+[meta]
+source = "Northwind_TakeHome_v2/data/group_policies.md"
+source_sha256 = "00888e755e03b2b275bb9b77b5e71916a26b2a23cfda4dffd1dbd47447cc05d4"
+status = "approved-baseline"
+
+[presentation]                       # clause 1
+currency = "GBP"
+
+[translation]                        # clause 2
+assets_liabilities = "closing"
+income_expenses = "average_for_inclusion_period"   # US: FY average; India: H2 average (1 Jul to 31 Dec)
+equity = "historical"
+difference_account = "3300"
+cross_rate = "product_of_same_rate_type"
+
+[foreign_currency_items]             # clause 3
+monetary_items = "closing"
+difference_account = "7300"
+
+[business_combination]               # clause 4
+nci_measurement = "proportionate_share_of_net_assets"
+goodwill_currency = "subsidiary_functional"
+goodwill_translation = "closing"
+
+[intercompany]                       # clause 5
+elimination = "full"
+in_transit = "receiving_entity_at_closing"
+residual_account = "7300"
+
+[journals]                           # clause 6
+posting_rule = "valid_for_period_only"
+
+[rounding]                           # clause 7 and the brief appendix
+translate = "full_precision"
+report_decimal_places = 2

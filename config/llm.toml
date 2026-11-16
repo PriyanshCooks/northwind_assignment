@@ -1,0 +1,14 @@
+# Which model the AI layer uses. Secrets never live here: use environment variables (see .env.example).
+# Model strings: ollama:<model> | openai:<model> | google:<model> | anthropic:<model>
+
+[llm]
+model = "ollama:qwen3:4b-instruct-2507-q4_K_M"
+ledger = "ledger/qwen3-4b-dev.jsonl"
+max_output_tokens = 400
+ollama_base_url = "http://localhost:11434/v1"
+
+# Sent only if the provider accepts them. Cloud models may reject sampling parameters: leave this table empty for them.
+# Determinism comes from the ledger, not from these values.
+[llm.settings]
+temperature = 0.0
+seed = 7
