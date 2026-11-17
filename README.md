@@ -83,7 +83,7 @@ Set `model` in `config/llm.toml`, or the `NORTHWIND_MODEL` environment variable.
 | Detectors D01 to D14 | Built, tested: each known defect in the data gives exactly one finding |
 | Journal dispositions, posting, revaluation, intercompany, translation, eliminations, goodwill, NCI | Built, tested |
 | Translation reserve by two routes, statements, the 12 control figures | Built, tested |
-| Invariants and an independent oracle that recomputes the figures from the raw files | Built, tested; 20 checks run on every consolidation |
+| Invariants and an oracle: a second implementation of the same method that recomputes the figures from the raw files | Built, tested; 20 checks run on every consolidation |
 | Lineage, `trace`, run manifest, JSON-lines run log, `run.py check` | Built, tested |
 | Golden test against the hand calculation | Passing; the hand calculation is AI-written and not yet human-reviewed |
 | Continuous integration workflow | Present; not yet seen green on Linux |

@@ -1,6 +1,8 @@
-"""Independent recomputation of the control figures from the raw files, by a different route and different code.
+"""A second implementation of the same method, recomputing the control figures from the raw files.
 
-It imports nothing from app.core or app.parsers: it reads the files itself, works entity by entity in local
+It shares the policy and the assumptions (A1, A3, A6, A9, and the 2310 remap switch passed in by the run), so it is not
+an independent check of the accounting. It imports nothing from app.core or app.parsers (only the figure names and
+the invariants): it reads the files itself, works entity by entity in local
 currency, and translates once at the end. A disagreement with the pipeline is reported, never adjusted away."""
 import csv
 import json
