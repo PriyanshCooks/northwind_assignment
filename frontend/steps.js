@@ -35,25 +35,25 @@ async function reviewStep(run) {
   }
   const rv = await api("GET", `/runs/${run.id}/review`);
   const marks = {};
-  const approver = h("input", { placeholder: "your name", maxlength: 60 });
-  const waiting = rv.queue.filter((q) => rv.open_items.includes(q.key));
-  const choose = (q) => h("select", { onchange: (e) => { marks[q.key] = e.target.value; } },
-    ["", "approve", "reject"].map((v) => h("option", { value: v }, v || "undecided")));
+  const approver = h("input", { placeholder: "your name", maxlength: 60, "aria-label": "Your name" });
+  const cardKeys = new Set(rv.cards.map((c) => c.key));
+  const others = rv.queue.filter((q) => rv.open_items.includes(q.key) && !cardKeys.has(q.key));
   const send = async () => {
     const decisions = Object.fromEntries(Object.entries(marks).filter(([, v]) => v));
     try { await api("POST", `/runs/${run.id}/decisions`, { approver: approver.value, decisions }); await route(); }
     catch (e) { fail(e); }
   };
+  const holder = h("div");
+  const draw = () => holder.replaceChildren(...issueGroups(rv.cards, marks, draw));
+  draw();
   const advice = rv.advice.map((a) => [a.kind, a.unit, a.recorded ? "recorded model answer" : "not recorded (rule fallback)",
     a.verified.join(", "), a.unverified.join(", "), a.dropped.map((d) => `${d.claim}: ${d.why}`).join("; "), a.missed.join(", ")]);
   show(...head(run, "2 Review"), h("p", {}, "Status: ", h("span", { class: "tag" }, run.status)),
-    waiting.length ? h("div", {}, h("h2", {}, "Waiting for a decision"),
-      table(["Item", "State", "Reason", "Decision"], waiting.map((q) => [h("code", {}, q.key), q.state, q.reason, choose(q)])),
-      h("div", { class: "row" }, approver, button("Submit decisions", send))) :
-      h("div", { class: "callout" }, "Nothing is waiting for a decision."),
-    h("h2", {}, `Findings (${rv.findings.length})`),
-    table(["Code", "Severity", "Where", "Claim", "Action"], rv.findings.map((f) =>
-      [f.code, f.severity, `${f.file}:${f.line ?? ""}`, f.claim, f.action])),
+    rv.open_items.length ? h("div", { class: "callout warn" }, `${rv.open_items.length} item(s) wait for a decision. Approve or reject each card, add your name and submit.`) :
+      h("div", { class: "callout ok" }, "Nothing is waiting for a decision."),
+    others.length ? h("div", {}, h("h2", {}, "Other items waiting"), table(["Item", "State", "Reason"], others.map((q) => [h("code", {}, q.key), q.state, q.reason]))) : null,
+    holder,
+    rv.open_items.length ? h("div", { class: "row" }, approver, button("Submit decisions", send)) : null,
     h("h2", {}, "Journal dispositions"),
     table(["Journal", "Disposition", "Reasons"], rv.dispositions.map((d) => [d.journal_id, d.status, d.reasons.join("; ")])),
     h("h2", {}, "Recorded AI advice"), h("p", { class: "muted" }, "Advice only: it changes no figure. Claims the packet does not " +
@@ -107,8 +107,7 @@ async function resultsStep(run) {
   };
   show(...head(run, "5 Results"), h("h2", {}, "The 12 control figures"),
     figuresTable(r.figures),
-    h("h2", {}, `Issues (${r.issues.length})`),
-    table(["Code", "Severity", "Where", "Action", "Claim"], r.issues.map((i) => [i.code, i.severity, `${i.file}:${i.line ?? ""}`, i.action, i.claim])),
+    h("h2", {}, `Issues (${r.issues.length})`), ...issueGroups(r.cards, {}, () => {}),
     h("h2", {}, "What if an input changes?"), h("p", { class: "muted" }, "Builds a new run from a changed cell (line 1 is the header); this run is left as it is."),
     h("div", { class: "row" }, f.file, f.line, f.column, f.value, name, button("Build new run", build)),
     h("h2", {}, "Compare with another run"), h("div", { class: "row" }, other, button("Compare", compare, true)), holder,

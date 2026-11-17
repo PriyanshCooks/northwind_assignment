@@ -22,7 +22,8 @@ def _finished(reg: Reg, run_id: str) -> None:
 def get_results(run_id: str, reg: Reg) -> dict[str, Any]:
     _finished(reg, run_id)
     out = reg.out_dir(run_id)
-    return {"figures": results.figures(out), "issues": results.issues(out)}
+    items = results.issues(out)
+    return {"figures": results.figures(out), "issues": items, "cards": pipeline.result_cards(reg, run_id, items)}
 
 
 @router.get("/runs/{run_id}/outputs")

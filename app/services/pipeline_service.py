@@ -8,10 +8,12 @@ from app.llm.factory import load_llm_config
 from app.llm.ledger import Ledger
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
 from app.orchestrator.state import RunState
+from app.services import ai_service
+from app.services.cards_service import build_cards
 from app.services.overrides_service import override_states, review_queue
 from app.services.registry_service import Registry
 from app.services.review_service import review_all
-from app.services.run_service import build_context, stage
+from app.services.run_service import Consolidation, build_context, stage
 from app.services.upload_service import file_status
 
 
@@ -62,16 +64,32 @@ def _advice(registry: Registry, run_id: str) -> list[dict[str, Any]]:
     return rows
 
 
+def _memos(run: Consolidation) -> dict[str, dict[str, Any]]:
+    """Text addressed to tools (D12), tied to the journal starting last at or before its line."""
+    starts = sorted((j.ref.line, j.id) for j in run.ctx.inputs.journals)
+    found = {}
+    for f in run.findings:
+        if f.code == "D12" and f.quoted_text is not None and f.line is not None:
+            owner = [jid for line, jid in starts if line <= f.line]
+            if owner:
+                found[owner[-1]] = {"line": f.line, "text": f.quoted_text.text}
+    return found
+
+
 def review_view(registry: Registry, run_id: str) -> dict[str, Any]:
     ctx = build_context(registry.data_dir(run_id), registry.config_dir(run_id))
     run = stage(ctx)
     states = override_states(load_overrides(registry.config_dir(run_id) / "overrides.toml"), ctx.inputs)
-    keep = ("key", "code", "severity", "claim", "file", "line", "action")
+    keep = ("key", "code", "severity", "claim", "file", "line", "action", "subject")
+    findings = [{k: v for k, v in f.model_dump(mode="json").items() if k in keep} for f in run.findings]
+    dispositions = [d.model_dump(mode="json") for d in run.dispositions]
+    open_items = registry.meta(run_id)["open_items"]
+    units = ai_service.review_units(registry, run_id)["units"]
     return {
-        "findings": [{k: v for k, v in f.model_dump(mode="json").items() if k in keep} for f in run.findings],
-        "dispositions": [d.model_dump(mode="json") for d in run.dispositions],
+        "findings": findings, "cards": build_cards(findings, units, dispositions, open_items, _memos(run)),
+        "dispositions": dispositions,
         "queue": review_queue(run.findings, states),
-        "open_items": registry.meta(run_id)["open_items"],
+        "open_items": open_items,
         "advice": _advice(registry, run_id),
     }
 
@@ -84,3 +102,10 @@ def build(registry: Registry, run_id: str) -> dict[str, Any]:
     registry.update(run_id, built=True)
     gates = [{"name": c.name, "ok": c.ok, "detail": c.detail} for c in run.checks]
     return {"gates": gates, "passed": run.checks_passed, "blocked": run.blocked}
+
+
+def result_cards(registry: Registry, run_id: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Cards for a finished run's issues.json rows: the same wording as the review step, with no decision buttons."""
+    run = stage(build_context(registry.data_dir(run_id), registry.config_dir(run_id)))
+    units = ai_service.review_units(registry, run_id)["units"]
+    return build_cards(items, units, [d.model_dump(mode="json") for d in run.dispositions], [], _memos(run))
