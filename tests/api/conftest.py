@@ -9,7 +9,7 @@ from app.main import create_app
 
 @pytest.fixture
 def client(tmp_path: Path) -> TestClient:
-    return TestClient(create_app(tmp_path / "runs"))
+    return TestClient(create_app(tmp_path / "runs"), base_url="http://127.0.0.1")
 
 
 def sample_run(client: TestClient) -> str:
