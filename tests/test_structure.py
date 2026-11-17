@@ -11,7 +11,7 @@ APP_FILES = {
     "app/review": ["units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
     "app/core": [
         "post_journals.py", "revalue.py", "translate.py", "intercompany.py", "eliminate.py",
-        "acquisition.py", "reserve.py", "statements.py", "figures.py", "lineage.py",
+        "acquisition.py", "reserve.py", "statements.py", "figures.py", "lineage.py", "calculations.py",
     ],
     "app/parsers": [
         "contracts.py", "tb_adapters.py", "journals.py", "mappings.py", "fx_rates.py",
@@ -21,13 +21,13 @@ APP_FILES = {
         "registry.py", "balance.py", "mapping.py", "journals.py", "rates.py",
         "reconciliation.py", "text_scan.py", "expectations.py", "duplicates.py",
     ],
-    "app/verification": ["invariants.py", "oracle.py"],
+    "app/verification": ["invariants.py", "oracle.py", "recalc.py"],
     "app/writers": [
         "consolidated_tb.py", "statements.py", "eliminations.py", "issues.py", "control_figures.py", "manifest.py",
     ],
     "app/domain": [
         "refs.py", "quarantine.py", "ledger.py", "journals.py", "findings.py",
-        "entries.py", "figures.py", "policy.py", "runs.py",
+        "entries.py", "figures.py", "policy.py", "runs.py", "calculations.py",
     ],
     "app/db": [
         "connection.py", "schema.sql", "runs_service.py",
