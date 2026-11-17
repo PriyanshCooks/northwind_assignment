@@ -35,9 +35,35 @@ function table(head, rows) {
 function when(text) { return new Date(text).toLocaleString(); }
 function shown(v) { return v === null ? "null" : typeof v === "object" ? JSON.stringify(v) : String(v); }
 
+const STATUS = { new: "Not analysed", awaiting_review: "Waiting for a decision", done: "Finished", blocked: "Blocked" };
+
+// One state per step, from what the run already holds: nothing here is a guess about work not done.
+function stepState(run, key, step) {
+  const finished = run.status === "done", analysed = run.status !== "new";
+  if (key === step) return "current";
+  if (run.blocked && key === "review") return "blocked";
+  const done = { upload: analysed, review: finished, outputs: Boolean(run.outputs), build: Boolean(run.built), results: false, export: false }[key];
+  if (done) return "done";
+  if (key === "review" && run.status === "awaiting_review") return "blocked";
+  const locked = { review: !analysed, outputs: !finished, build: !finished, results: !finished, export: !finished }[key];
+  return locked ? "locked" : "todo";
+}
+const STATE_TEXT = { done: "Done", current: "Current", blocked: "Needs you", locked: "Not yet", todo: "Ready" };
+
 function drawStepper(run, step) {
-  stepper.replaceChildren(...(run ? STEPS.map(([key, label]) =>
-    h("a", { href: `#/run/${run.id}/${key}`, class: key === step ? "here" : "" }, label)) : []));
+  const runbar = document.getElementById("runbar");
+  if (!run) { stepper.replaceChildren(); runbar.replaceChildren(h("span", {}, "Review a consolidation run step by step")); return; }
+  const at = STEPS.findIndex(([k]) => k === step);
+  runbar.replaceChildren(h("strong", {}, run.name), h("span", { class: "tag" }, STATUS[run.blocked ? "blocked" : run.status] || run.status),
+    h("span", {}, `Step ${at + 1} of ${STEPS.length}: ${STEPS[at][1].slice(2)}`));
+  stepper.replaceChildren(...STEPS.map(([key, label], i) => {
+    const state = stepState(run, key, step);
+    const mark = state === "done" ? "\u2713" : state === "blocked" ? "!" : String(i + 1);
+    return h(state === "locked" ? "span" : "a", { href: state === "locked" ? null : `#/run/${run.id}/${key}`, class: `item ${state}`,
+      "aria-current": state === "current" ? "step" : null },
+      h("span", { class: "dot", "aria-hidden": "true" }, mark),
+      h("span", {}, label.slice(2), h("span", { class: "state" }, STATE_TEXT[state])));
+  }));
 }
 
 function nextStep(run) {

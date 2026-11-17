@@ -24,7 +24,7 @@ async function uploadStep(run) {
   const fresh = await api("GET", `/runs/${run.id}`);
   const ready = fresh.files.every((f) => f.present && !f.error);
   const next = async () => { try { await api("POST", `/runs/${run.id}/analyse`); go(run, "review"); } catch (e) { fail(e); } };
-  show(...head(run, "1 Upload"), h("div", { class: "note" }, "Only the 15 expected file names are accepted, up to 1 MB each. " +
+  show(...head(run, "1 Upload"), h("div", { class: "callout" }, "Only the 15 expected file names are accepted, up to 1 MB each. " +
     "A file that breaks its contract is refused and the reason is shown on its row."),
     h("div", { class: "row" }, input, button("Upload", upload)), rows(fresh.files),
     h("div", { class: "row" }, h("button", { onclick: next, disabled: !ready }, "Analyse and go to Review")));
@@ -52,7 +52,7 @@ async function reviewStep(run) {
     waiting.length ? h("div", {}, h("h2", {}, "Waiting for a decision"),
       table(["Item", "State", "Reason", "Decision"], waiting.map((q) => [h("code", {}, q.key), q.state, q.reason, choose(q)])),
       h("div", { class: "row" }, approver, button("Submit decisions", send))) :
-      h("div", { class: "note" }, "Nothing is waiting for a decision."),
+      h("div", { class: "callout" }, "Nothing is waiting for a decision."),
     h("h2", {}, `Findings (${rv.findings.length})`),
     table(["Code", "Severity", "Where", "Claim", "Action"], rv.findings.map((f) =>
       [f.code, f.severity, `${f.file}:${f.line ?? ""}`, f.claim, f.action])),
@@ -77,7 +77,7 @@ async function outputsStep(run) {
 
 async function buildStep(run) {
   const b = await api("POST", `/runs/${run.id}/build`);
-  show(...head(run, "4 Build"), h("div", { class: b.passed ? "note" : "error" },
+  show(...head(run, "4 Build"), h("div", { class: b.passed ? "callout ok" : "error" },
     b.passed ? `All ${b.gates.length} gates passed.` : "A gate failed" + (b.blocked ? `: ${b.blocked}` : ".")),
     table(["Gate", "Result", "Detail"], b.gates.map((g) => [g.name, h("span", { class: g.ok ? "ok" : "bad" }, g.ok ? "pass" : "FAIL"), tidy(g.detail)])),
     h("div", { class: "row" }, button("Next: results", () => go(run, "results"))));

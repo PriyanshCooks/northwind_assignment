@@ -3,16 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Northwind consolidation review</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <a href="#/" class="brand">Northwind consolidation review</a>
-    <span class="local">local only · 127.0.0.1 · no live model call</span>
+  <a class="skip" href="#view">Skip to the main panel</a>
+  <header class="top">
+    <a href="#/" class="brand">Northwind consolidation</a>
+    <div id="runbar" class="runbar" aria-live="polite"></div>
   </header>
-  <nav id="stepper" aria-label="Steps"></nav>
-  <main id="view" aria-live="polite"></main>
+  <div class="layout">
+    <nav id="stepper" class="stepper" aria-label="Steps"></nav>
+    <main id="view" tabindex="-1"></main>
+  </div>
+  <footer class="foot">This page runs only on this machine (127.0.0.1). Your files stay here and no live model is called from it.</footer>
   <script src="app.js"></script>
   <script src="steps.js"></script>
   <script>route();</script>
