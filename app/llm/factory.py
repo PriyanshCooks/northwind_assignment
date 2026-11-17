@@ -1,4 +1,5 @@
 """The model comes from config/llm.toml, or from NORTHWIND_MODEL: a string like ollama:<name> or openai:<name>."""
+import importlib
 import os
 import re
 import tomllib
@@ -53,17 +54,18 @@ def model_settings(cfg: LlmConfig) -> dict[str, Any]:
 def build_model(cfg: LlmConfig) -> Model:
     provider, _, name = cfg.model.partition(":")
     if provider in ("ollama", "openai"):
-        from openai import AsyncOpenAI  # needs the openai package (requirements-llm.txt)
+        key = os.environ.get("OPENAI_API_KEY", "")
+        if provider == "openai" and not key:
+            raise LlmStop("OPENAI_API_KEY is not set: paste it into .env (see .env.example) and run again")
+        # loaded by name: openai is only in requirements-llm.txt, so a dev-only install must still type-check
+        async_openai = importlib.import_module("openai").AsyncOpenAI
         from pydantic_ai.models.openai import OpenAIChatModel
         from pydantic_ai.providers.openai import OpenAIProvider
 
         if provider == "ollama":
-            client = AsyncOpenAI(base_url=cfg.ollama_base_url, api_key="ollama", timeout=cfg.request_timeout_s)
+            client = async_openai(base_url=cfg.ollama_base_url, api_key="ollama", timeout=cfg.request_timeout_s)
         else:
-            key = os.environ.get("OPENAI_API_KEY", "")
-            if not key:
-                raise LlmStop("OPENAI_API_KEY is not set: paste it into .env (see .env.example) and run again")
             # retries are ours (client.py): the SDK would also retry a 429 that only means "out of credit"
-            client = AsyncOpenAI(api_key=key, timeout=cfg.request_timeout_s, max_retries=0)
+            client = async_openai(api_key=key, timeout=cfg.request_timeout_s, max_retries=0)
         return OpenAIChatModel(name, provider=OpenAIProvider(openai_client=client))
     return infer_model(cfg.model)
