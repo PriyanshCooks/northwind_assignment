@@ -234,3 +234,45 @@ One user, no login, no concurrency control: it is a local tool. What-if edits on
 - Switching output files was slow because each switch re-ran the engine and the ledger replay for the issue cards (about 70 ms), then fetched the file list again, and asked for the file and its issues one after the other. Cards are now kept per run until issues.json or the ledger changes (about 7 ms after the first), the file list is read once per run, and the two requests go out together.
 - D02 nature rule (`_nature_problem` in detectors/mapping.py): a mapped line whose own name reads as a liability (deferred, accruals, payables, loans, provisions) but maps to a non-liability group account, or reads as income but maps to a non-revenue one, is flagged and left as supplied. It needs no exact name match, so 'Deferred income (current)' is caught. It never remaps, since a remap needs a stated assumption. It is silent on the supplied data apart from the existing 2310 finding.
 - Held journals: a journal the rules hold ("needs a human") is a waiting item as `journal:JE-016`. Its card offers Approve (recorded as accepted as held) and Reject (recorded as disputed). Neither moves a figure, because a held journal is not posted either way; the decision is stored with the approver's name in the run's `held_decisions`. This is an ASSUMED reading of the brief, logged in DECISIONS_LOG. The engine and the command line are unchanged; the pause is applied in `pipeline_service._with_held`, so a run with an undecided held journal is `awaiting_review` and the same 409 gate covers it.
+
+
+## The reasoning layer (advice only)
+
+Principle: code calculates, the model reads and explains. The layer sees everything and can change nothing: no figure,
+no disposition, no rule. It lives in `app/reasoning/` and never imports `app/core` (a test checks this). It runs on a
+cloud model only; with the local model `review --reasoning` prints "AI review not available" and every rule and figure
+is unchanged.
+
+**Calculation records.** `app/core/calculations.py` builds, after the run, one record per consolidated row and per
+control figure: a formula text, its inputs with their `file:line` (or `calc:<id>` when the input is another record) and
+the result. `app/verification/recalc.py` re-runs the formula from the inputs with a small evaluator (names, whole
+numbers, `+ - * /` only) and a test fails if it does not equal the result. The Unknown SGD figure has no record.
+
+**Three checkpoints.**
+1. `reader.py`: every line of every input file, in chunks of 40 lines per file, with the file's plain meaning
+   (`meanings.py`). The model answers with flags from a fixed menu (`schema.py`).
+2. `calc_review.py`: after the engine, one call per calculation record; the model judges sign, size and fit.
+3. `investigator.py`: for each concern, the model follows the result back with read-only tools and reports a chain.
+
+**Grounding and the two tiers** (`grounding.py`). A claim is dropped when its `file:line` or calculation id does not
+exist, or when a quoted text or any number in its reason is not in what the model was shown. A claim that stands is
+*verified* only when code can prove it (an impossible date, a line with no letters, a sign on a figure that must be
+positive, or a fact a detector already confirmed); otherwise it is a *suspicion*: shown, never counted, never gating.
+
+**Tools** (`tools.py`): `read_lines`, `find_in_file`, `get_rule`, `get_calculation`, `get_lineage`, `get_related`.
+File tools take a file name from the run's own list, never a path. At most 5 calls per item, no repeated call, and
+every result is returned as `quoted_data` with a note that it is data. A test lists the tools and fails on any name,
+parameter or import that could write, run a command or reach the network.
+
+**Ledger and cost** (`app/llm/tooluse.py`). A tool-using call is keyed by model, settings, prompt version, schema,
+packet and tool names; the answer is stored with its tool trail, so a replay shows what the model looked at. Unchanged
+units replay free and only changed units go live. `--max-units N` limits live units for a whole run (it counts units,
+not dollars); five failures in a row trip the circuit breaker; an authentication error stops the run at once.
+
+**Commands.** `python run.py review --reasoning` replays; add `--live` to record unrecorded units; add `--smoke` to send
+one unit to each checkpoint.
+
+**What to say about it.** The model is never trusted with a number: its schema has no number field and no field that
+can name a decision. Hostile text in a journal memo or a map name changes no figure, disposition or rule finding (a
+tested fact), a hostile rate row is refused by validation before anything reads it, and a simulated model that obeys
+the text changes nothing. Figures and output hashes are identical with the layer off, on and replayed.
