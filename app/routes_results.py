@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Response
 
 from app.api_models import Outputs, WhatIf
 from app.routes import Reg
+from app.services import output_service as files
 from app.services import pipeline_service as pipeline
 from app.services import results_service as results
 from app.services.pipeline_service import NotReady
@@ -65,3 +66,36 @@ def export(run_id: str, reg: Reg) -> Response:
     chosen = reg.meta(run_id)["outputs"] or [o["name"] for o in results.available_outputs(reg.out_dir(run_id))]
     return Response(results.build_zip(reg.out_dir(run_id), chosen), media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{run_id}.zip"'})
+
+
+@router.get("/runs/{run_id}/output-files")
+def output_files(run_id: str, reg: Reg) -> list[dict[str, Any]]:
+    _finished(reg, run_id)
+    return files.file_list(reg.out_dir(run_id))
+
+
+@router.get("/runs/{run_id}/output-files/{name}")
+def output_file(run_id: str, name: str, reg: Reg) -> dict[str, Any]:
+    _finished(reg, run_id)
+    try:
+        return files.file_view(reg.out_dir(run_id), name)
+    except files.TooLarge as error:
+        raise HTTPException(413, str(error)) from error
+
+
+@router.get("/runs/{run_id}/output-files/{name}/issues")
+def output_file_issues(run_id: str, name: str, reg: Reg) -> dict[str, list[dict[str, Any]]]:
+    _finished(reg, run_id)
+    out = reg.out_dir(run_id)
+    cards = pipeline.result_cards(reg, run_id, results.issues(out))
+    return files.issues_by_file(out, cards, name)
+
+
+@router.get("/runs/{run_id}/output-files/{name}/download")
+def output_download(run_id: str, name: str, reg: Reg) -> Response:
+    _finished(reg, run_id)
+    out = reg.out_dir(run_id)
+    if name not in {o["name"] for o in results.available_outputs(out)}:
+        raise HTTPException(404, f"not an output of this run: {name}")
+    return Response((out / name).read_bytes(), media_type="application/octet-stream",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})

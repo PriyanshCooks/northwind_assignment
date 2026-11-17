@@ -1,7 +1,7 @@
 // Review UI: hash router, API helper and the runs list. Everything from the server is put on the page with
 // text nodes (never as HTML), so uploaded text is shown as data and cannot run as script.
 const STEPS = [["upload", "1 Upload"], ["review", "2 Review"], ["outputs", "3 Choose outputs"],
-               ["build", "4 Build"], ["results", "5 Results"], ["export", "6 Export"]];
+               ["build", "4 Build"], ["results", "5 Results"], ["files", "6 Output files"], ["export", "7 Export"]];
 const view = document.getElementById("view");
 const stepper = document.getElementById("stepper");
 
@@ -41,10 +41,10 @@ function stepState(run, key, step) {
   const finished = run.status === "done", analysed = run.status !== "new";
   if (key === step) return "current";
   if (run.blocked && key === "review") return "blocked";
-  const done = { upload: analysed, review: finished, outputs: Boolean(run.outputs), build: Boolean(run.built), results: false, export: false }[key];
+  const done = { upload: analysed, review: finished, outputs: Boolean(run.outputs), build: Boolean(run.built), results: false, files: false, export: false }[key];
   if (done) return "done";
   if (key === "review" && run.status === "awaiting_review") return "blocked";
-  const locked = { review: !analysed, outputs: !finished, build: !finished, results: !finished, export: !finished }[key];
+  const locked = { review: !analysed, outputs: !finished, build: !finished, results: !finished, files: !finished, export: !finished }[key];
   return locked ? "locked" : "todo";
 }
 const STATE_TEXT = { done: "Done", current: "Current", blocked: "Needs you", locked: "Not yet", todo: "Ready" };

@@ -108,15 +108,15 @@ async function resultsStep(run) {
     h("h2", {}, "What if an input changes?"), h("p", { class: "muted" }, "Builds a new run from a changed cell (line 1 is the header); this run is left as it is."),
     h("div", { class: "row" }, f.file, f.line, f.column, f.value, name, button("Build new run", build)),
     h("h2", {}, "Compare with another run"), h("div", { class: "row" }, other, button("Compare", compare, true)), holder,
-    h("div", { class: "row" }, button("Next: export", () => go(run, "export"))));
+    h("div", { class: "row" }, button("Next: output files", () => go(run, "files"))));
 }
 
 async function exportStep(run) {
   const out = await api("GET", `/runs/${run.id}/outputs`);
   const names = out.chosen ? [...out.chosen, "run_manifest.json"] : out.available.map((o) => o.name);
-  show(...head(run, "6 Export"), h("p", {}, "A zip of the chosen files plus the run manifest:"),
+  show(...head(run, "7 Export"), h("p", {}, "A zip of the chosen files plus the run manifest:"),
     h("ul", {}, [...new Set(names)].map((n) => h("li", {}, h("code", {}, n)))),
     h("a", { class: "btn", href: `/api/runs/${run.id}/export` }, "Download zip"));
 }
 
-const STEP_VIEWS = { upload: uploadStep, review: reviewStep, outputs: outputsStep, build: buildStep, results: resultsStep, export: exportStep };
+const STEP_VIEWS = { upload: uploadStep, review: reviewStep, outputs: outputsStep, build: buildStep, results: resultsStep, files: filesStep, export: exportStep };
