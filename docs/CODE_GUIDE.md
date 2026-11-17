@@ -109,3 +109,6 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### lineage, outputs and commands (task 1.13)
 `core/lineage.py` lists the postings every consolidated balance is made of and builds a trace per figure. `app/writers/` writes the required files: values are rounded to 2 decimals only there (`round_tree`). `consolidated_tb.csv` and `eliminations.csv` cite `file:line` for every row. `run_manifest.json` records input, policy, assumption and code hashes plus a hash of every other output, so two runs on the same inputs can be compared byte for byte. `run.py consolidate` runs everything and stores findings, origin rows and traces in `.northwind/run.db`; `run.py trace goodwill_closing` (or an account such as `1100`) walks a result down to the source rows; `run.py check` verifies the data bundle and the policy binding.
+
+### run log (task 1.14)
+`app/utils/logging.py` writes one JSON line per event to `.northwind/logs/`. Each line has `run_id`, `stage` and `event`; finding events carry the finding key and gate events the check name and result. Timestamps live only in this log, so the required outputs are byte-identical between runs while the logs differ.

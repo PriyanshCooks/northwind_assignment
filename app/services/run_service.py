@@ -41,6 +41,7 @@ from app.parsers.mappings import apply_mapping, load_coa, load_map
 from app.parsers.policy_text import PolicyBlocked, check_binding
 from app.parsers.tb_adapters import load_india_monthly, load_tb
 from app.utils.hashing import json_hash, sha256_file
+from app.utils.logging import RunLogger
 from app.utils.paths import CONFIG_DIR, RUNTIME_DIR
 from app.verification.invariants import Check, check_invariants
 from app.verification.oracle import oracle_checks
@@ -103,6 +104,7 @@ class Consolidation:
     figures: dict[str, Figure] = field(default_factory=dict)
     checks: list[Check] = field(default_factory=list)
     blocked: str | None = None
+    log_path: Path | None = None
 
     @property
     def checks_passed(self) -> bool:
@@ -194,7 +196,7 @@ def write_outputs(run: Consolidation, out_dir: Path) -> None:
 
 def record(run: Consolidation, db_path: Path) -> str:
     """Keep the findings, origin rows and traces in the evidence store so `trace` can answer later."""
-    inputs_hash = json_hash({p.name: sha256_file(p) for p in sorted(run.ctx.inputs.data_dir.iterdir()) if p.is_file()})
+    inputs_hash = input_hash(run.ctx.inputs.data_dir)
     conn = connect(db_path)
     create_run(conn, inputs_hash[:16], inputs_hash, {"blocked": run.blocked, "checks_passed": run.checks_passed})
     upsert_findings(conn, inputs_hash[:16], run.findings)
@@ -206,8 +208,31 @@ def record(run: Consolidation, db_path: Path) -> str:
     return inputs_hash[:16]
 
 
-def run_consolidation(data_dir: Path, out_dir: Path, db_path: Path | None = None) -> Consolidation:
-    run = stage(build_context(data_dir))
-    write_outputs(run, out_dir)
-    record(run, db_path or RUNTIME_DIR / "run.db")
-    return run
+def input_hash(data_dir: Path) -> str:
+    return json_hash({p.name: sha256_file(p) for p in sorted(data_dir.iterdir()) if p.is_file()})
+
+
+def run_consolidation(
+    data_dir: Path, out_dir: Path, db_path: Path | None = None, log_dir: Path | None = None,
+) -> Consolidation:
+    """Intake, analyse, consolidate, verify, export, each logged. The log holds the timestamps; the outputs do not."""
+    log = RunLogger(log_dir or RUNTIME_DIR / "logs", input_hash(data_dir)[:16])
+    try:
+        log.event("intake", "inputs read", data_dir=str(data_dir))
+        run = stage(build_context(data_dir))
+        for f in run.findings:
+            log.event("analyse", "finding", finding_key=f.key, code=f.code, severity=f.severity, action=f.action)
+        for d in run.dispositions:
+            log.event("consolidate", "journal disposition", journal=d.journal_id, status=d.status)
+        if run.blocked:
+            log.event("consolidate", "blocked", reason=run.blocked)
+        for c in run.checks:
+            log.event("verify", "gate", check=c.name, passed=c.ok)
+        write_outputs(run, out_dir)
+        log.event("export", "outputs written", folder=str(out_dir))
+        record(run, db_path or RUNTIME_DIR / "run.db")
+        log.event("run", "finished", blocked=run.blocked, checks_passed=run.checks_passed)
+        run.log_path = log.path
+        return run
+    finally:
+        log.close()
