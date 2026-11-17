@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
+from app.orchestrator.runner_plain import run_plain
 from app.orchestrator.state import RunState, initial_state
 from app.services.env_service import check_environment
 from app.services.trace_service import trace
@@ -14,7 +15,11 @@ from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, RU
 
 def _run(args: argparse.Namespace) -> int:
     state = initial_state(args.data, args.output, args.config, args.db, args.db.parent / "logs")
-    return _report(run_graph(state, args.db.parent / "checkpoints.db"), args.output)
+    if args.engine == "plain":
+        final = run_plain(state)
+    else:
+        final = run_graph(state, args.db.parent / "checkpoints.db")
+    return _report(final, args.output)
 
 
 def _resume(args: argparse.Namespace) -> int:
@@ -65,6 +70,9 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR, help="folder for the outputs")
         command.add_argument("--db", type=Path, default=RUNTIME_DIR / "run.db", help="evidence store file")
         command.add_argument("--config", type=Path, default=CONFIG_DIR, help="folder holding policy and overrides")
+        if name == "consolidate":
+            command.add_argument("--engine", choices=("graph", "plain"), default="graph",
+                                 help="LangGraph or plain runner")
         if name == "resume":
             command.add_argument("--thread", required=True, help="thread printed when the run paused")
             command.add_argument("--approver", required=True, help="who is signing the decisions")

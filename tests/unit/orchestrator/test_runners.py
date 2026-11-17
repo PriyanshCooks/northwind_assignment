@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
+from app.orchestrator.runner_plain import run_plain
 from app.orchestrator.state import RunState, initial_state
 from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR, ROOT
 
@@ -37,6 +38,35 @@ def test_the_graph_pauses_at_resolve_and_resumes_to_a_finished_run(tmp_path: Pat
 
 def _cli(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run([sys.executable, "run.py", *args], cwd=ROOT, capture_output=True, text=True, timeout=120)
+
+
+def test_both_runners_write_identical_outputs(tmp_path: Path) -> None:
+    plain = run_plain(_state(tmp_path / "plain"))
+    graph = run_graph(_state(tmp_path / "graph"), tmp_path / "graph" / "checkpoints.db")
+    assert plain["status"] == graph["status"] == "done"
+    assert plain["output_hashes"] == graph["output_hashes"]
+    assert "run_manifest.json" in plain["output_hashes"]
+
+
+def test_an_open_override_stops_the_plain_runner_before_any_output(tmp_path: Path) -> None:
+    state = run_plain(_state(tmp_path, open_item=True))
+    assert (state["status"], state["open_items"]) == ("awaiting_review", [TARGET])
+    assert not (tmp_path / "out").exists()
+
+
+def test_a_resumed_graph_and_an_answered_plain_run_agree_byte_for_byte(tmp_path: Path) -> None:
+    run_graph(_state(tmp_path / "graph", open_item=True), tmp_path / "graph" / "checkpoints.db")
+    resumed = resume_graph(thread_for(DEFAULT_DATA_DIR), ANSWER, tmp_path / "graph" / "checkpoints.db")
+    plain = run_plain(_state(tmp_path / "plain", open_item=True), ANSWER)
+    assert resumed["output_hashes"] == plain["output_hashes"]
+
+
+def test_the_cli_engines_print_the_same_figures(tmp_path: Path) -> None:
+    graph = _cli("consolidate", "--output", str(tmp_path / "g"), "--db", str(tmp_path / "g.db" / "run.db"))
+    plain = _cli("consolidate", "--engine", "plain", "--output", str(tmp_path / "p"),
+                 "--db", str(tmp_path / "p.db" / "run.db"))
+    assert graph.returncode == plain.returncode == 0
+    assert graph.stdout.splitlines()[1:] == plain.stdout.splitlines()[1:]
 
 
 def test_a_paused_run_resumes_in_a_separate_process(tmp_path: Path) -> None:
