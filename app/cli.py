@@ -6,14 +6,15 @@ from pathlib import Path
 
 from app.llm.cost import build_report, format_report
 from app.llm.factory import load_llm_config
-from app.llm.ledger import Ledger
+from app.llm.ledger import Ledger, LlmStop
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
 from app.orchestrator.runner_plain import run_plain
 from app.orchestrator.state import RunState, initial_state
 from app.parsers.contracts import ContractError
 from app.services.env_service import check_environment
+from app.services.reasoning_service import run_reasoning
 from app.services.review_service import BatchStopped, review_all
-from app.services.run_service import build_context
+from app.services.run_service import build_context, stage
 from app.services.trace_service import trace
 from app.services.whatif_service import Change, Diff, diff_inputs, impact, whatif
 from app.utils.hashing import dumps
@@ -89,6 +90,8 @@ def _trace(args: argparse.Namespace) -> int:
 
 def _review(args: argparse.Namespace) -> int:
     """Advice from the reviewers (replayed from the ledger, or recorded with --live). It changes no figure."""
+    if args.reasoning:
+        return _reasoning(args)
     ctx = build_context(args.data, args.config)
     cfg = load_llm_config()
     ledger = Ledger(cfg.ledger_path)
@@ -108,6 +111,29 @@ def _review(args: argparse.Namespace) -> int:
     if stopped:
         print(f"stopped early: {stopped.reason}; {stopped.left} units were not reviewed")
         return 3
+    return 0
+
+
+def _reasoning(args: argparse.Namespace) -> int:
+    """The three reasoning checkpoints: advice only, replayed from the ledger unless --live. --smoke sends one unit
+    to each checkpoint."""
+    cfg = load_llm_config()
+    ledger = Ledger(cfg.ledger_path)
+    run = stage(build_context(args.data, args.config))
+    try:
+        report = run_reasoning(run, cfg, ledger, "live" if args.live else "replay", None, args.max_units, args.smoke)
+    except LlmStop as stop:
+        print(f"stopped: {stop}")
+        return 3
+    if not report.available or report.inputs is None or report.calcs is None or report.traces is None:
+        print(report.note)
+        return 0
+    read = report.inputs
+    print(f"input reader: {len(read.verified)} verified, {len(read.findings) - len(read.verified)} suspicion, "
+          f"{len(read.dropped)} claims dropped, {len(read.unavailable)} chunks unanswered")
+    print(f"calculation reviewer: {len(report.calcs.findings)} concerns, {len(report.calcs.dropped)} dropped, "
+          f"{len(report.calcs.unavailable)} unanswered; investigations: {len(report.traces.traces)}")
+    print(f"{len(ledger.new_keys)} units sent to {cfg.model} this run")
     return 0
 
 
@@ -154,6 +180,9 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "review":
             command.add_argument("--live", action="store_true", help="call the configured model for unrecorded units")
             command.add_argument("--cost", action="store_true", help="print tokens and estimated cost per agent")
+            command.add_argument("--reasoning", action="store_true", help="run the three reasoning checkpoints")
+            command.add_argument("--max-units", type=int, default=None, help="most units sent live in one run")
+            command.add_argument("--smoke", action="store_true", help="with --reasoning: one unit per checkpoint")
         if name == "resume":
             command.add_argument("--thread", required=True, help="thread printed when the run paused")
             command.add_argument("--approver", required=True, help="who is signing the decisions")

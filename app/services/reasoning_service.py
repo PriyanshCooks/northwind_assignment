@@ -3,11 +3,20 @@ calculation records, the source lines behind each record and the facts the rules
 model; it only turns engine objects into text and numbers."""
 import json
 import re
+from dataclasses import dataclass
 from decimal import Decimal
 
 from app.core.calculations import calculation_records
 from app.domain.calculations import CalcRecord
+from app.llm.client import Mode
+from app.llm.factory import LlmConfig
+from app.llm.ledger import Ledger
+from app.reasoning.budget import UnitBudget
+from app.reasoning.calc_review import CalcReport, review_calculations
 from app.reasoning.evidence import Evidence
+from app.reasoning.grounding import Grounded
+from app.reasoning.investigator import TraceReport, investigate
+from app.reasoning.reader import InputReport, read_inputs
 from app.reasoning.tools import lineage_text
 from app.services.run_service import Consolidation
 
@@ -67,3 +76,41 @@ def build_evidence(run: Consolidation) -> Evidence:
         lineage={rid: lineage_text(data_dir, src, files) for rid, src in sources.items()},
         related=_related(run), confirmed=_confirmed(run),
     )
+
+
+NOT_AVAILABLE = ("AI review not available: the local model cannot do reliable tool use, so the reasoning layer runs "
+                 "on a cloud model only. The rules and every figure are unchanged.")
+
+
+@dataclass
+class ReasoningReport:
+    """Advice only. Nothing here is read by the engine, a gate or a writer."""
+
+    available: bool
+    note: str = ""
+    inputs: InputReport | None = None
+    calcs: CalcReport | None = None
+    traces: TraceReport | None = None
+
+
+def run_reasoning(
+    run: Consolidation, cfg: LlmConfig, ledger: Ledger, mode: Mode = "replay", model: object | None = None,
+    max_units: int | None = None, smoke: bool = False,
+) -> ReasoningReport:
+    """The three checkpoints in order. `max_units` limits live units for the whole run; `smoke` sends one unit to
+    each checkpoint, which is enough to see a provider accept the schema and the tools."""
+    if cfg.model.startswith("ollama:") and model is None:
+        return ReasoningReport(False, NOT_AVAILABLE)
+    evidence = build_evidence(run)
+    shared = UnitBudget(max_units)
+
+    def budget() -> UnitBudget:
+        return UnitBudget(1) if smoke else shared
+
+    inputs = read_inputs(cfg, ledger, evidence, mode, model, budget())
+    calcs = review_calculations(cfg, ledger, evidence, mode, model, budget())
+    if smoke and not calcs.concerns() and evidence.calculations:
+        first = next(iter(evidence.calculations))
+        calcs.findings.append(Grounded(first, "magnitude_implausible", "smoke test of the investigator", "suspicion"))
+    traces = investigate(cfg, ledger, evidence, calcs, mode, model, budget())
+    return ReasoningReport(True, "", inputs, calcs, traces)
