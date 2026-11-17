@@ -184,7 +184,7 @@ OUTPUT_FILES = [
 ]
 
 
-def write_outputs(run: Consolidation, out_dir: Path) -> None:
+def write_outputs(run: Consolidation, out_dir: Path, config_dir: Path = CONFIG_DIR) -> None:
     """The required files plus the run manifest. Rounding to 2 decimals happens in the writers, nowhere else."""
     out_dir.mkdir(parents=True, exist_ok=True)
     if run.blocked is None:
@@ -194,7 +194,7 @@ def write_outputs(run: Consolidation, out_dir: Path) -> None:
     write_issues(run, out_dir)
     write_control_figures(run, out_dir)
     written = [name for name in OUTPUT_FILES if (out_dir / name).exists()]
-    write_manifest(run.ctx.inputs.data_dir, out_dir, written)
+    write_manifest(run.ctx.inputs.data_dir, out_dir, written, config_dir)
 
 
 def record(run: Consolidation, db_path: Path) -> str:

@@ -31,7 +31,7 @@ APP_FILES = {
     ],
     "app/db": [
         "connection.py", "schema.sql", "runs_service.py", "ledger_service.py",
-        "findings_service.py", "facts_service.py", "lineage_service.py",
+        "findings_service.py", "facts_service.py", "lineage_service.py", "checkpoint.py",
     ],
     "app/services": [
         "run_service.py", "trace_service.py", "whatif_service.py", "overrides_service.py", "env_service.py",

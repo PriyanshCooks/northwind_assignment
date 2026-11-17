@@ -1,29 +1,42 @@
-"""Command line: run (consolidate), trace and check. whatif, impact, diff-inputs, review and verify arrive in wave 2."""
+"""Command line: consolidate, resume, trace and check. whatif, impact, diff-inputs and review follow in wave 2."""
 import argparse
+import json
 import sys
 from pathlib import Path
 
-from app.domain.figures import Unknown
+from app.orchestrator.graph import resume_graph, run_graph, thread_for
+from app.orchestrator.state import RunState, initial_state
 from app.services.env_service import check_environment
-from app.services.run_service import run_consolidation
 from app.services.trace_service import trace
 from app.utils.hashing import dumps
-from app.utils.money import round_tree
-from app.utils.paths import DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, RUNTIME_DIR
+from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, RUNTIME_DIR
 
 
 def _run(args: argparse.Namespace) -> int:
-    run = run_consolidation(args.data, args.output, args.db)
-    print(f"outputs written to {args.output}")
-    for key, figure in run.figures.items():
-        shown = "null" if isinstance(figure, Unknown) else dumps(round_tree(figure.value), indent=None)
-        print(f"  {key}: {shown}" + ("" if isinstance(figure, Unknown) else f"  [{figure.kind}]"))
-    failed = [c.name for c in run.checks if not c.ok]
-    passed = len(run.checks) - len(failed)
-    print(f"checks: {passed} of {len(run.checks)} passed" + (f"; failed: {failed}" if failed else ""))
-    if run.blocked:
-        print(f"BLOCKED: {run.blocked}")
-    return 0 if run.blocked is None and not failed else 1
+    state = initial_state(args.data, args.output, args.config, args.db, args.db.parent / "logs")
+    return _report(run_graph(state, args.db.parent / "checkpoints.db"), args.output)
+
+
+def _resume(args: argparse.Namespace) -> int:
+    decisions = {t: "approve" for t in args.approve} | {t: "reject" for t in args.reject}
+    answer = {"approver": args.approver, "decisions": decisions}
+    return _report(resume_graph(args.thread, answer, args.db.parent / "checkpoints.db"), args.output)
+
+
+def _report(state: RunState, out_dir: Path) -> int:
+    if state["status"] == "awaiting_review":
+        items = ", ".join(state["open_items"])
+        print(f"paused at the review gate; waiting for a decision on: {items}")
+        print(f"resume with: run.py resume --thread {thread_for(Path(state['data_dir']))} --approver NAME "
+              f"--approve {state['open_items'][0]}")
+        return 2
+    print(f"outputs written to {out_dir}")
+    for key, value in json.loads((out_dir / "control_figures_pb.json").read_text(encoding="utf-8")).items():
+        print(f"  {key}: {dumps(value, indent=None)}")
+    print("checks: " + ("all passed" if state["checks_passed"] else "FAILED"))
+    if state["blocked"]:
+        print(f"BLOCKED: {state['blocked']}")
+    return 0 if state["blocked"] is None and state["checks_passed"] else 1
 
 
 def _trace(args: argparse.Namespace) -> int:
@@ -44,12 +57,19 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     for name, handler, text in (("consolidate", _run, "run the consolidation and write the outputs"),
                                 ("trace", _trace, "walk a figure or an account down to file:line"),
-                                ("check", _check, "check the environment and the data bundle")):
+                                ("check", _check, "check the environment and the data bundle"),
+                                ("resume", _resume, "answer a paused run and let it finish")):
         command = sub.add_parser(name, help=text)
         command.set_defaults(handler=handler)
         command.add_argument("--data", type=Path, default=DEFAULT_DATA_DIR, help="folder holding the supplied files")
         command.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR, help="folder for the outputs")
         command.add_argument("--db", type=Path, default=RUNTIME_DIR / "run.db", help="evidence store file")
+        command.add_argument("--config", type=Path, default=CONFIG_DIR, help="folder holding policy and overrides")
+        if name == "resume":
+            command.add_argument("--thread", required=True, help="thread printed when the run paused")
+            command.add_argument("--approver", required=True, help="who is signing the decisions")
+            command.add_argument("--approve", action="append", default=[], help="override target to approve")
+            command.add_argument("--reject", action="append", default=[], help="override target to reject")
         if name == "trace":
             command.add_argument("target", help="a control figure key or a group account code")
     return parser
