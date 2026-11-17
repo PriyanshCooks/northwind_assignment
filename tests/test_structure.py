@@ -35,6 +35,7 @@ APP_FILES = {
     ],
     "app/services": [
         "run_service.py", "trace_service.py", "whatif_service.py", "overrides_service.py", "env_service.py",
+        "review_service.py",
     ],
     "app/utils": ["hashing.py", "logging.py", "money.py", "paths.py"],
 }
