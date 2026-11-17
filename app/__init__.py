@@ -1,0 +1,1 @@
+"""The Northwind consolidation application."""

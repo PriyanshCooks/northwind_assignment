@@ -1,0 +1,1 @@
+-- Tables: runs, source_rows, findings, facts, llm_ledger, origin_rows, traces. Filled in wave 1.
