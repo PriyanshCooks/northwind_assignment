@@ -112,3 +112,8 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### run log (task 1.14)
 `app/utils/logging.py` writes one JSON line per event to `.northwind/logs/`. Each line has `run_id`, `stage` and `event`; finding events carry the finding key and gate events the check name and result. Timestamps live only in this log, so the required outputs are byte-identical between runs while the logs differ.
+
+## Wave 2 module notes
+
+### overrides and the review queue (task 2.2)
+`config/overrides.toml` holds human decisions. Each one stores an `evidence_hash`: the hash of the mapping row and the trial balance row the reviewer looked at. `services/overrides_service.py` classifies every override on each run: `applied` (approved, evidence unchanged), `open` (not yet signed off, still applied and reversible), `stale` (the evidence changed, so it stops applying) or `rejected`. `build_context` feeds only applied and open ones into the run. `review_queue` lists open and stale overrides first, then every flagged or blocked finding; notes are left out. To say in the live session: a decision is only valid for the evidence it was made on, so an input change puts the item back in front of a person instead of silently carrying an old approval forward.

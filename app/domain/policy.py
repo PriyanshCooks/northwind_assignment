@@ -37,7 +37,10 @@ class Policy(Model):
 
 
 class Override(Model):
-    """A human decision on a finding (config/overrides.toml). `open` means the reviewer has not signed it off yet."""
+    """A human decision on a finding (config/overrides.toml). `open` means the reviewer has not signed it off yet.
+
+    `evidence_hash` fingerprints the rows the reviewer looked at; if they change, the decision is stale.
+    """
 
     target: str
     decision: str
@@ -46,6 +49,7 @@ class Override(Model):
     reason: str
     status: str
     effect_if_reversed: str
+    evidence_hash: str
 
 
 class Assumption(Model):

@@ -1,5 +1,5 @@
-# Human decisions on findings. Each should be stored against a hash of the evidence it was made on; if the input
-# changes the decision is stale and the item returns to the review queue (the hash check arrives with Wave 2).
+# Human decisions on findings. Each is stored against a hash of the evidence it was made on (the mapping row and the
+# trial balance row). If either input changes the decision is stale: it stops applying and returns to the review queue.
 # status "open" means a person has not yet signed the decision off; "approved" means they have. Either way it is applied and can be reversed here.
 
 [[override]]
@@ -10,3 +10,4 @@ approver = "Priyansh (user)"
 reason = "UK 2310 is named exactly 'Deferred income', the name of group 2300; map_uk.csv points it at 4100 (revenue)"
 status = "approved"
 effect_if_reversed = "UK 2310 (-180,000 GBP) stays in revenue 4100: revenue and group profit rise by 180,000 and liabilities fall by the same"
+evidence_hash = "c64556a36eb95379018c37634af43ab72596f57ac6f323afea47db0d15687c60"

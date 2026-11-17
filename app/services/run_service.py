@@ -40,6 +40,7 @@ from app.parsers.journals import load_journals
 from app.parsers.mappings import apply_mapping, load_coa, load_map
 from app.parsers.policy_text import PolicyBlocked, check_binding
 from app.parsers.tb_adapters import load_india_monthly, load_tb
+from app.services.overrides_service import active_overrides
 from app.utils.hashing import json_hash, sha256_file
 from app.utils.logging import RunLogger
 from app.utils.paths import CONFIG_DIR, RUNTIME_DIR
@@ -77,11 +78,12 @@ def load_inputs(data_dir: Path) -> Inputs:
 
 
 def build_context(data_dir: Path, config_dir: Path = CONFIG_DIR) -> Context:
+    inputs = load_inputs(data_dir)
+    decisions = active_overrides(load_overrides(config_dir / "overrides.toml"), inputs)
     return Context(
-        inputs=load_inputs(data_dir),
+        inputs=inputs,
         policy=load_policy(config_dir / "policy.toml"),
-        assumptions=load_assumptions(config_dir / "assumptions.toml")
-        | override_switches(load_overrides(config_dir / "overrides.toml")),
+        assumptions=load_assumptions(config_dir / "assumptions.toml") | override_switches(decisions),
     )
 
 
