@@ -154,3 +154,11 @@ def test_five_failed_investigations_in_a_row_trip_the_breaker(evidence: Evidence
     many.findings = [replace(many.findings[0], cite=k) for k in list(evidence.calculations)[:7]]
     with pytest.raises(LlmStop, match="circuit breaker"):
         investigate(CFG, Ledger(tmp_path / "cp3.jsonl"), evidence, many, "live", broken)
+
+
+def test_a_model_that_keeps_calling_tools_after_refusals_still_gets_to_answer(evidence: Evidence,
+                                                                               tmp_path: Path) -> None:
+    calls = [("read_lines", {"file": "tb_uk.csv", "start": n, "end": n}) for n in range(1, 11)]
+    model, seen = tool_model(calls, {"chain": [], "cause": ""})
+    report = investigate(CFG, Ledger(tmp_path / "cp3.jsonl"), evidence, flagged(evidence, tmp_path), "live", model)
+    assert len(report.traces[0].trail) == 5 and sum("refused" in s for s in seen) == 5

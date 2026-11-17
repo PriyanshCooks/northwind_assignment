@@ -74,7 +74,8 @@ def run_with_tools(
     )
     record: dict[str, Any] = {"key": key, "agent": agent, "model": cfg.model, "settings": settings,
                               "prompt_version": prompt_version, "packet": packet, "tools": names}
-    limits = UsageLimits(request_limit=MAX_TOOL_CALLS + 3, tool_calls_limit=MAX_TOOL_CALLS + 2)
+    # the toolbox refuses calls past MAX_TOOL_CALLS with a message; this cap only stops a model that never gives up
+    limits = UsageLimits(request_limit=3 * MAX_TOOL_CALLS, tool_calls_limit=3 * MAX_TOOL_CALLS)
     try:
         result = _attempt(runner, packet, lambda s: None, limits)
     except (UnexpectedModelBehavior, UsageLimitExceeded) as error:
