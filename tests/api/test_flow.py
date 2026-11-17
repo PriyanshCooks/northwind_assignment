@@ -1,7 +1,9 @@
 """The review flow end to end, and the check that the API shows the same 12 figures as run.py consolidate."""
 import io
 import json
+import re
 import zipfile
+from decimal import Decimal
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -22,7 +24,8 @@ def _reopen_the_override(client: TestClient, run_id: str) -> None:
 def _cli_figures(tmp_path: Path) -> dict[str, object]:
     out = tmp_path / "cli_out"
     assert cli_main(["consolidate", "--output", str(out), "--db", str(tmp_path / "cli.db")]) == 0
-    return dict(json.loads((out / "control_figures_pb.json").read_text(encoding="utf-8")))
+    text = (out / "control_figures_pb.json").read_text(encoding="utf-8")
+    return dict(json.loads(text, parse_float=lambda t: str(Decimal(t).quantize(Decimal("0.01")))))
 
 
 def _api_figures(client: TestClient, run_id: str) -> dict[str, object]:
@@ -166,3 +169,21 @@ def test_the_page_script_refuses_an_empty_submit_and_disables_next() -> None:
     script = (ROOT / "frontend" / "steps.js").read_text(encoding="utf-8")
     assert "Choose Approve or Reject" in script and "Enter your name" in script
     assert "disabled: rv.open_items.length > 0" in script
+
+
+def test_every_money_value_on_the_api_is_a_two_decimal_string(client: TestClient) -> None:
+    results = client.get(f"/api/runs/{finished_run(client)}/results").json()
+    money = {f["key"]: f["value"] for f in results["figures"]}
+    assert money["group_revenue"] == "28301607.81" and money["sgd_bank_gbp"] is None
+    assert money["journals"] == {"posted": 15, "rejected": 3, "held": 2}
+    amounts = [i["amount_affected"] for i in results["issues"] if i["amount_affected"] is not None]
+    assert amounts and all(isinstance(a, str) and re.fullmatch(r"-?\d+\.\d{2}", a) for a in amounts)
+    assert not any(isinstance(v, float) for v in _walk(results))
+
+
+def _walk(node: object) -> list[object]:
+    if isinstance(node, dict):
+        return [x for v in node.values() for x in _walk(v)]
+    if isinstance(node, list):
+        return [x for v in node for x in _walk(v)]
+    return [node]

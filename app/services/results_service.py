@@ -4,6 +4,7 @@ import io
 import json
 import re
 import zipfile
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -16,8 +17,14 @@ CHANGED = re.compile(r"^(?P<file>[^:]+): changed at line\(s\) (?P<lines>.+)$")
 MAX_IMPACT_TARGETS = 10
 
 
+def _two_places(text: str) -> str:
+    return str(Decimal(text).quantize(Decimal("0.01")))
+
+
 def _json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+    """Every non-integer number in an output file is money, sent on as text with two decimals so no float ever reaches
+    the page. Counts such as the journal tallies are integers and stay integers."""
+    return json.loads(path.read_text(encoding="utf-8"), parse_float=_two_places)
 
 
 def figures(out_dir: Path) -> list[dict[str, Any]]:

@@ -9,14 +9,16 @@ const FIGURE_NAMES = {
   sgd_bank_gbp: "Singapore dollar bank balance in GBP", journals: "Adjusting journals",
 };
 
-// "1234567.5" or 1234567.5 -> "£1,234,567.50". Anything that is not a plain number is shown as supplied, never as 1e+21.
+// Money arrives as text ("1234567.50"). Intl.NumberFormat reads a numeric string exactly, so it is never turned into a
+// float here. Anything that is not a plain decimal is shown as supplied.
+const DECIMAL = /^-?\d+(\.\d+)?$/;
 function money(value) {
-  const n = typeof value === "string" ? Number(value.replace(/,/g, "")) : value;
-  return typeof n === "number" && Number.isFinite(n) ? GBP.format(n) : String(value);
+  const text = String(value).replace(/,/g, "");
+  return DECIMAL.test(text) ? GBP.format(text) : String(value);
 }
 function amount(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? PLAIN.format(n) : String(value);
+  const text = String(value).replace(/,/g, "");
+  return DECIMAL.test(text) ? PLAIN.format(text) : String(value);
 }
 // Gate details and claims carry engine text: Decimal reprs, 40-digit fractions and exponents are shortened for reading.
 function tidy(text) {
