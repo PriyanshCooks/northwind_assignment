@@ -1,4 +1,4 @@
-"""Create and read runs."""
+"""Create runs and find the latest."""
 import json
 import sqlite3
 from typing import Any
@@ -12,11 +12,6 @@ def create_run(conn: sqlite3.Connection, run_id: str, input_hash: str, manifest:
             "INSERT INTO runs (run_id, input_hash, manifest) VALUES (?, ?, ?)",
             (run_id, input_hash, json.dumps(manifest)),
         )
-
-
-def get_manifest(conn: sqlite3.Connection, run_id: str) -> dict[str, Any] | None:
-    row = conn.execute("SELECT manifest FROM runs WHERE run_id = ?", (run_id,)).fetchone()
-    return None if row is None else dict(json.loads(row["manifest"]))
 
 
 def latest_run_id(conn: sqlite3.Connection) -> str | None:

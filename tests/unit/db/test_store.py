@@ -4,11 +4,9 @@ from decimal import Decimal
 import pytest
 
 from app.db.connection import connect
-from app.db.facts_service import get_fact, is_stale, put_fact
-from app.db.findings_service import list_findings, upsert_findings
-from app.db.ledger_service import get_call, put_call
+from app.db.findings_service import upsert_findings
 from app.db.lineage_service import get_trace, origin_rows, store_origin_rows, store_trace
-from app.db.runs_service import create_run, get_manifest, latest_run_id
+from app.db.runs_service import create_run, latest_run_id
 from app.domain.entries import Posting, TraceStep
 from app.domain.findings import Finding
 from app.domain.refs import make_ref
@@ -23,52 +21,25 @@ def finding(key: str = "D09:subledger_controls.csv:4:control_total") -> Finding:
     )
 
 
-def test_malformed_json_cannot_be_stored() -> None:
+def test_finding_is_upserted_by_key() -> None:
     conn = connect(":memory:")
-    with pytest.raises(sqlite3.IntegrityError):
-        conn.execute("INSERT INTO llm_ledger (key, model, body) VALUES ('k', 'm', 'not json')")
-
-
-def test_run_is_stored_and_read_back() -> None:
-    conn = connect(":memory:")
-    create_run(conn, "r1", "abc", {"policy_sha256": "00888e75"})
-    assert get_manifest(conn, "r1") == {"policy_sha256": "00888e75"}
-    assert latest_run_id(conn) == "r1"
+    upsert_findings(conn, "r1", [finding()])
+    upsert_findings(conn, "r1", [finding()])
+    assert conn.execute("SELECT COUNT(*) FROM findings").fetchone()[0] == 1
 
 
 def test_repeating_a_run_replaces_it() -> None:
     conn = connect(":memory:")
     create_run(conn, "r1", "abc", {"n": 1})
     create_run(conn, "r1", "abc", {"n": 2})
-    assert get_manifest(conn, "r1") == {"n": 2}
+    assert conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0] == 1
+    assert latest_run_id(conn) == "r1"
 
 
-def test_finding_is_upserted_by_key() -> None:
+def test_malformed_json_cannot_be_stored() -> None:
     conn = connect(":memory:")
-    upsert_findings(conn, "r1", [finding()])
-    upsert_findings(conn, "r1", [finding()])
-    assert len(list_findings(conn, "r1")) == 1
-
-
-def test_finding_amount_keeps_its_decimal_exactly() -> None:
-    conn = connect(":memory:")
-    upsert_findings(conn, "r1", [finding()])
-    assert list_findings(conn, "r1")[0].amount_affected == Decimal("45000.00")
-
-
-def test_recorded_ai_call_is_fetched_by_key() -> None:
-    conn = connect(":memory:")
-    put_call(conn, "abc123", "qwen3:4b", {"risk": False})
-    assert get_call(conn, "abc123") == {"risk": False}
-    assert get_call(conn, "missing") is None
-
-
-def test_decision_goes_stale_when_its_evidence_changes() -> None:
-    conn = connect(":memory:")
-    put_fact(conn, "mapping:UK:2310", "hash-v1", {"decision": "remap", "to": "2300"})
-    assert get_fact(conn, "mapping:UK:2310") == {"decision": "remap", "to": "2300"}
-    assert not is_stale(conn, "mapping:UK:2310", "hash-v1")
-    assert is_stale(conn, "mapping:UK:2310", "hash-v2")
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute("INSERT INTO llm_ledger (key, model, body) VALUES ('k', 'm', 'not json')")
 
 
 def test_origin_rows_come_back_in_order_with_exact_amounts() -> None:

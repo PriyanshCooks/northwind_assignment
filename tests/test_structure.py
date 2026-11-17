@@ -8,7 +8,7 @@ APP_FILES = {
     "app/agents": [],
     "app/orchestrator": ["state.py", "nodes.py", "edges.py", "graph.py", "runner_plain.py"],
     "app/llm": ["client.py", "factory.py", "ledger.py", "instrumentation.py", "replay.py", "cost.py"],
-    "app/review": ["profiles.py", "units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
+    "app/review": ["units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
     "app/core": [
         "post_journals.py", "revalue.py", "translate.py", "intercompany.py", "eliminate.py",
         "acquisition.py", "reserve.py", "statements.py", "figures.py", "lineage.py",
@@ -21,7 +21,7 @@ APP_FILES = {
         "registry.py", "balance.py", "mapping.py", "journals.py", "rates.py",
         "reconciliation.py", "text_scan.py", "expectations.py", "duplicates.py",
     ],
-    "app/verification": ["invariants.py", "oracle.py", "correlate.py"],
+    "app/verification": ["invariants.py", "oracle.py"],
     "app/writers": [
         "consolidated_tb.py", "statements.py", "eliminations.py", "issues.py", "control_figures.py", "manifest.py",
     ],
@@ -30,8 +30,8 @@ APP_FILES = {
         "entries.py", "figures.py", "policy.py", "runs.py",
     ],
     "app/db": [
-        "connection.py", "schema.sql", "runs_service.py", "ledger_service.py",
-        "findings_service.py", "facts_service.py", "lineage_service.py", "checkpoint.py",
+        "connection.py", "schema.sql", "runs_service.py",
+        "findings_service.py", "lineage_service.py", "checkpoint.py",
     ],
     "app/services": [
         "run_service.py", "trace_service.py", "whatif_service.py", "overrides_service.py", "env_service.py",

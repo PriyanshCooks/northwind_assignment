@@ -91,12 +91,3 @@ class Context:
     inputs: Inputs
     policy: Policy
     assumptions: dict[str, bool | str]
-
-
-class RunManifest(Model):
-    input_hashes: dict[str, str]
-    policy_sha256: str
-    assumptions_sha256: str
-    overrides_sha256: str
-    code_sha256: str
-    ledger_sha256: str | None
