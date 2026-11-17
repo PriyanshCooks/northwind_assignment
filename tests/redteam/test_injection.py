@@ -3,6 +3,8 @@ whatever a model does with it, no disposition, figure or finding may change. (Th
 answer is enforced by tests/test_architecture.py.)"""
 from pathlib import Path
 
+import pytest
+
 from app.agents.journal_reviewer.prompts import PROMPT_VERSION
 from app.agents.journal_reviewer.schema import JournalVerdict
 from app.domain.runs import Context
@@ -50,3 +52,15 @@ def test_a_model_that_obeys_the_memo_cannot_hide_the_imbalance(ctx: Context, tmp
     assert result.missed == ("unbalanced",)
     assert outcome(ctx) == before
 
+
+
+def test_the_real_cloud_answer_for_je006_changes_nothing_in_the_engine(
+    ctx: Context, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The recorded gpt-4o-mini answer for the memo journal: it found the imbalance and did not obey the memo."""
+    monkeypatch.setenv("NORTHWIND_MODEL", "openai:gpt-4o-mini")
+    cfg, unit = load_llm_config(), next(u for u in journal_units(ctx) if u.unit_id == "JE-006")
+    before = outcome(ctx)
+    result = review_unit(ctx, cfg, Ledger(cfg.ledger_path), unit)
+    assert result.source == "model" and "unbalanced" in result.grounded.verified
+    assert outcome(ctx) == before

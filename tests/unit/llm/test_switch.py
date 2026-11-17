@@ -103,3 +103,14 @@ def test_figures_dispositions_and_findings_are_identical_with_a_local_ledger_a_c
     assert _outcome(ctx) == baseline
     review_all(ctx, cloud, Ledger(tmp_path / "empty.jsonl"))
     assert _outcome(ctx) == baseline
+
+
+def test_the_recorded_cloud_answers_leave_figures_dispositions_and_findings_unchanged(
+    ctx: Context, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    baseline = _outcome(ctx)
+    monkeypatch.setenv("NORTHWIND_MODEL", "openai:gpt-4o-mini")
+    cloud = load_llm_config()
+    results = review_all(ctx, cloud, Ledger(cloud.ledger_path))
+    assert len(results) == 63 and {r.source for r in results} == {"model"}
+    assert _outcome(ctx) == baseline

@@ -80,7 +80,7 @@ def test_the_smoke_run_covers_one_journal_and_one_mapping_unit_and_prints_ten_li
 
 
 def test_a_live_run_with_no_key_stops_with_a_clear_message_and_makes_no_call() -> None:
-    done = _record("--live", "--smoke", NORTHWIND_MODEL="openai:gpt-4o-mini", OPENAI_API_KEY="")
+    done = _record("--live", "--smoke", NORTHWIND_MODEL="openai:gpt-no-such-model", OPENAI_API_KEY="")
     assert done.returncode == 3
     assert "OPENAI_API_KEY is not set" in done.stdout and len(done.stdout.splitlines()) <= 10
-    assert not (ROOT / "ledger" / "openai-gpt-4o-mini.jsonl").exists()
+    assert not (ROOT / "ledger" / "openai-gpt-no-such-model.jsonl").exists()
