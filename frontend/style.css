@@ -82,3 +82,4 @@ q { font-style: italic; }
 pre { background: var(--soft); padding: 10px; border-radius: 6px; overflow-x: auto; max-height: 320px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
 h4 { margin: 12px 0 4px; font-size: 14px; color: var(--muted); } .stages { padding-left: 20px; } .stages li { margin: 4px 0; }
 @media (max-width: 800px) { .figkey { display: none; } th, td { padding: 8px 6px; } }
+[hidden] { display: none !important; }

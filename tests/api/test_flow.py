@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.cli import main as cli_main
-from app.utils.paths import CONFIG_DIR
+from app.utils.paths import CONFIG_DIR, ROOT
 from tests.api.conftest import finished_run, sample_run
 
 APPROVED = 'status = "approved"'
@@ -138,3 +138,31 @@ def test_a_waiting_override_gets_a_card_with_its_reason_and_both_effects(client:
     assert card["key"] == "mapping:UK:2310" and card["state"] == "open"
     assert "named exactly 'Deferred income'" in card["reason"]
     assert "signed off" in card["approve_effect"] and "stays in revenue 4100" in card["reject_effect"]
+
+
+def test_nothing_past_review_runs_while_an_item_is_undecided(client: TestClient) -> None:
+    run_id = sample_run(client)
+    _reopen_the_override(client, run_id)
+    client.post(f"/api/runs/{run_id}/analyse")
+    other = finished_run(client)
+    calls = [client.post(f"/api/runs/{run_id}/build"), client.get(f"/api/runs/{run_id}/results"),
+             client.get(f"/api/runs/{run_id}/outputs"), client.put(f"/api/runs/{run_id}/outputs", json={"files": []}),
+             client.get(f"/api/runs/{run_id}/export"), client.get(f"/api/runs/{run_id}/output-files"),
+             client.get(f"/api/runs/{run_id}/compare/{other}")]
+    for response in calls:
+        assert response.status_code == 409 and "mapping:UK:2310" in response.json()["detail"]
+
+
+def test_a_blank_name_is_refused_and_changes_nothing(client: TestClient) -> None:
+    run_id = sample_run(client)
+    _reopen_the_override(client, run_id)
+    client.post(f"/api/runs/{run_id}/analyse")
+    body = {"approver": "", "decisions": {"mapping:UK:2310": "approve"}}
+    assert client.post(f"/api/runs/{run_id}/decisions", json=body).status_code == 422
+    assert client.get(f"/api/runs/{run_id}").json()["status"] == "awaiting_review"
+
+
+def test_the_page_script_refuses_an_empty_submit_and_disables_next() -> None:
+    script = (ROOT / "frontend" / "steps.js").read_text(encoding="utf-8")
+    assert "Choose Approve or Reject" in script and "Enter your name" in script
+    assert "disabled: rv.open_items.length > 0" in script

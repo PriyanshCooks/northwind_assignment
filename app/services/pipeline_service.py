@@ -96,10 +96,18 @@ def review_view(registry: Registry, run_id: str) -> dict[str, Any]:
     }
 
 
+def require_done(registry: Registry, run_id: str) -> None:
+    """Nothing after the review may run while an item is undecided, so no figure can be shown as Determined on it."""
+    meta = registry.meta(run_id)
+    if meta["open_items"]:
+        raise NotReady("decide these items first: " + ", ".join(meta["open_items"]))
+    if meta["status"] != "done":
+        raise NotReady("the run has not finished")
+
+
 def build(registry: Registry, run_id: str) -> dict[str, Any]:
     """The gates are the engine's own invariant and oracle checks, run again on this run's files."""
-    if registry.meta(run_id)["status"] != "done":
-        raise NotReady("decide the open items first: the run has not finished")
+    require_done(registry, run_id)
     run = stage(build_context(registry.data_dir(run_id), registry.config_dir(run_id)))
     registry.update(run_id, built=True)
     gates = [{"name": c.name, "ok": c.ok, "detail": c.detail} for c in run.checks]

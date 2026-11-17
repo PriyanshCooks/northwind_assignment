@@ -8,15 +8,13 @@ from app.routes import Reg
 from app.services import output_service as files
 from app.services import pipeline_service as pipeline
 from app.services import results_service as results
-from app.services.pipeline_service import NotReady
 from app.services.whatif_service import Change, patched_copy
 
 router = APIRouter(prefix="/api")
 
 
 def _finished(reg: Reg, run_id: str) -> None:
-    if reg.meta(run_id)["status"] != "done":
-        raise NotReady("the run has not finished")
+    pipeline.require_done(reg, run_id)
 
 
 @router.get("/runs/{run_id}/results")
