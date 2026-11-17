@@ -100,3 +100,6 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### reserve, statements and figures (task 1.10)
 `core/reserve.py` computes the translation reserve two ways. The balance route treats equity as fixed by net assets: the reserve is what remains after share capital, retained earnings (opening plus the owners share of profit) and non-controlling interest. The components route adds up named exchange differences: US opening net assets and profit, India net assets, profit and goodwill, less the retranslation of the two investments the group eliminates. The two must agree within a cent. `core/statements.py` builds the balance sheet, profit and loss and changes in equity. `core/figures.py` produces the twelve control figures; a figure that depends on the missing SGD rate is Provisional with that open item, and the SGD balance itself is Unknown with its reason.
+
+### policy binding (task 1.11)
+`config/policy.toml` holds the policy values the engine reads (difference accounts, the intercompany residual account, the reporting period). It records the SHA-256 of `group_policies.md`. `check_binding` compares that hash with the file on every run; if the policy text changed and nobody re-approved `policy.toml`, the run is blocked and every figure is `null` with the reason. Reading clauses automatically is a Wave 3 task.

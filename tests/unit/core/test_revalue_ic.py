@@ -15,7 +15,7 @@ def fx_of(ctx: Context) -> FxTable:
 
 
 def revaluation(ctx: Context):
-    return revalue(apply_mapping(classified(ctx), ctx.assumptions), fx_of(ctx))
+    return revalue(apply_mapping(classified(ctx), ctx.assumptions), fx_of(ctx), "7300")
 
 
 def test_uk_usd_payable_is_revalued_at_closing_with_a_loss_to_7300(ctx: Context) -> None:

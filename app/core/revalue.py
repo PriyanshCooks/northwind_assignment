@@ -8,7 +8,6 @@ from app.parsers.fx_rates import FxTable
 
 # policy 3 restates monetary items only: cash, receivables, payables, accruals, tax and borrowings
 MONETARY = {"1100", "1200", "1250", "2100", "2150", "2200", "2400", "2500"}
-FX_DIFFERENCE = "7300"
 
 
 @dataclass
@@ -27,8 +26,9 @@ def restated_amount(line: LedgerLine, fx: FxTable) -> Decimal | None:
     return line.txn_amount / foreign * home
 
 
-def revalue(mapped: list[MappedLine], fx: FxTable) -> RevalueResult:
-    """Dr or Cr the item and the opposite to 7300. A line with no closing rate is left alone and reported."""
+def revalue(mapped: list[MappedLine], fx: FxTable, difference_account: str) -> RevalueResult:
+    """Dr or Cr the item and the opposite to the policy difference account (7300). A line with no closing rate
+    is left alone and reported."""
     entries: list[Entry] = []
     unresolved: list[LedgerLine] = []
     for item in mapped:
@@ -50,7 +50,7 @@ def revalue(mapped: list[MappedLine], fx: FxTable) -> RevalueResult:
             lines=(
                 Posting(entity=line.entity, account=item.group_code or "", amount=difference, ccy=line.currency,
                         origin="REVALUE", sources=sources, rate_ref=rate, note=note),
-                Posting(entity=line.entity, account=FX_DIFFERENCE, amount=-difference, ccy=line.currency,
+                Posting(entity=line.entity, account=difference_account, amount=-difference, ccy=line.currency,
                         origin="REVALUE", sources=sources, rate_ref=rate, note=note),
             ),
         ))

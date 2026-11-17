@@ -32,6 +32,7 @@ from app.parsers.entities import load_entities, load_intercompany, load_prior_eq
 from app.parsers.fx_rates import FxTable, load_rates
 from app.parsers.journals import load_journals
 from app.parsers.mappings import apply_mapping, load_coa, load_map
+from app.parsers.policy_text import PolicyBlocked, check_binding
 from app.parsers.tb_adapters import load_india_monthly, load_tb
 from app.utils.paths import CONFIG_DIR
 
@@ -93,11 +94,15 @@ def stage(ctx: Context) -> Consolidation:
     fx = FxTable(ctx.inputs.rates)
     result = Consolidation(ctx=ctx, findings=run_all(ctx))
     try:
+        check_binding(ctx.policy, ctx.inputs.data_dir)
+        _stop_on_blockers(result.findings)
         result.mapped = apply_mapping(classified(ctx), ctx.assumptions)
         result.dispositions = decide(ctx.inputs.journals, result.findings, ctx.assumptions)
         local = india_period_postings(import_postings(result.mapped), ctx.inputs)
         local += journal_postings(ctx.inputs, ctx.inputs.journals, result.dispositions)
-        result.revalue, result.ic = revalue(result.mapped, fx), reconcile(ctx.inputs, fx)
+        difference_account = ctx.policy.foreign_currency_items.difference_account
+        result.revalue = revalue(result.mapped, fx, difference_account)
+        result.ic = reconcile(ctx.inputs, fx)
         for entry in result.revalue.entries + result.ic.entries:
             local += list(entry.lines)
         result.local = local
@@ -107,10 +112,17 @@ def stage(ctx: Context) -> Consolidation:
         result.eliminations = [ic_balances(result.translated), ic_income_expense(result.translated, residual)]
         result.eliminations += investments(ctx.inputs, local, result.translated, result.acquisition)
         _finish(result, fx)
-    except ConsolidationBlocked as stop:
+    except (ConsolidationBlocked, PolicyBlocked) as stop:
         result.blocked = str(stop)
         result.figures = all_unknown(result.blocked)
     return result
+
+
+def _stop_on_blockers(findings: list[Finding]) -> None:
+    """A trial balance that does not balance, or files that do not tie, block the run: nothing is guessed."""
+    blocking = [f for f in findings if f.severity == "BLOCK" and f.code in {"D01", "D10"}]
+    if blocking:
+        raise ConsolidationBlocked("; ".join(f"{f.code} {f.claim}" for f in blocking))
 
 
 def _finish(run: Consolidation, fx: FxTable) -> None:
