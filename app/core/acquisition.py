@@ -53,6 +53,7 @@ class AcquisitionFigures:
     india_net_assets_inr: Decimal
     india_profit_gbp: Decimal
     closing_rate: Decimal
+    spot_rate: Decimal
     refs: tuple[SourceRef, ...]
 
 
@@ -75,6 +76,7 @@ def acquisition_figures(
         goodwill_inr=goodwill_inr, goodwill_gbp=goodwill_inr / closing, nci_at_acquisition=at_acquisition,
         nci_closing=closing_nci, nci_profit=nci_profit, nci_translation=closing_nci - at_acquisition - nci_profit,
         india_net_assets_inr=net_assets, india_profit_gbp=profit, closing_rate=closing,
+        spot_rate=spot,
         refs=tuple(note.refs.values()),
     )
 

@@ -77,3 +77,12 @@ def test_a_missing_inr_spot_rate_blocks_the_acquisition_not_the_whole_run(edited
     run = stage(ctx)
     assert run.blocked is not None and "spot" in run.blocked
     assert run.findings  # detectors still ran
+
+
+def test_india_owners_share_of_pre_acquisition_net_assets_uses_the_acquisition_date_rate(ctx: Context) -> None:
+    run = stage(ctx)
+    acq = run.acquisition
+    assert acq is not None
+    expected = Decimal("0.8") * Decimal("678000000") / acq.spot_rate
+    assert amounts(entry(run, "ELIM-INV-IN"))["3200"] == round2(expected)
+    assert acq.spot_rate != acq.closing_rate
