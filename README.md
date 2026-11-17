@@ -83,6 +83,8 @@ Set `model` in `config/llm.toml`, or the `NORTHWIND_MODEL` environment variable.
 | Settings: policy, assumptions, overrides, model | Present (`config/`); policy values are bound to `group_policies.md` by hash |
 | Parsers, schema contracts and the three trial-balance adapters | Built, tested |
 | Detectors D01 to D14 | Built, tested: each known defect in the data gives exactly one finding |
+| Rate plausibility D15 (amber, tolerances ASSUMED) | Built, tested; raises nothing on the supplied data |
+| Input validation: impossible rates, percentages, dates and amounts stop the run with file, line and column (exit 2, API 422) | Built, tested with a table of perturbations |
 | Journal dispositions, posting, revaluation, intercompany, translation, eliminations, goodwill, NCI | Built, tested |
 | Translation reserve by two routes, statements, the 12 control figures | Built, tested |
 | Invariants and an oracle: a second implementation of the same method that recomputes the figures from the raw files | Built, tested; 20 checks run on every consolidation |
