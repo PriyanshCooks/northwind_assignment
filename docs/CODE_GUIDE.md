@@ -56,3 +56,10 @@ broken. It also tests its own checker on small snippets, so it cannot pass by ch
 - **TOML for config.** YAML reads `0031` as the number 25; TOML refuses it.
 - **No line-ending conversion for the data.** The first commit stored 12 CSV files with changed line endings; the
   second commit ("store data files byte for byte") corrected it.
+
+## Wave 1 module notes
+
+### utils (task 1.0)
+- `money.py`: `to_decimal` builds a Decimal from a string or int and refuses a float. `round2` rounds half up and is called only when a figure is written (policy 7, assumption A13). The module sets 50 digits of precision, so translation is exact enough to round once at the end.
+- `hashing.py`: SHA-256 helpers and `dumps`, the one JSON writer used for outputs and hashes. It writes a Decimal as a bare number without passing through a float.
+- `paths.py`: repository paths. The data folder is a command-line option; the path here is only its default.
