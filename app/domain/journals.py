@@ -13,6 +13,7 @@ class JournalLine(Model):
     debit: Money
     credit: Money
     memo: Quarantined | None = None
+    memo_ref: SourceRef | None = None
 
 
 class Journal(Model):

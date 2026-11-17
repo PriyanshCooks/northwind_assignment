@@ -76,3 +76,6 @@ All models are frozen Pydantic classes in `app/domain/`. The plan called this `t
 
 ### evidence store (task 1.2)
 `app/db/connection.py` opens SQLite and applies `schema.sql`; every JSON column has a `json_valid` check, so a malformed document cannot be stored. The service files each own one table family: runs, findings (upsert by key), facts (a decision is stale when its evidence hash changes), recorded AI calls, and origin rows with traces. The database is disposable and rebuilt on every run.
+
+### parsers (task 1.3)
+Each input file has a contract in `app/parsers/contracts.py` (columns, decimal and date columns, allowed values). A file that breaks it raises `ContractError` with the file, line and reason. Only outer whitespace is trimmed, so `0031` stays text. `tb_adapters.py` reads the three layouts (debit/credit columns, one signed balance, amount plus Dr/Cr) into one `LedgerLine`, chosen from the header; an unknown header blocks that entity. `fx_rates.py` parses the direction of each rate from the convention column and answers in GBP terms: the product rule for GBP/INR is in `FxTable.units_per_gbp`, and a rate the file does not give returns None. `journals.py` keeps the line each journal and memo starts on, so a finding can point at `adjustments.json:112`.
