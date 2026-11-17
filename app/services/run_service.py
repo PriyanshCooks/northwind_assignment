@@ -1,5 +1,6 @@
 """Run a consolidation end to end: load the inputs, check them, consolidate, verify, write."""
 from dataclasses import dataclass, field
+from decimal import Decimal
 from pathlib import Path
 
 from app.config import load_assumptions, load_policy
@@ -35,6 +36,8 @@ from app.parsers.mappings import apply_mapping, load_coa, load_map
 from app.parsers.policy_text import PolicyBlocked, check_binding
 from app.parsers.tb_adapters import load_india_monthly, load_tb
 from app.utils.paths import CONFIG_DIR
+from app.verification.invariants import Check, check_invariants
+from app.verification.oracle import oracle_checks
 
 
 def load_inputs(data_dir: Path) -> Inputs:
@@ -86,7 +89,12 @@ class Consolidation:
     reserve: ReserveResult | None = None
     statements: dict[str, dict[str, object]] = field(default_factory=dict)
     figures: dict[str, Figure] = field(default_factory=dict)
+    checks: list[Check] = field(default_factory=list)
     blocked: str | None = None
+
+    @property
+    def checks_passed(self) -> bool:
+        return all(c.ok for c in self.checks)
 
 
 def stage(ctx: Context) -> Consolidation:
@@ -144,3 +152,10 @@ def _finish(run: Consolidation, fx: FxTable) -> None:
         "changes_in_equity": changes_in_equity(equity, period),
     }
     run.figures = build_figures(inputs, fx, run.balances, run.reserve, acq, run.ic, run.dispositions, run.revalue)
+    tolerance = Decimal(str(run.ctx.assumptions["oracle_tolerance"]))  # assumption A12
+    run.checks = check_invariants(
+        inputs, run.mapped, run.local, run.revalue.entries + run.ic.entries, run.eliminations, run.balances,
+        run.statements, run.reserve, tolerance,
+    )
+    remap = run.ctx.assumptions.get("map_uk_2310") == "remap_2300"
+    run.checks += oracle_checks(inputs.data_dir, run.figures, tolerance, remap)

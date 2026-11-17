@@ -103,3 +103,6 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### policy binding (task 1.11)
 `config/policy.toml` holds the policy values the engine reads (difference accounts, the intercompany residual account, the reporting period). It records the SHA-256 of `group_policies.md`. `check_binding` compares that hash with the file on every run; if the policy text changed and nobody re-approved `policy.toml`, the run is blocked and every figure is `null` with the reason. Reading clauses automatically is a Wave 3 task.
+
+### verification (task 1.12)
+`app/verification/invariants.py` holds checks that must hold for any input; a failing check marks the run failed instead of being adjusted away. `app/verification/oracle.py` recomputes the control figures from the raw files with separate code (no imports from `core` or `parsers`), working per entity in local currency. The pipeline and the oracle must agree within a cent. The oracle follows the same policy, so it catches slips and wiring errors, not a misreading of the policy; that is what the hand calculation and the review are for.
