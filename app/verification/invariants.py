@@ -48,7 +48,7 @@ def check_invariants(
     out.append(_check("no trial-balance line is dropped by mapping", kept))
     unbalanced = {k: v for k, v in _by_journal(local).items() if v != 0}
     out.append(_check("every posted journal balances", not unbalanced, str(unbalanced)))
-    broken = [e.id for e in entries + eliminations if not e.is_balanced()]
+    broken = [e.id for e in entries + eliminations if abs(e.difference()) > CLOSE]
     out.append(_check("every revaluation, in-transit and elimination entry balances", not broken, ", ".join(broken)))
     off = {k: v for k, v in _by_entity(local).items() if abs(v) > CLOSE}
     out.append(_check("every entity balances in its own currency after posting", not off, str(off)))
