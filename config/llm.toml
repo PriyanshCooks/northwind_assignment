@@ -5,6 +5,7 @@
 model = "ollama:qwen3:4b-instruct-2507-q4_K_M"
 ledger = "ledger/qwen3-4b-dev.jsonl"
 max_output_tokens = 400
+request_timeout_s = 60
 ollama_base_url = "http://localhost:11434/v1"
 
 # Sent only if the provider accepts them. Cloud models may reject sampling parameters: leave this table empty for them.
@@ -12,3 +13,7 @@ ollama_base_url = "http://localhost:11434/v1"
 [llm.settings]
 temperature = 0.0
 seed = 7
+
+# Used when NORTHWIND_MODEL switches to another model. Empty on purpose: the ledger gives determinism, and a seed is
+# documented as best effort. Add temperature = 0.0 here only after a recording shows the provider accepts it.
+[llm.cloud_settings]
