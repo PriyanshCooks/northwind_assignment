@@ -9,6 +9,8 @@ from app.domain.runs import Context
 from app.services.run_service import build_context
 from app.utils.paths import DEFAULT_DATA_DIR
 
+Edit = Callable[[str, str, str], Context]
+
 
 @pytest.fixture(scope="session")
 def ctx() -> Context:
@@ -16,7 +18,7 @@ def ctx() -> Context:
 
 
 @pytest.fixture
-def edited_context(tmp_path: Path) -> Callable[[str, str, str], Context]:
+def edited_context(tmp_path: Path) -> Edit:
     """Copy the data, replace `old` with `new` in one file, and build a context from the copy."""
 
     def build(file: str, old: str, new: str) -> Context:

@@ -2,22 +2,11 @@
 from app.domain.findings import Finding, new_finding
 from app.domain.ledger import MappedLine
 from app.domain.runs import Context
-from app.parsers.mappings import classify
-
-
-def remap_switch(entity: str, local_code: str) -> str:
-    """The assumptions key that approves a rule-confirmed remap, for example map_uk_2310 (assumption A7)."""
-    return f"map_{entity.lower()}_{local_code}"
+from app.parsers.mappings import classify_all, remap_switch
 
 
 def classified(ctx: Context) -> list[MappedLine]:
-    out = []
-    for entity, lines in ctx.inputs.trial_balances.items():
-        index = ctx.inputs.maps.get(entity)
-        for line in lines:
-            rows = None if index is None else index.get(line.local_code, [])
-            out.append(classify(line, rows, ctx.inputs.coa))
-    return out
+    return classify_all(ctx.inputs.trial_balances, ctx.inputs.maps, ctx.inputs.coa)
 
 
 def _problem(ctx: Context, mapped: MappedLine) -> Finding | None:

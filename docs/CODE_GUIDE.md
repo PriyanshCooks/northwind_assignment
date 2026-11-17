@@ -82,3 +82,6 @@ Each input file has a contract in `app/parsers/contracts.py` (columns, decimal a
 
 ### detectors (task 1.4)
 Each detector is a function from a `Context` (inputs, policy, assumptions) to findings. `registry.run_all` runs all fourteen and merges findings with the same key. D01 and D03 check balance; D02 checks mappings (including the exact-name rule that catches UK 2310 Deferred income mapped to Revenue); D04 to D07 check journals (period, duplicates, accounts through the entity map, reversals past zero); D08 needs rates; D09 to D11 tie files together; D12 scans free text; D13 notes the tax step and identical months; D14 flags exact duplicate rows. Findings never change a number: the consolidation reads them only to decide a journal disposition (task 1.6).
+
+### mapping (task 1.5)
+`classify_all` gives every trial-balance line a verdict and `apply_mapping` applies the assumption switches. A suspect mapping is only changed when the switch for that account is set in `config/assumptions.toml` (`map_uk_2310 = "remap_2300"`). Unmapped and ambiguous lines get no group account and are carried in a suspense line, so mapping never changes a total.

@@ -48,6 +48,35 @@ def exact_name_match(row: MapRow, coa: dict[str, CoaAccount]) -> str | None:
     return same_name[0] if len(same_name) == 1 else None
 
 
+def remap_switch(entity: str, local_code: str) -> str:
+    """The assumptions key that approves a rule-confirmed remap, for example map_uk_2310 (assumption A7)."""
+    return f"map_{entity.lower()}_{local_code}"
+
+
+def classify_all(
+    trial_balances: dict[str, list[LedgerLine]], maps: dict[str, dict[str, list[MapRow]]], coa: dict[str, CoaAccount],
+) -> list[MappedLine]:
+    """Every trial-balance line keeps its place whatever the verdict, so mapping never changes a total."""
+    out = []
+    for entity, lines in trial_balances.items():
+        index = maps.get(entity)
+        for line in lines:
+            out.append(classify(line, None if index is None else index.get(line.local_code, []), coa))
+    return out
+
+
+def apply_mapping(mapped: list[MappedLine], assumptions: dict[str, bool | str]) -> list[MappedLine]:
+    """Outcome 1: a rule-confirmed contradiction is remapped as ASSUMED when its switch is set. Outcome 2: otherwise
+    the mapping stays as supplied (SUSPECT, flagged). Outcome 3: UNMAPPED and AMBIGUOUS lines get no group account."""
+    applied = []
+    for item in mapped:
+        switch = assumptions.get(remap_switch(item.line.entity, item.line.local_code))
+        if item.verdict == "SUSPECT" and item.proposed_group_code and switch == f"remap_{item.proposed_group_code}":
+            item = item.model_copy(update={"group_code": item.proposed_group_code, "verdict": "REMAPPED"})
+        applied.append(item)
+    return applied
+
+
 def classify(line: LedgerLine, rows: list[MapRow] | None, coa: dict[str, CoaAccount]) -> MappedLine:
     """Mapping outcomes: OK, SUSPECT (rule-confirmed contradiction), UNMAPPED, AMBIGUOUS. `rows` None means the
     entity reports in group codes (the US), so the code is its own group code."""
