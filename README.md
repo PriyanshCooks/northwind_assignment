@@ -4,8 +4,8 @@ Consolidates a three-entity, multi-currency group (a US parent, a UK subsidiary 
 for FY2024 and produces its statements. An AI review layer reads the data and **can only recommend**.
 Assignment bundle ID **NWG-D0BC**.
 
-> **Status: structure, tooling and guard tests only.** The application code is built wave by wave; every module is a
-> docstring-only shell until its wave. The table at the end says exactly what exists.
+> **Status: the deterministic spine (wave 1) is built; orchestration, the review UI and the AI layer are not.**
+> `python run.py consolidate` writes the required outputs. The table at the end says exactly what exists.
 
 ## Principles
 
@@ -58,12 +58,11 @@ python -m pytest
 
 ## Run
 
-Until its wave is built, each command prints `not built yet (Wave N)` and exits with code 2.
-
 ```bash
 python run.py consolidate     # the one command: reads Northwind_TakeHome_v2/data/, writes output/
-python run.py serve           # API and review UI on http://127.0.0.1:8000
-python run.py check           # environment, data integrity, config
+python run.py trace goodwill_closing   # walk a figure (or an account such as 1100) down to file:line
+python run.py check           # Python version, data integrity, policy binding
+python run.py serve           # not built yet (Wave 2): prints a message and exits with code 2
 ```
 
 Tests and checks: `python -m pytest && python -m ruff check . && python -m mypy app`
@@ -79,14 +78,16 @@ Set `model` in `config/llm.toml`, or the `NORTHWIND_MODEL` environment variable.
 | Area | State |
 |---|---|
 | Supplied data with integrity checksums | Present (`Northwind_TakeHome_v2/data/`, `config/bundle_manifest.sha256`) |
-| Settings: policy, assumptions, overrides, model | Present (`config/`) |
-| Continuous integration workflow | Present (`.github/workflows/ci.yml`) |
-| Folder structure of `app/` and `tests/`, with docstring-only shells | Present; no logic yet |
-| `run.py` with `consolidate`, `serve`, `check` | Present as stubs that print `not built yet (Wave N)` |
-| `pyproject.toml` and pinned `requirements*.txt` | Present (checked against PyPI) |
-| Structure, import-boundary and data-checksum tests | Present and passing (`tests/test_structure.py`, `test_architecture.py`, `test_bundle.py`) |
-| Parsers, detectors, consolidation, statements, outputs (wave 1) | Not built |
-| Orchestration, API (wave 2); AI layer and ledger (wave 3) | Not built |
-| Golden figures test, perturbation, property and red-team tests | Not built |
+| Settings: policy, assumptions, overrides, model | Present (`config/`); policy values are bound to `group_policies.md` by hash |
+| Parsers, schema contracts and the three trial-balance adapters | Built, tested |
+| Detectors D01 to D14 | Built, tested: each known defect in the data gives exactly one finding |
+| Journal dispositions, posting, revaluation, intercompany, translation, eliminations, goodwill, NCI | Built, tested |
+| Translation reserve by two routes, statements, the 12 control figures | Built, tested |
+| Invariants and an independent oracle that recomputes the figures from the raw files | Built, tested; 20 checks run on every consolidation |
+| Lineage, `trace`, run manifest, JSON-lines run log, `run.py check` | Built, tested |
+| Golden test against the hand calculation | Passing; the hand calculation is AI-written and not yet human-reviewed |
+| Continuous integration workflow | Present; not yet seen green on Linux |
+| Orchestration with pause and resume, `whatif`, review queue, API | Not built (wave 2) |
+| AI reviewers, model ledger, model switch | Not built (wave 3); the run needs no model |
 | `frontend/` | `README.md` only |
-| `docs/CODE_GUIDE.md` | Present; describes the structure, tooling and tests only |
+| `docs/CODE_GUIDE.md` | Present; covers wave 0 and wave 1 |
