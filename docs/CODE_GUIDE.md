@@ -73,3 +73,6 @@ All models are frozen Pydantic classes in `app/domain/`. The plan called this `t
 - `entries.py`: a `Posting` is one piece of a balance with its origin (IMPORT, JOURNAL, REVALUE, TRANSLATION, ELIMINATION, ACQUISITION) and source rows. An `Entry` must balance.
 - `figures.py`: `Determined`, `Provisional` and `Unknown` form a union. An unknown figure carries a reason and has no value field.
 - `policy.py`, `runs.py`: policy values, the assumptions registry, the parsed inputs and the run manifest.
+
+### evidence store (task 1.2)
+`app/db/connection.py` opens SQLite and applies `schema.sql`; every JSON column has a `json_valid` check, so a malformed document cannot be stored. The service files each own one table family: runs, findings (upsert by key), facts (a decision is stale when its evidence hash changes), recorded AI calls, and origin rows with traces. The database is disposable and rebuilt on every run.
