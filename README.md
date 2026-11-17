@@ -4,8 +4,8 @@ Consolidates a three-entity, multi-currency group (a US parent, a UK subsidiary 
 for FY2024 and produces its statements. An AI review layer reads the data and **can only recommend**.
 Assignment bundle ID **NWG-D0BC**.
 
-> **Status: structure and configuration only.** The application code is built wave by wave. The table at the end says
-> exactly what exists.
+> **Status: structure, tooling and guard tests only.** The application code is built wave by wave; every module is a
+> docstring-only shell until its wave. The table at the end says exactly what exists.
 
 ## Principles
 
@@ -53,10 +53,12 @@ python -m venv .venv
 # Windows:  .venv\Scripts\activate        macOS/Linux:  source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements-dev.txt
-python run.py check
+python -m pytest
 ```
 
 ## Run
+
+Until its wave is built, each command prints `not built yet (Wave N)` and exits with code 2.
 
 ```bash
 python run.py consolidate     # the one command: reads Northwind_TakeHome_v2/data/, writes output/
@@ -70,7 +72,7 @@ Tests and checks: `python -m pytest && python -m ruff check . && python -m mypy 
 
 Set `model` in `config/llm.toml`, or the `NORTHWIND_MODEL` environment variable. Strings: `ollama:<model>`,
 `openai:<model>`, `google:<model>`, `anthropic:<model>`. Keys come from environment variables (see `.env.example`). The
-12 control figures are identical whichever model is used, and a test enforces it.
+12 control figures are meant to be identical whichever model is used; the test for that arrives with wave 3.
 
 ## What is built
 
@@ -79,4 +81,12 @@ Set `model` in `config/llm.toml`, or the `NORTHWIND_MODEL` environment variable.
 | Supplied data with integrity checksums | Present (`Northwind_TakeHome_v2/data/`, `config/bundle_manifest.sha256`) |
 | Settings: policy, assumptions, overrides, model | Present (`config/`) |
 | Continuous integration workflow | Present (`.github/workflows/ci.yml`) |
-| `app/`, `tests/`, `frontend/`, `run.py`, requirements | Not created yet |
+| Folder structure of `app/` and `tests/`, with docstring-only shells | Present; no logic yet |
+| `run.py` with `consolidate`, `serve`, `check` | Present as stubs that print `not built yet (Wave N)` |
+| `pyproject.toml` and pinned `requirements*.txt` | Present (checked against PyPI) |
+| Structure, import-boundary and data-checksum tests | Present and passing (`tests/test_structure.py`, `test_architecture.py`, `test_bundle.py`) |
+| Parsers, detectors, consolidation, statements, outputs (wave 1) | Not built |
+| Orchestration, API (wave 2); AI layer and ledger (wave 3) | Not built |
+| Golden figures test, perturbation, property and red-team tests | Not built |
+| `frontend/` | `README.md` only |
+| `docs/CODE_GUIDE.md` | Present; describes the structure, tooling and tests only |
