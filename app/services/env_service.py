@@ -1,9 +1,10 @@
 """The environment check behind `run.py check`: Python, the data bundle, and the policy binding."""
 import sys
+import tomllib
 from pathlib import Path
 
 from app.config import load_assumptions, load_policy
-from app.parsers.policy_text import PolicyBlocked, check_binding
+from app.parsers.policy_text import PolicyBlocked, check_binding, compare, read_policy
 from app.utils.hashing import sha256_file
 from app.utils.paths import CONFIG_DIR
 
@@ -24,5 +25,9 @@ def check_environment(data_dir: Path, config_dir: Path = CONFIG_DIR) -> list[tup
         results.append(("policy.toml is bound to group_policies.md", True, policy.meta.status))
     except PolicyBlocked as stop:
         results.append(("policy.toml is bound to group_policies.md", False, str(stop)))
+    approved = tomllib.loads((config_dir / "policy.toml").read_text(encoding="utf-8"))
+    problems = compare(read_policy((data_dir / Path(policy.meta.source).name).read_text(encoding="utf-8")), approved)
+    results.append(("the policy text, read by the lexicon, agrees with policy.toml", not problems,
+                    "; ".join(f"{f}: {why}" for f, why in problems)))
     results.append(("assumptions load", bool(load_assumptions(config_dir / "assumptions.toml")), ""))
     return results
