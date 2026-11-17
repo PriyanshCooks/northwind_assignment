@@ -8,7 +8,8 @@ from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR
 def test_the_uk_2310_remap_comes_from_the_override_file_not_the_assumptions() -> None:
     assert load_assumptions(CONFIG_DIR / "assumptions.toml")["map_uk_2310"] == "none"
     rows = load_overrides(CONFIG_DIR / "overrides.toml")
-    assert [(r.target, r.to, r.status) for r in rows] == [("mapping:UK:2310", "2300", "open")]
+    assert [(r.target, r.to, r.status) for r in rows] == [("mapping:UK:2310", "2300", "approved")]
+    assert rows[0].approver == "Priyansh (user)"
     assert rows[0].effect_if_reversed
 
 
