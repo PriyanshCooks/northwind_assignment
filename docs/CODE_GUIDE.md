@@ -85,3 +85,6 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### mapping (task 1.5)
 `classify_all` gives every trial-balance line a verdict and `apply_mapping` applies the assumption switches. A suspect mapping is only changed when the switch for that account is set in `config/assumptions.toml` (`map_uk_2310 = "remap_2300"`). Unmapped and ambiguous lines get no group account and are carried in a suspense line, so mapping never changes a total.
+
+### journals (task 1.6)
+`core/post_journals.py` turns trial-balance lines into IMPORT postings and decides each journal: REJECT when invalid for FY2024 (unbalanced, outside the period, duplicate), HOLD when a human must look (account not in the entity chart, reversal past zero), otherwise POST. The decision reads only detector findings and the assumption switches, never the free text of a memo. Posted journals go through the entity map, so UK `7100` (rent) becomes group `6200`, not group `7100` (finance costs).

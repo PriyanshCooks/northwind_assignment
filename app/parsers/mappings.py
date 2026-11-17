@@ -48,6 +48,17 @@ def exact_name_match(row: MapRow, coa: dict[str, CoaAccount]) -> str | None:
     return same_name[0] if len(same_name) == 1 else None
 
 
+def resolve_account(
+    maps: dict[str, dict[str, list[MapRow]]], coa: dict[str, CoaAccount], entity: str, account: str,
+) -> str | None:
+    """Journals use each entity's own codes (UK 7100 is rent, group 7100 is finance costs): go through its map."""
+    index = maps.get(entity)
+    if index is None:
+        return account if account in coa else None
+    rows = index.get(account, [])
+    return rows[0].group_code if len(rows) == 1 and rows[0].group_code in coa else None
+
+
 def remap_switch(entity: str, local_code: str) -> str:
     """The assumptions key that approves a rule-confirmed remap, for example map_uk_2310 (assumption A7)."""
     return f"map_{entity.lower()}_{local_code}"

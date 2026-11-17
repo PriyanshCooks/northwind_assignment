@@ -23,5 +23,5 @@ def d03_journal_balance(ctx: Context) -> list[Finding]:
         if debit != credit:
             claim = f"{journal.id} is unbalanced: debits {debit}, credits {credit}"
             found.append(new_finding("D03", "BLOCK", claim, journal.ref.file, journal.ref.line, "blocked",
-                                     abs(debit - credit), "balance", evidence=(journal.ref,)))
+                                     abs(debit - credit), "balance", evidence=(journal.ref,), subject=journal.id))
     return found

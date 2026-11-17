@@ -4,15 +4,11 @@ from decimal import Decimal
 from app.domain.findings import Finding, new_finding
 from app.domain.journals import Journal
 from app.domain.runs import Context
+from app.parsers.mappings import resolve_account
 
 
 def group_account(ctx: Context, entity: str, account: str) -> str | None:
-    """Journals use the entity's own codes (UK 7100 is rent, group 7100 is finance costs): resolve through its map."""
-    index = ctx.inputs.maps.get(entity)
-    if index is None:
-        return account if account in ctx.inputs.coa else None
-    rows = index.get(account, [])
-    return rows[0].group_code if len(rows) == 1 and rows[0].group_code in ctx.inputs.coa else None
+    return resolve_account(ctx.inputs.maps, ctx.inputs.coa, entity, account)
 
 
 def d04_period(ctx: Context) -> list[Finding]:
@@ -22,7 +18,7 @@ def d04_period(ctx: Context) -> list[Finding]:
         if not start <= j.date <= end:
             claim = f"{j.id} is dated {j.date}, outside {start} to {end}; policy 6 says it is not posted"
             found.append(new_finding("D04", "BLOCK", claim, j.ref.file, j.ref.line, "blocked", j.total_debit(),
-                                     "date", (j.ref,)))
+                                     "date", (j.ref,), subject=j.id))
     return found
 
 
@@ -39,7 +35,7 @@ def d05_duplicate(ctx: Context) -> list[Finding]:
         if first is not j:
             claim = f"{j.id} repeats the postings of {first.id} (same entity, date, accounts and amounts)"
             found.append(new_finding("D05", "BLOCK", claim, j.ref.file, j.ref.line, "blocked", j.total_debit(),
-                                     "duplicate", (j.ref, first.ref)))
+                                     "duplicate", (j.ref, first.ref), subject=j.id))
     return found
 
 
@@ -51,7 +47,7 @@ def d06_account_exists(ctx: Context) -> list[Finding]:
                 claim = (f"{j.id} posts to {line.account}, which is not in the {j.entity} chart or its map; "
                          "it cannot be posted and is held")
                 found.append(new_finding("D06", "BLOCK", claim, line.ref.file, line.ref.line, "blocked",
-                                         line.debit + line.credit, "account", (line.ref,)))
+                                         line.debit + line.credit, "account", (line.ref,), subject=j.id))
     return found
 
 
@@ -82,5 +78,5 @@ def d07_reversal_exceeds_balance(ctx: Context) -> list[Finding]:
                 claim = (f"{j.id} moves {line.account} from {before} to {after}, past zero against its normal "
                          f"{group.normal_balance.lower()} side")
                 found.append(new_finding("D07", "BLOCK", claim, line.ref.file, line.ref.line, "blocked",
-                                         line.debit + line.credit, "reversal", (line.ref,)))
+                                         line.debit + line.credit, "reversal", (line.ref,), subject=j.id))
     return found
