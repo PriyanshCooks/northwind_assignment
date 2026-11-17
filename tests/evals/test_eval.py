@@ -1,6 +1,8 @@
 """The eval harness itself, and the rule-based baseline it is measured against. Needs no model. With
 NORTHWIND_REQUIRE_LEDGER=1 it also checks that the committed ledger answers every unit."""
 import os
+import subprocess
+import sys
 
 import pytest
 
@@ -10,6 +12,7 @@ from app.llm.ledger import Ledger
 from app.review.grounding import Grounded
 from app.review.units import Unit, journal_units, mapping_units
 from app.services.review_service import UnitResult, review_all, review_unit
+from app.utils.paths import ROOT
 from tests.evals.labels import expected
 from tests.evals.metrics import score, supplied
 from tests.evals.seeds import seeded_journals, seeded_mappings
@@ -53,3 +56,10 @@ def test_every_unit_has_a_recorded_answer_when_the_ledger_is_committed(ctx: Cont
         pytest.skip("set NORTHWIND_REQUIRE_LEDGER=1 once the ledger is complete")
     results = review_all(ctx, cfg, Ledger(cfg.ledger_path))
     assert [r.unit.unit_id for r in results if r.source == "rules"] == []
+
+
+def test_the_recorder_prints_its_summary_and_exits_with_code_zero() -> None:
+    done = subprocess.run([sys.executable, "-m", "tests.evals.record"], cwd=ROOT, capture_output=True, text=True,
+                          timeout=300)
+    assert done.returncode == 0, done.stderr[-300:]
+    assert "answered by the model" in done.stdout
