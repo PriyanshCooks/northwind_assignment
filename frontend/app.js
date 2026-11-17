@@ -71,7 +71,9 @@ function nextStep(run) {
 
 async function runsList() {
   drawStepper(null);
-  const runs = await api("GET", "/runs");
+  const showArchived = location.hash === "#/archived";
+  const runs = await api("GET", showArchived ? "/runs?archived=true" : "/runs");
+  const keep = (r, what) => async () => { try { await api("POST", `/runs/${r.id}/${what}`); await route(); } catch (e) { fail(e); } };
   const name = h("input", { placeholder: "run name", maxlength: 60 });
   const sample = h("input", { type: "checkbox" });
   const create = async () => {
@@ -85,8 +87,11 @@ async function runsList() {
       h("button", { onclick: create }, "New run")),
     runs.length ? table(["Name", "Id", "Status", "Created", "Based on", ""], runs.map((r) => [
       r.name, h("code", {}, r.id), h("span", { class: "tag" }, r.status), when(r.created), r.parent || "",
-      h("a", { class: "btn plain", href: `#/run/${r.id}/${nextStep(r)}` },
-        r.status === "awaiting_review" ? "Resume" : "Open")])) : h("p", { class: "muted" }, "No runs yet."));
+      h("span", { class: "row" }, h("a", { class: "btn plain", href: `#/run/${r.id}/${nextStep(r)}` },
+        r.status === "awaiting_review" ? "Resume" : "Open"),
+      h("button", { class: "plain", onclick: keep(r, showArchived ? "restore" : "archive") }, showArchived ? "Restore" : "Archive"))]))
+      : h("p", { class: "muted" }, showArchived ? "No archived runs." : "No runs yet."),
+    h("p", {}, h("a", { href: showArchived ? "#/" : "#/archived" }, showArchived ? "Back to runs" : "Show archived runs")));
 }
 
 // A step that needs a finished run says why it cannot open yet and what to do, instead of showing an error.

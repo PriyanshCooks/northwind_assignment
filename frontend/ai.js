@@ -15,7 +15,7 @@ function unitRow(u) {
   const grounding = [...u.verified.map((c) => `verified: ${c}`), ...u.unverified.map((c) => `not checkable: ${c}`),
     ...u.dropped.map((d) => `dropped: ${d.claim} (${d.why})`), ...u.missed.map((c) => `the rules found ${c} and the answer did not report it`)];
   return h("details", { class: "unit" }, h("summary", {}, h("code", {}, u.unit), ` ${u.kind} · ${unitVerdict(u)}`),
-    h("h4", {}, "Evidence packet sent to the model"), h("pre", {}, JSON.stringify(u.packet, null, 2)),
+    h("h4", {}, "Evidence sent to the model"), h("pre", {}, JSON.stringify(u.packet, null, 2)),
     h("h4", {}, "The model's recorded answer"), h("pre", {}, answer),
     h("h4", {}, "Grounding verdict"), grounding.length ? h("ul", {}, grounding.map((g) => h("li", {}, g))) : h("p", { class: "muted" }, "No claims to check."));
 }

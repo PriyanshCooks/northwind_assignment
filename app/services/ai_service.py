@@ -22,13 +22,17 @@ def _recorded(ledger: Ledger) -> dict[tuple[str, str], dict[str, Any]]:
     return {(e["agent"], _same(e["packet"])): e for e in ledger.entries.values() if e.get("validated")}
 
 
+def _plain_why(why: str) -> str:
+    return why.replace("the packet", "the supplied data")
+
+
 def _unit(r: UnitResult, entry: dict[str, Any] | None) -> dict[str, Any]:
     usage = (entry or {}).get("usage") or {}
     return {
         "kind": r.unit.kind, "unit": r.unit.unit_id, "source": r.source, "recorded": r.source == "model",
         "packet": r.unit.packet, "answer": entry["response"] if entry and r.source == "model" else None,
         "verified": list(r.grounded.verified), "unverified": list(r.grounded.unverified),
-        "dropped": [{"claim": c, "why": w} for c, w in r.grounded.dropped], "missed": list(r.missed),
+        "dropped": [{"claim": c, "why": _plain_why(w)} for c, w in r.grounded.dropped], "missed": list(r.missed),
         "input_tokens": usage.get("input_tokens"), "output_tokens": usage.get("output_tokens"),
         "cost_usd": entry.get("cost_usd") if entry else None, "note": r.note,
     }

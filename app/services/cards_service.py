@@ -25,7 +25,7 @@ FIGURE_NAMES = {
     "intercompany_difference": "Intercompany difference",
     "sgd_bank_gbp": "The Singapore dollar bank balance in GBP", "journals": "The journal counts",
 }
-FIGURE_CLAIM = re.compile(r"^(\w+) is (provisional|null)")
+FIGURE_CLAIM = re.compile(r"^(\w+) is (provisional|null)\b")
 
 
 def plain(text: str) -> str:
@@ -55,14 +55,14 @@ def _ai(unit: dict[str, Any] | None, about_text: bool = False) -> dict[str, str]
                 "text": "Not reviewed by the AI: it looks only at trial-balance mappings and journals."}
     if not unit["recorded"]:
         return {"state": "not_reviewed", "text": "No recorded AI answer here; the rule-based proposer was used."}
-    if about_text:  # free text is not a fact the packet can prove, so the AI's other claims say nothing about it
+    if about_text:  # free text is not a fact the data can prove, so the AI's other claims say nothing about it
         return {"state": "no_claim", "text": f"The AI reviewed {unit['unit']} and did not raise this text."}
     if unit["missed"]:
         said = ", ".join(unit["missed"])
         return {"state": "disagrees", "text": f"The recorded AI answer did not report {said}, which the rules found."}
     if unit["verified"]:
         said = ", ".join(unit["verified"])
-        return {"state": "agrees", "text": f"The recorded AI answer agrees and the packet backs it: {said}."}
+        return {"state": "agrees", "text": f"The recorded AI answer agrees and the supplied data backs it: {said}."}
     return {"state": "no_claim", "text": "The AI reviewed this item and did not flag it."}
 
 

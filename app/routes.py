@@ -20,8 +20,18 @@ Reg = Annotated[Registry, Depends(registry)]
 
 
 @router.get("/runs")
-def list_runs(reg: Reg) -> list[dict[str, Any]]:
-    return reg.list()
+def list_runs(reg: Reg, archived: bool = False) -> list[dict[str, Any]]:
+    return reg.list(archived)
+
+
+@router.post("/runs/{run_id}/archive")
+def archive(run_id: str, reg: Reg) -> dict[str, Any]:
+    return reg.update(run_id, archived=True)
+
+
+@router.post("/runs/{run_id}/restore")
+def restore(run_id: str, reg: Reg) -> dict[str, Any]:
+    return reg.update(run_id, archived=False)
 
 
 @router.post("/runs")

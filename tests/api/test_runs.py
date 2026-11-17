@@ -77,3 +77,13 @@ def test_only_the_runs_folder_is_written(client: TestClient, tmp_path: Path) -> 
     assert written == {"runs"}
     manifest = json.loads(next((tmp_path / "runs").glob("r*/run.json")).read_text(encoding="utf-8"))
     assert "key" not in json.dumps(manifest).lower()
+
+
+def test_archiving_hides_a_run_and_restoring_brings_it_back(client: TestClient) -> None:
+    run_id = client.post("/api/runs", json={"name": "old"}).json()["id"]
+    assert client.post(f"/api/runs/{run_id}/archive").json()["archived"] is True
+    assert run_id not in [r["id"] for r in client.get("/api/runs").json()]
+    assert run_id in [r["id"] for r in client.get("/api/runs?archived=true").json()]
+    assert client.get(f"/api/runs/{run_id}").status_code == 200  # still on disk
+    client.post(f"/api/runs/{run_id}/restore")
+    assert run_id in [r["id"] for r in client.get("/api/runs").json()]

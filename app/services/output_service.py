@@ -27,6 +27,8 @@ def _path(out_dir: Path, name: str) -> Path:
 def _flat(value: Any, prefix: str = "") -> list[list[str]]:
     if isinstance(value, dict):
         return [row for k, v in value.items() for row in _flat(v, f"{prefix}{k}.")]
+    if isinstance(value, list) and all(not isinstance(v, (dict, list)) for v in value):
+        return [[prefix.rstrip("."), "\n".join(str(v) for v in value)]]
     return [[prefix.rstrip("."), "" if value is None else str(value)]]
 
 

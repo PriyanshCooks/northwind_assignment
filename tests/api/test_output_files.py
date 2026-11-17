@@ -52,3 +52,16 @@ def test_files_are_not_served_before_the_run_finishes(client: TestClient) -> Non
     from tests.api.conftest import sample_run
     run_id = sample_run(client)
     assert client.get(f"/api/runs/{run_id}/output-files").status_code == 409
+
+
+def test_a_figure_headline_uses_the_plain_name_not_the_key() -> None:
+    from app.services.cards_service import _headline
+    claim = "sgd_bank_gbp is null: no GBP/SGD closing rate"
+    item = {"claim": claim, "code": "FIG", "file": "fx_rates.csv", "line": None}
+    assert _headline(item, {}).startswith("The Singapore dollar bank balance in GBP cannot be determined")
+
+
+def test_a_list_in_a_json_file_is_one_cell_with_a_line_for_each_entry() -> None:
+    from app.services.output_service import _sections
+    (section,) = _sections({"provisional": ["first reason", "second reason"]})
+    assert section["rows"] == [["provisional", "first reason\nsecond reason"]]

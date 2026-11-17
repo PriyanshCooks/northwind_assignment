@@ -39,9 +39,15 @@ function statusBadge(x) {
 function figuresTable(figures) {
   const rows = figures.map((x) => h("tr", {}, h("td", {}, FIGURE_NAMES[x.key] || x.key, h("div", { class: "muted small figkey" }, h("code", {}, x.key))),
     h("td", { class: "num" }, figureValue(x)), h("td", {}, statusBadge(x))));
-  const notes = figures.filter((x) => x.value === null || x.status === "provisional").map((x) =>
-    h("div", { class: `callout ${x.value === null ? "bad" : "warn"}` }, h("strong", {}, `${FIGURE_NAMES[x.key] || x.key}: `),
-      x.value === null ? "Not determinable. " + tidy(x.reason || "No reason was recorded.") : "Provisional. " + tidy((x.open_items || []).join("; "))));
+  const nulls = figures.filter((x) => x.value === null).map((x) =>
+    h("div", { class: "callout bad" }, h("strong", {}, `${FIGURE_NAMES[x.key] || x.key}: `), "Not determinable. " + tidy(x.reason || "No reason was recorded.")));
+  const reasons = new Map();  // one callout per distinct reason, naming every figure that rests on it
+  for (const x of figures.filter((f) => f.value !== null && f.status === "provisional")) {
+    const why = tidy((x.open_items || []).join("; "));
+    reasons.set(why, [...(reasons.get(why) || []), FIGURE_NAMES[x.key] || x.key]);
+  }
+  const notes = [...nulls, ...[...reasons].map(([why, names]) =>
+    h("div", { class: "callout warn" }, h("strong", {}, `Provisional: ${names.join(", ")}. `), why))];
   return h("div", {}, h("div", { class: "scroll" }, h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Figure"),
     h("th", { class: "num" }, "Value (GBP)"), h("th", {}, "Status"))), h("tbody", {}, rows))), notes);
 }

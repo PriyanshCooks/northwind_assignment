@@ -4,7 +4,7 @@ const isNumber = (t) => /^-?\d+(\.\d+)?$/.test(t);
 
 function sectionTable(s) {
   const numeric = s.columns.map((c, i) => MONEY_COLUMN.test(c) && s.rows.some((r) => isNumber(r[i])));
-  const cell = (v, i) => (numeric[i] && isNumber(v) ? h("td", { class: "num" }, amount(v)) : h("td", {}, v));
+  const cell = (v, i) => (numeric[i] && isNumber(v) ? h("td", { class: "num" }, money(v)) : h("td", { class: "lines" }, v));
   return h("div", {}, s.title ? h("h3", {}, s.title) : null, h("div", { class: "scroll" }, h("table", {},
     h("thead", {}, h("tr", {}, s.columns.map((c, i) => h("th", { class: numeric[i] ? "num" : "" }, c)))),
     h("tbody", {}, s.rows.map((r) => h("tr", {}, r.map(cell)))))));

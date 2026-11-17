@@ -63,9 +63,11 @@ class Registry:
         (folder / "run.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
         return meta
 
-    def list(self) -> list[dict[str, Any]]:
+    def list(self, archived: bool = False) -> list[dict[str, Any]]:
+        """Runs in use, or with archived=True the archived ones. Archiving hides a run; nothing is deleted."""
         found = [self.meta(p.name) for p in self.root.glob("r*") if RUN_ID.match(p.name) and (p / "run.json").is_file()]
-        return sorted(found, key=lambda m: str(m["created"]), reverse=True)
+        shown = [m for m in found if bool(m.get("archived")) == archived]
+        return sorted(shown, key=lambda m: str(m["created"]), reverse=True)
 
     def state(self, run_id: str) -> RunState:
         folder = self.folder(run_id)
