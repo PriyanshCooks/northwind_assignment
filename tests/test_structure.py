@@ -45,7 +45,8 @@ TEST_FOLDERS = ["unit", "perturbation", "property", "redteam", "evals", "api"]
 UNIT_FOLDERS = [folder.removeprefix("app/") for folder in APP_FILES if folder != "app"]
 TOP_LEVEL = [
     "run.py", "README.md", "DECISIONS.md", "VALIDATION.md", "REFLECTION.md", "pyproject.toml",
-    "requirements.txt", "requirements-dev.txt", "requirements-llm.txt", ".env.example", ".gitignore",
+    "requirements.txt", "requirements-dev.txt", "requirements-llm.txt", "requirements-constraints.txt",
+    ".env.example", ".gitignore",
     ".gitattributes", ".github/workflows/ci.yml", "docs/ARCHITECTURE.md", "ledger/README.md",
     "transcripts/README.md", "config/policy.toml", "config/assumptions.toml", "config/overrides.toml",
     "config/llm.toml", "config/bundle_manifest.sha256", "frontend/README.md",

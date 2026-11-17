@@ -49,7 +49,10 @@ broken. It also tests its own checker on small snippets, so it cannot pass by ch
 ## Choices worth explaining
 
 - **Pinned requirements.** Exact versions, so a fresh clone installs what was tested. Pins were checked against PyPI
-  on 2026-11-17. `google-genai` is left unpinned until Gemini is first used.
+  on 2026-11-17. `requirements.txt` names the packages the code uses; `requirements-constraints.txt` is the full
+  `pip freeze` of the tested environment and is pulled in with `-c`, so transitive packages are fixed too. A clean
+  venv installed from these files freezes to exactly that list. The packages for `requirements-llm.txt` are not in
+  the constraints file, and `google-genai` is left unpinned until Gemini is first used.
 - **TOML for config.** YAML reads `0031` as the number 25; TOML refuses it.
 - **No line-ending conversion for the data.** The first commit stored 12 CSV files with changed line endings; the
   second commit ("store data files byte for byte") corrected it.
