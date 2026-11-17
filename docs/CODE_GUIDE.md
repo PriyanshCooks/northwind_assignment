@@ -63,3 +63,13 @@ broken. It also tests its own checker on small snippets, so it cannot pass by ch
 - `money.py`: `to_decimal` builds a Decimal from a string or int and refuses a float. `round2` rounds half up and is called only when a figure is written (policy 7, assumption A13). The module sets 50 digits of precision, so translation is exact enough to round once at the end.
 - `hashing.py`: SHA-256 helpers and `dumps`, the one JSON writer used for outputs and hashes. It writes a Decimal as a bare number without passing through a float.
 - `paths.py`: repository paths. The data folder is a command-line option; the path here is only its default.
+
+### domain (task 1.1)
+All models are frozen Pydantic classes in `app/domain/`. The plan called this `types.py`; the structure document is the master, so it is a folder.
+- `refs.py`: `SourceRef` (file, line, hash of the raw row) is the unit of traceability. `Money` is a Decimal that refuses a float and is written as a string in JSON.
+- `quarantine.py`: `Quarantined` wraps free text. It prints only its length; scanners read `.text`, everything else shows `quoted()`.
+- `ledger.py`, `journals.py`: trial-balance lines (debit-positive), mapping rows, the chart of accounts, monthly rows, journals and their dispositions (POST, REJECT, HOLD).
+- `findings.py`: one problem with `file:line`, the amount affected and what the system did. Two findings with the same key merge.
+- `entries.py`: a `Posting` is one piece of a balance with its origin (IMPORT, JOURNAL, REVALUE, TRANSLATION, ELIMINATION, ACQUISITION) and source rows. An `Entry` must balance.
+- `figures.py`: `Determined`, `Provisional` and `Unknown` form a union. An unknown figure carries a reason and has no value field.
+- `policy.py`, `runs.py`: policy values, the assumptions registry, the parsed inputs and the run manifest.
