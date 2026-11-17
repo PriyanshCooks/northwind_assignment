@@ -152,3 +152,15 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### the model switch and `run.py review` (task 3.7, local part)
 Everything model-specific is in `config/llm.toml`: the model string (`ollama:`, `openai:`, `google:`, `anthropic:`), its settings (leave the table empty for a cloud model that rejects sampling parameters) and the ledger file. To switch: set `model` and `ledger`, put the provider's key in the environment (never in the repo), and run `python run.py review --live` once to record that model's answers; commit the new ledger file. The ledger key includes the model and settings, so the local ledger can never answer for a cloud model (a test proves a miss, then the rule fallback). `run.py review` prints the verified, unverified and missed claims per unit and how many units a model answered. Running it changes no figure: a test hashes the figures before and after. Not done here: a cloud recording, which needs an API key the repository does not hold.
+
+### results of the local model (task 3.4)
+Recorded with `qwen3:4b-instruct-2507-q4_K_M` (78 units, ledger `ledger/qwen3-4b-dev.jsonl`, 83 lines; one seeded unit, `SEED-J-balanced`, timed out twice and is answered by the rule fallback). After grounding:
+
+| Reviewer | Units | Recall | False alarms | Claims dropped by grounding |
+|---|---|---|---|---|
+| Local model, supplied data | 63 | 0.33 | 0.00 | 0.62 |
+| Local model, seeded | 14 | 0.17 | 0.00 | 0.71 |
+| Rule-based baseline, supplied | 63 | 0.89 | 0.00 | 0 |
+| Rule-based baseline, seeded | 15 | 0.46 | 0.00 | 0 |
+
+The model reliably found duplicates, the unbalanced journal and mirror images. It missed all three out-of-period dates, the exceeds-balance case and the unknown account, and its mapping claims mostly failed grounding (10 name-mismatch claims dropped, 9 real ones missed). Grounding removed every false claim (false alarms 0.00 after it), which is what it is for, but the cost is low recall: a 4B model is a weak second opinion here and the rules do better on every category they can compute. The rules cannot read wording, so the model's value is limited to cases like the reworded memo. Prompts were not tuned further (journal prompt on its second version, mapping on its first); the result is a finding, not a target. The sample is small and the labels are mine.
