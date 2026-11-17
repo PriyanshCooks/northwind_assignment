@@ -8,6 +8,10 @@ source = "Northwind_TakeHome_v2/data/group_policies.md"
 source_sha256 = "00888e755e03b2b275bb9b77b5e71916a26b2a23cfda4dffd1dbd47447cc05d4"
 status = "approved-baseline"
 
+[period]                             # brief section 2: the year ended 31 December 2024
+start = 2024-01-01
+end = 2024-12-31
+
 [presentation]                       # clause 1
 currency = "GBP"
 

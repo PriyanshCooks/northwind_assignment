@@ -1,8 +1,22 @@
 """One deduplicated problem found in the inputs or the run, with the place it came from."""
+from decimal import Decimal
 from typing import Literal
 
 from app.domain.quarantine import Quarantined
 from app.domain.refs import Model, Money, SourceRef
+
+
+def new_finding(
+    code: str, severity: Literal["BLOCK", "FLAG", "NOTE"], claim: str, file: str, line: int | None,
+    action: Literal["blocked", "assumed", "flagged", "noted"], amount: Decimal | None = None, field: str = "",
+    evidence: tuple[SourceRef, ...] = (), quoted: Quarantined | None = None,
+) -> "Finding":
+    """Build a finding with its stable key (code, file, line, field)."""
+    key = f"{code}:{file}:{line if line is not None else 0}:{field}"
+    return Finding(
+        key=key, code=code, severity=severity, claim=claim, file=file, line=line,
+        amount_affected=amount, action=action, evidence=evidence, quoted_text=quoted,
+    )
 
 
 class Finding(Model):

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from app.domain.journals import Journal
 from app.domain.ledger import CoaAccount, LedgerLine, MapRow, MonthlyRow
+from app.domain.policy import Policy
 from app.domain.refs import Model, Money, SourceRef
 
 
@@ -81,6 +82,15 @@ class Inputs:
     prior_equity: dict[str, PriorEquity]
     acquisition: Acquisition
     india_monthly: list[MonthlyRow]
+
+
+@dataclass
+class Context:
+    """Everything a detector or a consolidation step may read: the inputs, the policy and the assumption switches."""
+
+    inputs: Inputs
+    policy: Policy
+    assumptions: dict[str, bool | str]
 
 
 class RunManifest(Model):

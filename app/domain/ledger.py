@@ -51,3 +51,4 @@ class MappedLine(Model):
     group_code: str | None
     map_ref: SourceRef | None
     verdict: Literal["OK", "REMAPPED", "SUSPECT", "UNMAPPED", "AMBIGUOUS"]
+    proposed_group_code: str | None = None
