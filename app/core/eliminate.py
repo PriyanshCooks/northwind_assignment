@@ -65,6 +65,7 @@ def _uk_investment(local: list[Posting], translated: list[Posting]) -> Entry:
 def _india_investment(inputs: Inputs, translated: list[Posting], acq: AcquisitionFigures) -> Entry:
     note = inputs.acquisition
     investment = total(translated, INVESTMENT["IN"], "US")
+    # policy 2: pre-acquisition equity is translated at the acquisition-date rate, as reserve.py does
     owners_share = note.interest_pct / 100 * note.net_assets_at_completion / acq.spot_rate
     src = _sources(translated, INVESTMENT["IN"]) + acq.refs
     return Entry(
@@ -72,7 +73,7 @@ def _india_investment(inputs: Inputs, translated: list[Posting], acq: Acquisitio
         description="Eliminate the investment in Northwind India and recognise goodwill",
         lines=(_leg(INVESTMENT["IN"], -investment, "investment at closing", src),
                _leg("1700", acq.goodwill_gbp, "goodwill held in INR, retranslated at closing", src),
-               _leg("3200", owners_share, "owners' share of net assets at completion, at the acquisition-date rate (policy 2)", src),
+               _leg("3200", owners_share, "owners' share at the acquisition-date rate", src),
                _leg("3300", investment - acq.goodwill_gbp - owners_share, "translation difference", src)),
     )
 
