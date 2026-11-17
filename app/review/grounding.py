@@ -62,7 +62,7 @@ def ground_journal(verdict: JournalVerdict, packet: dict[str, Any]) -> Grounded:
         elif facts[flag]:
             verified.append(flag)
         else:
-            dropped.append((flag, f"the packet does not support {flag}"))
+            dropped.append((flag, f"the supplied data does not support {flag}"))
     return Grounded(tuple(verified), tuple(dropped), tuple(unverified))
 
 
@@ -109,5 +109,5 @@ def ground_mapping(verdict: MappingVerdictBase, packet: dict[str, Any], coa: dic
         if _mapping_claim_holds(flag, proposed, packet, coa):
             verified.append(flag)
         else:
-            dropped.append((flag, f"the packet does not support {flag}"))
+            dropped.append((flag, f"the supplied data does not support {flag}"))
     return Grounded(tuple(verified), tuple(dropped))

@@ -29,6 +29,11 @@ def test_a_false_claim_that_a_balanced_journal_is_unbalanced_is_dropped(ctx: Con
     assert grounded.verified == () and [flag for flag, _ in grounded.dropped] == ["unbalanced"] and not grounded.risk
 
 
+def test_a_dropped_claim_gives_its_reason_in_plain_words(ctx: Context) -> None:
+    grounded = ground_journal(verdict(unbalanced=True), packet_of(ctx, "JE-001"))
+    assert grounded.dropped == (("unbalanced", "the supplied data does not support unbalanced"),)
+
+
 def test_each_claim_is_judged_on_its_own(ctx: Context) -> None:
     grounded = ground_journal(verdict(unbalanced=True, outside_period=True, duplicate_of_another=True),
                               packet_of(ctx, "JE-006"))
