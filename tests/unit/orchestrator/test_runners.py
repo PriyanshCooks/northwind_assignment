@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -76,7 +77,7 @@ def test_a_paused_run_resumes_in_a_separate_process(tmp_path: Path) -> None:
     common = ["--config", str(_config(tmp_path / "config", True)), "--output", str(tmp_path / "out"),
               "--db", str(tmp_path / "run.db")]
     first = _cli("consolidate", *common)
-    assert first.returncode == 2 and "paused" in first.stdout and TARGET in first.stdout
+    assert first.returncode == 4 and "paused" in first.stdout and TARGET in first.stdout
     assert not (tmp_path / "out" / "control_figures_pb.json").exists()
     thread = thread_for(DEFAULT_DATA_DIR, tmp_path / "config")
     second = _cli("resume", "--thread", thread, "--approver", "A. Reviewer", "--approve", TARGET,
@@ -101,3 +102,15 @@ def test_a_paused_thread_is_not_reused_once_the_override_is_approved(tmp_path: P
     finished = run_graph(_state(tmp_path / "b", open_item=False), checkpoints)
     assert finished["status"] == "done"
     assert finished["run_id"] != paused["run_id"]
+
+
+def test_an_impossible_rate_exits_2_with_one_line_and_writes_nothing(tmp_path: Path) -> None:
+    data = tmp_path / "data"
+    shutil.copytree(DEFAULT_DATA_DIR, data)
+    rates = data / "fx_rates.csv"
+    rates.write_bytes(rates.read_bytes().replace(b"closing,1.2530", b"closing,0", 1))
+    result = _cli("consolidate", "--data", str(data), "--output", str(tmp_path / "out"),
+                  "--db", str(tmp_path / "run.db"))
+    assert result.returncode == 2 and result.stdout == ""
+    assert result.stderr.strip() == "input rejected: fx_rates.csv:6: column rate: must be greater than zero, got 0"
+    assert not (tmp_path / "out").exists()

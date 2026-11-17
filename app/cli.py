@@ -10,6 +10,7 @@ from app.llm.ledger import Ledger
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
 from app.orchestrator.runner_plain import run_plain
 from app.orchestrator.state import RunState, initial_state
+from app.parsers.contracts import ContractError
 from app.services.env_service import check_environment
 from app.services.review_service import BatchStopped, review_all
 from app.services.run_service import build_context
@@ -19,6 +20,9 @@ from app.utils.hashing import dumps
 from app.utils.logging import RunLogger
 from app.utils.money import round2
 from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, RUNTIME_DIR
+
+REJECTED = 2  # an input file is impossible; no output was written
+PAUSED = 4  # waiting at the review gate, not a failure; 3 is a review stopped early
 
 
 def _run(args: argparse.Namespace) -> int:
@@ -43,7 +47,7 @@ def _report(state: RunState, out_dir: Path) -> int:
         thread = thread_for(Path(state["data_dir"]), Path(state["config_dir"]))
         print(f"resume with: run.py resume --thread {thread} --approver NAME "
               f"--approve {state['open_items'][0]}")
-        return 2
+        return PAUSED
     print(f"outputs written to {out_dir}")
     for key, value in json.loads((out_dir / "control_figures_pb.json").read_text(encoding="utf-8")).items():
         print(f"  {key}: {dumps(value, indent=None)}")
@@ -170,7 +174,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    return int(args.handler(args))
+    try:
+        return int(args.handler(args))
+    except ContractError as error:
+        print(f"input rejected: {error}", file=sys.stderr)
+        return REJECTED
 
 
 if __name__ == "__main__":

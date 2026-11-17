@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import routes, routes_results
+from app.parsers.contracts import ContractError
 from app.services.pipeline_service import NotReady
 from app.services.registry_service import Registry, UnknownRun
 from app.utils.paths import ROOT, RUNTIME_DIR
@@ -38,6 +39,10 @@ def create_app(runs_root: Path = RUNTIME_DIR / "runs", frontend: Path = ROOT / "
     @app.exception_handler(NotReady)
     def not_ready(_: Request, error: NotReady) -> JSONResponse:
         return JSONResponse({"detail": scrub(str(error))}, status_code=409)
+
+    @app.exception_handler(ContractError)
+    def bad_input(_: Request, error: ContractError) -> JSONResponse:
+        return JSONResponse({"detail": scrub(f"input rejected: {error}")}, status_code=422)
 
     @app.exception_handler(ValueError)
     def bad_value(_: Request, error: ValueError) -> JSONResponse:
