@@ -8,7 +8,12 @@ from pathlib import Path
 class Evidence:
     data_dir: Path
     files: frozenset[str]  # the names of the run's input files: the only files a tool may open
+    last_year: int = 2024  # the last year of the reporting period; a later date in a data line is not plausible
     rules: dict[str, str] = field(default_factory=dict)  # clause name -> text
     calculations: dict[str, str] = field(default_factory=dict)  # calc id -> record as text
     lineage: dict[str, str] = field(default_factory=dict)  # row id -> its source lines as text
     related: dict[str, str] = field(default_factory=dict)  # group account -> mapped local accounts as text
+    confirmed: dict[str, frozenset[str]] = field(default_factory=dict)  # flag -> file:line the rules already confirm
+
+    def lines(self, file: str) -> list[str]:
+        return (self.data_dir / file).read_text(encoding="utf-8").splitlines()

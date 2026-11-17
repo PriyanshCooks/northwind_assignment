@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP_FILES = {
     "app": ["main.py", "routes.py", "routes_results.py", "api_models.py", "cli.py", "config.py"],
     "app/agents": [],
-    "app/reasoning": ["evidence.py", "tools.py"],
+    "app/reasoning": ["evidence.py", "tools.py", "schema.py", "grounding.py", "meanings.py", "reader.py"],
     "app/orchestrator": ["state.py", "nodes.py", "edges.py", "graph.py", "runner_plain.py"],
     "app/llm": ["client.py", "factory.py", "ledger.py", "instrumentation.py", "replay.py", "cost.py"],
     "app/review": ["units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
