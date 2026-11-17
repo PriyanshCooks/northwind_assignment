@@ -26,10 +26,12 @@ def test_je006_card_names_the_imbalance_and_the_memo_as_data(client: TestClient)
     assert "rejected and not posted" in card["rules"]
 
 
-def test_the_memo_card_quotes_the_text_and_the_ai_line_never_says_agrees_without_a_record(client: TestClient) -> None:
+def test_the_memo_card_quotes_the_text_and_says_the_ai_reviewed_it_without_flagging_it(client: TestClient) -> None:
     cards = _cards(client).values()
     memo = next(c for c in cards if c["code"] == "D12")
-    assert "AUTOMATED REVIEWERS" in memo["quote"] and memo["ai"]["state"] == "not_reviewed"
+    assert "AUTOMATED REVIEWERS" in memo["quote"] and memo["ai"]["state"] == "no_claim"
+    assert "JE-006" in memo["ai"]["text"] and "did not raise" in memo["ai"]["text"]
+    assert "unit exists" not in memo["ai"]["text"] and "Not reviewed" not in memo["ai"]["text"]
     assert all(c["ai"]["state"] in {"agrees", "disagrees", "no_claim", "not_reviewed"} for c in cards)
 
 

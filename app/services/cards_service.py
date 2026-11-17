@@ -49,19 +49,21 @@ def _unit_for(item: dict[str, Any], units: list[dict[str, Any]]) -> dict[str, An
     return next((u for u in units if match and u["unit"].startswith(f"{match[1]}:{match[2]}:")), None)
 
 
-def _ai(unit: dict[str, Any] | None) -> dict[str, str]:
+def _ai(unit: dict[str, Any] | None, about_text: bool = False) -> dict[str, str]:
     if unit is None:
         return {"state": "not_reviewed",
                 "text": "Not reviewed by the AI: it looks only at trial-balance mappings and journals."}
     if not unit["recorded"]:
         return {"state": "not_reviewed", "text": "No recorded AI answer here; the rule-based proposer was used."}
+    if about_text:  # free text is not a fact the packet can prove, so the AI's other claims say nothing about it
+        return {"state": "no_claim", "text": f"The AI reviewed {unit['unit']} and did not raise this text."}
     if unit["missed"]:
         said = ", ".join(unit["missed"])
         return {"state": "disagrees", "text": f"The recorded AI answer did not report {said}, which the rules found."}
     if unit["verified"]:
         said = ", ".join(unit["verified"])
         return {"state": "agrees", "text": f"The recorded AI answer agrees and the packet backs it: {said}."}
-    return {"state": "no_claim", "text": "The AI reviewed this item and raised no claim."}
+    return {"state": "no_claim", "text": "The AI reviewed this item and did not flag it."}
 
 
 def _figure(item: dict[str, Any]) -> str | None:
@@ -96,6 +98,9 @@ def build_cards(items: list[dict[str, Any]], units: list[dict[str, Any]], dispos
     decided = {d["journal_id"]: d for d in dispositions}
     cards = []
     for item in items:
+        memo_text = item["code"] == "D12"
+        owner = next((j for j, m in memos.items() if m["line"] == item.get("line")), None) if memo_text else None
+        item = item | {"subject": owner} if owner else item
         unit, subject = _unit_for(item, units), _subject(item)
         rules = RULES[item["action"]]
         if subject in decided:
@@ -104,7 +109,8 @@ def build_cards(items: list[dict[str, Any]], units: list[dict[str, Any]], dispos
         cards.append({
             "key": item.get("key"), "figure": _figure(item), "code": item["code"], "severity": item["severity"],
             "headline": _headline(item, memos),
-            "evidence": {"file": item["file"], "line": item.get("line")}, "rules": rules, "ai": _ai(unit),
+            "evidence": {"file": item["file"], "line": item.get("line")}, "rules": rules,
+            "ai": _ai(unit, memo_text),
             "quote": next((m["text"] for m in memos.values() if item["code"] == "D12" and m["line"] == item["line"]),
                           None),
             "dropped": unit["dropped"] if unit else [], "needs_decision": needs,

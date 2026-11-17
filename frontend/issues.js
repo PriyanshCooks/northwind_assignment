@@ -1,6 +1,6 @@
 // Issue cards. The wording comes from the server (cards_service); this file only lays it out.
 const SEVERITY = { BLOCK: ["Blocking", "bad"], FLAG: ["Flagged", "warn"], NOTE: ["Noted", "muted"] };
-const AI_STATE = { agrees: "AI agrees", disagrees: "AI disagrees", no_claim: "AI raised no claim", not_reviewed: "Not reviewed" };
+const AI_STATE = { agrees: "AI agrees", disagrees: "AI disagrees", no_claim: "Reviewed by the AI, not flagged", not_reviewed: "Not reviewed" };
 
 function field(label, ...body) { return h("div", { class: "field" }, h("dt", {}, label), h("dd", {}, ...body)); }
 
