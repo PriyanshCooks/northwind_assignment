@@ -9,7 +9,9 @@ from app.orchestrator.runner_plain import run_plain
 from app.orchestrator.state import RunState, initial_state
 from app.services.env_service import check_environment
 from app.services.trace_service import trace
+from app.services.whatif_service import Change, Diff, diff_inputs, impact, whatif
 from app.utils.hashing import dumps
+from app.utils.money import round2
 from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR, DEFAULT_OUTPUT_DIR, RUNTIME_DIR
 
 
@@ -44,6 +46,30 @@ def _report(state: RunState, out_dir: Path) -> int:
     return 0 if state["blocked"] is None and state["checks_passed"] else 1
 
 
+def _print_diff(diff: Diff) -> int:
+    if not diff.figures:
+        print("no control figure changes")
+    for key, (before, after) in diff.figures.items():
+        print(f"  {key}: {before} -> {after}")
+    if diff.accounts:
+        print("accounts that moved: " + ", ".join(
+            f"{a} {round2(b)} -> {round2(n)}" for a, (b, n) in diff.accounts.items()))
+    return 0
+
+
+def _whatif(args: argparse.Namespace) -> int:
+    return _print_diff(whatif(args.data, Change(args.patch, args.append, args.set), args.config))
+
+
+def _impact(args: argparse.Namespace) -> int:
+    return _print_diff(impact(args.data, args.target, args.config))
+
+
+def _diff_inputs(args: argparse.Namespace) -> int:
+    print("\n".join(diff_inputs(args.baseline, args.data) or ["inputs are identical"]))
+    return 0
+
+
 def _trace(args: argparse.Namespace) -> int:
     lines = trace(args.db, args.target)
     print("\n".join(lines))
@@ -63,7 +89,10 @@ def build_parser() -> argparse.ArgumentParser:
     for name, handler, text in (("consolidate", _run, "run the consolidation and write the outputs"),
                                 ("trace", _trace, "walk a figure or an account down to file:line"),
                                 ("check", _check, "check the environment and the data bundle"),
-                                ("resume", _resume, "answer a paused run and let it finish")):
+                                ("resume", _resume, "answer a paused run and let it finish"),
+                                ("whatif", _whatif, "re-run on a patched copy of the inputs and show the figure diff"),
+                                ("impact", _impact, "nudge one input row by 1% and show which figures move"),
+                                ("diff-inputs", _diff_inputs, "what changed between two input folders")):
         command = sub.add_parser(name, help=text)
         command.set_defaults(handler=handler)
         command.add_argument("--data", type=Path, default=DEFAULT_DATA_DIR, help="folder holding the supplied files")
@@ -78,6 +107,14 @@ def build_parser() -> argparse.ArgumentParser:
             command.add_argument("--approver", required=True, help="who is signing the decisions")
             command.add_argument("--approve", action="append", default=[], help="override target to approve")
             command.add_argument("--reject", action="append", default=[], help="override target to reject")
+        if name == "whatif":
+            command.add_argument("--patch", action="append", default=[], help="file:LINE.column=value")
+            command.add_argument("--append", action="append", default=[], help="file=csv row to add")
+            command.add_argument("--set", action="append", default=[], help="assumption key=value for this run")
+        if name == "impact":
+            command.add_argument("target", help="file:LINE, for example fx_rates.csv:3")
+        if name == "diff-inputs":
+            command.add_argument("baseline", type=Path, help="the older input folder to compare against")
         if name == "trace":
             command.add_argument("target", help="a control figure key or a group account code")
     return parser
