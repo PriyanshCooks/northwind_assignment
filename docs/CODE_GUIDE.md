@@ -88,3 +88,6 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### journals (task 1.6)
 `core/post_journals.py` turns trial-balance lines into IMPORT postings and decides each journal: REJECT when invalid for FY2024 (unbalanced, outside the period, duplicate), HOLD when a human must look (account not in the entity chart, reversal past zero), otherwise POST. The decision reads only detector findings and the assumption switches, never the free text of a memo. Posted journals go through the entity map, so UK `7100` (rent) becomes group `6200`, not group `7100` (finance costs).
+
+### revaluation and intercompany (task 1.7)
+`core/revalue.py` restates a foreign-currency monetary line at the closing rate (policy 3) and books the difference to 7300; a line whose rate is missing is reported, never guessed. `core/intercompany.py` pairs the two sides by document reference, records an invoice the receiver has not booked at the closing rate (policy 5) and splits the difference into in-transit plus revaluation. Both produce balanced `Entry` objects whose postings cite the source rows and the rate row used.
