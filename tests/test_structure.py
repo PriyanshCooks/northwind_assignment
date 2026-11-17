@@ -8,7 +8,7 @@ APP_FILES = {
     "app/agents": [],
     "app/orchestrator": ["state.py", "nodes.py", "edges.py", "graph.py", "runner_plain.py"],
     "app/llm": ["client.py", "factory.py", "ledger.py", "instrumentation.py", "replay.py"],
-    "app/review": ["profiles.py", "units.py", "packets.py", "grounding.py", "fallback.py"],
+    "app/review": ["profiles.py", "units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
     "app/core": [
         "post_journals.py", "revalue.py", "translate.py", "intercompany.py", "eliminate.py",
         "acquisition.py", "reserve.py", "statements.py", "figures.py", "lineage.py",
