@@ -1,0 +1,33 @@
+{
+  "source": "HANDCALC_v0.md, reproduced by handcalc_v0.py on 2026-11-17",
+  "review_status": "provisional: written by the AI assistant and not yet reviewed by a human (assumptions A1 to A7)",
+  "tolerance": "0.01",
+  "figures": {
+    "group_revenue": {"value": "28301607.81", "status": "determined"},
+    "group_profit": {"value": "2768780.95", "status": "determined"},
+    "profit_owners": {"value": "2707922.89", "status": "determined"},
+    "profit_nci": {"value": "60858.06", "status": "determined"},
+    "nci_closing": {"value": "1325107.53", "status": "determined"},
+    "goodwill_closing": {"value": "1375815.07", "status": "determined"},
+    "translation_reserve_movement": {"value": "43706.74", "status": "determined"},
+    "total_assets": {"value": "28575272.95", "status": "provisional", "reason": "includes the SGD bank at its booked 23010.00"},
+    "total_equity": {"value": "18343835.08", "status": "determined"},
+    "intercompany_difference": {"value": "20066.42", "status": "determined"},
+    "sgd_bank_gbp": {"value": null, "status": "unknown", "reason": "no GBP/SGD closing rate in fx_rates.csv"},
+    "journals": {"value": {"posted": 15, "rejected": 3, "held": 2}, "status": "determined"}
+  },
+  "intercompany_causes": {"in_transit": "8108.54", "revaluation": "11957.88", "income_expense_rate_residual_to_7300": "1966.21"},
+  "journals_by_id": {
+    "posted": ["JE-001", "JE-002", "JE-003", "JE-004", "JE-005", "JE-007", "JE-008", "JE-010", "JE-011", "JE-012", "JE-013", "JE-014", "JE-015", "JE-018", "JE-020"],
+    "rejected": ["JE-006", "JE-017", "JE-019"],
+    "held": ["JE-009", "JE-016"]
+  },
+  "reserve_components": {
+    "us_opening_net_assets": "201488.13",
+    "us_profit": "28979.74",
+    "india_net_assets_and_profit_owners": "-86835.30",
+    "india_goodwill": "-23944.83",
+    "uk_investment_retranslation_removed": "-15924.08",
+    "india_investment_retranslation_removed": "-60056.92"
+  }
+}
