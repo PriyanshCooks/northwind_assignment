@@ -91,3 +91,6 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### revaluation and intercompany (task 1.7)
 `core/revalue.py` restates a foreign-currency monetary line at the closing rate (policy 3) and books the difference to 7300; a line whose rate is missing is reported, never guessed. `core/intercompany.py` pairs the two sides by document reference, records an invoice the receiver has not booked at the closing rate (policy 5) and splits the difference into in-transit plus revaluation. Both produce balanced `Entry` objects whose postings cite the source rows and the rate row used.
+
+### translate (task 1.8)
+`core/translate.py` applies policy 2: closing rate for assets and liabilities, the average rate for the period the entity was owned for income and expenses. Which average applies is derived from the entity acquisition date and the rate windows in `fx_rates.csv`. Equity accounts are not translated here (group equity comes from `prior_year_group.csv` plus the reserve, see task 1.10). Every translated posting keeps its source rows and names the rate rows it used.
