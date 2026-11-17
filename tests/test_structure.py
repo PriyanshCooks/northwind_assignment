@@ -7,7 +7,7 @@ APP_FILES = {
     "app": ["main.py", "routes.py", "api_models.py", "cli.py", "config.py"],
     "app/agents": [],
     "app/orchestrator": ["state.py", "nodes.py", "edges.py", "graph.py", "runner_plain.py"],
-    "app/llm": ["client.py", "factory.py", "ledger.py", "instrumentation.py", "replay.py"],
+    "app/llm": ["client.py", "factory.py", "ledger.py", "instrumentation.py", "replay.py", "cost.py"],
     "app/review": ["profiles.py", "units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
     "app/core": [
         "post_journals.py", "revalue.py", "translate.py", "intercompany.py", "eliminate.py",
@@ -37,7 +37,7 @@ APP_FILES = {
         "run_service.py", "trace_service.py", "whatif_service.py", "overrides_service.py", "env_service.py",
         "review_service.py",
     ],
-    "app/utils": ["hashing.py", "logging.py", "money.py", "paths.py"],
+    "app/utils": ["env.py", "hashing.py", "logging.py", "money.py", "paths.py"],
 }
 AGENT_FILES = ["llm_model.py", "prompts.py", "schema.py", "tools.py"]
 FULL_AGENTS = ["mapping_reviewer", "journal_reviewer"]
@@ -50,7 +50,7 @@ TOP_LEVEL = [
     ".env.example", ".gitignore",
     ".gitattributes", ".github/workflows/ci.yml", "docs/ARCHITECTURE.md", "ledger/README.md",
     "transcripts/README.md", "config/policy.toml", "config/assumptions.toml", "config/overrides.toml",
-    "config/llm.toml", "config/bundle_manifest.sha256", "frontend/README.md",
+    "config/llm.toml", "config/pricing.toml", "config/bundle_manifest.sha256", "frontend/README.md",
 ]
 
 

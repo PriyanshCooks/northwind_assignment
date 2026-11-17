@@ -33,3 +33,9 @@ def edited_context(tmp_path: Path) -> Edit:
         return build_context(data)
 
     return build
+
+
+@pytest.fixture(autouse=True)
+def _no_model_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A real .env may name another model; the suite always starts from config/llm.toml."""
+    monkeypatch.setenv("NORTHWIND_MODEL", "")
