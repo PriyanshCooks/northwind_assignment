@@ -94,3 +94,6 @@ Each detector is a function from a `Context` (inputs, policy, assumptions) to fi
 
 ### translate (task 1.8)
 `core/translate.py` applies policy 2: closing rate for assets and liabilities, the average rate for the period the entity was owned for income and expenses. Which average applies is derived from the entity acquisition date and the rate windows in `fx_rates.csv`. Equity accounts are not translated here (group equity comes from `prior_year_group.csv` plus the reserve, see task 1.10). Every translated posting keeps its source rows and names the rate rows it used.
+
+### acquisition and elimination (task 1.9)
+`core/acquisition.py` splits India nine-month trial balance at the completion month: income and expense come from the monthly file for the months owned, and profit before completion is carried to reserves. It also computes goodwill (consideration less 80% of net assets at completion, held in INR and retranslated at closing) and non-controlling interest (20% of net assets, proportionate method). `core/eliminate.py` builds the balanced elimination entries: intercompany balances, intercompany income and expense (the rate difference goes to 7300) and the two investments. Equity legs of the investment entries are for the auditor; consolidated equity is built from the prior-year file in the reserve step.
