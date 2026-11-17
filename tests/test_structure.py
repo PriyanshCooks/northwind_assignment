@@ -15,7 +15,7 @@ APP_FILES = {
     ],
     "app/parsers": [
         "contracts.py", "tb_adapters.py", "journals.py", "mappings.py", "fx_rates.py",
-        "entities.py", "acquisition_note.py", "policy_text.py",
+        "entities.py", "acquisition_note.py", "policy_text.py", "ranges.py",
     ],
     "app/detectors": [
         "registry.py", "balance.py", "mapping.py", "journals.py", "rates.py",

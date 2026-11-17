@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from app.domain.journals import Journal, JournalLine
 from app.domain.quarantine import Quarantined
 from app.domain.refs import SourceRef, make_ref
-from app.parsers.contracts import ContractError, split_lines
+from app.parsers.contracts import ContractError, finite_decimal, split_lines
 
 
 def _find_lines(lines: list[str], needle: str, start: int = 0) -> list[int]:
@@ -20,6 +20,13 @@ def _ref(name: str, lines: list[str], index: int) -> SourceRef:
     return make_ref(name, index + 1, lines[index].strip())
 
 
+def _check_amounts(name: str, line: int, item: dict[str, Any]) -> None:
+    """Each journal line carries one side only; an amount that is not a finite decimal stops the run at its line."""
+    sides = {column: finite_decimal(name, line, column, item.get(column)) for column in ("debit", "credit")}
+    if sides["debit"] != 0 and sides["credit"] != 0:
+        raise ContractError(name, line, "column debit and credit: both are filled")
+
+
 def _entry(name: str, lines: list[str], raw: dict[str, Any], start: int, stop: int) -> Journal:
     account_lines = [i for i in _find_lines(lines, '"account"', start) if i < stop]
     memo_lines = [i for i in _find_lines(lines, '"memo"', start) if i < stop]
@@ -27,6 +34,8 @@ def _entry(name: str, lines: list[str], raw: dict[str, Any], start: int, stop: i
     if len(account_lines) != len(raw_lines):
         raise ContractError(name, start + 1, f"{raw['id']}: could not match its lines to the file")
     built = []
+    for index, item in zip(account_lines, raw_lines, strict=True):
+        _check_amounts(name, index + 1, item)
     for position, (index, item) in enumerate(zip(account_lines, raw_lines, strict=True)):
         next_account = account_lines[position + 1] if position + 1 < len(account_lines) else stop
         memo_at = next((m for m in memo_lines if index < m < next_account), None)

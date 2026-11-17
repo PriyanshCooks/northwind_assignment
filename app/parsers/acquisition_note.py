@@ -6,7 +6,7 @@ from pathlib import Path
 
 from app.domain.refs import SourceRef, make_ref
 from app.domain.runs import Acquisition
-from app.parsers.contracts import ContractError, split_lines
+from app.parsers.contracts import ContractError, check_percentage, split_lines
 from app.utils.money import to_decimal
 
 PATTERNS = {
@@ -35,10 +35,11 @@ def _amount(text: str) -> Decimal:
 def load_acquisition(path: Path) -> Acquisition:
     lines = split_lines(path)
     found = {key: _find(path.name, lines, key) for key in PATTERNS}
+    interest = check_percentage(path.name, found["interest"][1].line, "interest acquired", found["interest"][0])
     completion = datetime.strptime(found["completion"][0], "%d %B %Y").date()
     return Acquisition(
         completion_date=completion,
-        interest_pct=to_decimal(found["interest"][0]),
+        interest_pct=interest,
         consideration_inr=_amount(found["consideration"][0]),
         equity_share_capital=_amount(found["share_capital"][0]),
         reserves_at_start=_amount(found["reserves"][0]),

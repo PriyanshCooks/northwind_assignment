@@ -39,6 +39,7 @@ from app.parsers.fx_rates import FxTable, load_rates
 from app.parsers.journals import load_journals
 from app.parsers.mappings import apply_mapping, load_coa, load_map
 from app.parsers.policy_text import PolicyBlocked, check_binding
+from app.parsers.ranges import check_period
 from app.parsers.tb_adapters import load_india_monthly, load_tb
 from app.services.overrides_service import active_overrides
 from app.utils.hashing import json_hash, sha256_file
@@ -78,10 +79,12 @@ def load_inputs(data_dir: Path) -> Inputs:
 
 def build_context(data_dir: Path, config_dir: Path = CONFIG_DIR) -> Context:
     inputs = load_inputs(data_dir)
+    policy = load_policy(config_dir / "policy.toml")
+    check_period(inputs, policy.period.start, policy.period.end)
     decisions = active_overrides(load_overrides(config_dir / "overrides.toml"), inputs)
     return Context(
         inputs=inputs,
-        policy=load_policy(config_dir / "policy.toml"),
+        policy=policy,
         assumptions=load_assumptions(config_dir / "assumptions.toml") | override_switches(decisions),
     )
 

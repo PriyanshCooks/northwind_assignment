@@ -37,6 +37,8 @@ def _line(row: RawRow, entity: str, ccy: str, code: str, name: str, amount: Deci
 
 def _debit_credit(row: RawRow, entity: str, ccy: str) -> LedgerLine:
     v = row.values
+    if _number(v["debit"]) != 0 and _number(v["credit"]) != 0:
+        raise ContractError(row.ref.file, row.line, "column debit and credit: both are filled")
     return _line(row, entity, ccy, v["account_code"], v["account_name"], _number(v["debit"]) - _number(v["credit"]))
 
 

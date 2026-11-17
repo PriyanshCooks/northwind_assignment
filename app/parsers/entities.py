@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 
 from app.domain.runs import Entity, IcInvoice, PriorEquity, SubledgerControl
-from app.parsers.contracts import Contract, read_rows
+from app.parsers.contracts import Contract, check_percentage, read_rows
 from app.utils.money import to_decimal
 
 ENTITIES = Contract(
@@ -27,6 +27,8 @@ def load_entities(path: Path) -> dict[str, Entity]:
     entities = {}
     for row in read_rows(path, ENTITIES):
         v = row.values
+        if v["ownership_pct"]:
+            check_percentage(path.name, row.line, "ownership_pct", v["ownership_pct"])
         entities[v["entity_id"]] = Entity(
             ref=row.ref, id=v["entity_id"], currency=v["functional_currency"],
             ownership_pct=to_decimal(v["ownership_pct"]) if v["ownership_pct"] else None,

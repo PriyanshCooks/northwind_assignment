@@ -5,22 +5,44 @@ from decimal import Decimal
 from pathlib import Path
 
 from app.domain.runs import RateRow
-from app.parsers.contracts import Contract, ContractError, read_rows
-from app.utils.money import to_decimal
+from app.parsers.contracts import Contract, ContractError, finite_decimal, read_rows
 
 FX = Contract(("base_currency", "quote_currency", "rate_type", "rate", "as_of", "convention"), decimals=("rate",))
 CONVENTION = re.compile(r"^([A-Z]{3}) per 1 ([A-Z]{3})$")
 
 
+def _check_rate(name: str, line: int, text: str) -> Decimal:
+    """A missing, zero or negative rate would divide by zero or flip a sign, so it stops the run before any figure."""
+    if not text:
+        raise ContractError(name, line, "column rate: missing")
+    rate = finite_decimal(name, line, "rate", text)
+    if rate <= 0:
+        raise ContractError(name, line, f"column rate: must be greater than zero, got {text}")
+    return rate
+
+
+def _no_repeats(name: str, rows: list[tuple[int, str, str, str, str, Decimal]]) -> None:
+    """One rate per pair, type and date, in either direction: a second row is a duplicate or a conflict."""
+    seen: dict[tuple[frozenset[str], str, str], tuple[int, Decimal]] = {}
+    for line, base, quote, rate_type, as_of, rate in rows:
+        key = (frozenset((base, quote)), rate_type, as_of)
+        if key in seen:
+            first_line, first_rate = seen[key]
+            how = "repeats" if first_rate == rate else f"conflicts with ({first_rate} against {rate})"
+            raise ContractError(name, line, f"{base}/{quote} {rate_type} {as_of} {how} line {first_line}")
+        seen[key] = (line, rate)
+
+
 def load_rates(path: Path) -> tuple[RateRow, ...]:
-    rates = []
+    rates: list[RateRow] = []
+    seen: list[tuple[int, str, str, str, str, Decimal]] = []
     for row in read_rows(path, FX):
         v = row.values
         match = CONVENTION.match(v["convention"])
         if not match:
             raise ContractError(path.name, row.line, f"unknown rate convention {v['convention']!r}")
         units, per_one = match.groups()
-        rate = to_decimal(v["rate"])
+        rate = _check_rate(path.name, row.line, v["rate"])
         base, quote = v["base_currency"], v["quote_currency"]
         if (units, per_one) == (quote, base):
             value = rate
@@ -31,6 +53,8 @@ def load_rates(path: Path) -> tuple[RateRow, ...]:
         rates.append(
             RateRow(ref=row.ref, base=base, quote=quote, rate_type=v["rate_type"], value=value, as_of=v["as_of"])
         )
+        seen.append((row.line, base, quote, v["rate_type"], v["as_of"], value))
+    _no_repeats(path.name, seen)
     return tuple(rates)
 
 

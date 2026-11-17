@@ -2,6 +2,7 @@
 import csv
 from dataclasses import dataclass, field
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 from app.domain.refs import SourceRef, make_ref
@@ -47,13 +48,29 @@ def read_header(path: Path) -> tuple[str, ...]:
     return tuple(next(csv.reader([lines[0]])))
 
 
+def finite_decimal(name: str, line: int, column: str, value: object) -> Decimal:
+    """An amount as a Decimal, or a ContractError naming the place. NaN and infinity parse, so they are refused."""
+    try:
+        number = to_decimal(value)
+    except ValueError as exc:
+        raise ContractError(name, line, f"column {column}: {exc}") from exc
+    if not number.is_finite():
+        raise ContractError(name, line, f"column {column}: {value!r} is not a finite number")
+    return number
+
+
+def check_percentage(name: str, line: int, column: str, text: str) -> Decimal:
+    """A holding is above 0 and at most 100 percent: 0 is no holding, and 100 is the wholly owned UK."""
+    value = finite_decimal(name, line, column, text)
+    if not 0 < value <= 100:
+        raise ContractError(name, line, f"column {column}: {text} is outside 0 to 100 percent")
+    return value
+
+
 def _check(name: str, line: int, values: dict[str, str], contract: Contract) -> None:
     for column in contract.decimals:
         if values[column]:
-            try:
-                to_decimal(values[column])
-            except ValueError as exc:
-                raise ContractError(name, line, f"column {column}: {exc}") from exc
+            finite_decimal(name, line, column, values[column])
     for column in contract.dates:
         try:
             date.fromisoformat(values[column])
