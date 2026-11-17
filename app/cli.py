@@ -150,6 +150,12 @@ def _print_cost(ledger: Ledger, model: str) -> None:
     log.close()
 
 
+def _smoke(args: argparse.Namespace) -> int:
+    """One live unit per reasoning checkpoint: the cheapest way to see a provider accept the schema and the tools."""
+    args.reasoning, args.live, args.smoke, args.max_units = True, True, True, None
+    return _reasoning(args)
+
+
 def _check(args: argparse.Namespace) -> int:
     results = check_environment(args.data)
     for name, ok, detail in results:
@@ -164,6 +170,7 @@ def build_parser() -> argparse.ArgumentParser:
                                 ("trace", _trace, "walk a figure or an account down to file:line"),
                                 ("check", _check, "check the environment and the data bundle"),
                                 ("review", _review, "AI reviewer advice per unit (replay, or --live to record)"),
+                                ("smoke", _smoke, "send one unit to each reasoning checkpoint (calls the model)"),
                                 ("resume", _resume, "answer a paused run and let it finish"),
                                 ("whatif", _whatif, "re-run on a patched copy of the inputs and show the figure diff"),
                                 ("impact", _impact, "nudge one input row by 1% and show which figures move"),

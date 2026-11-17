@@ -51,3 +51,8 @@ def test_the_local_model_degrades_to_a_plain_message_with_the_rules_intact(ctx, 
 def test_the_cli_reasoning_flag_is_off_by_default_and_live_is_a_separate_switch(capsys) -> None:  # type: ignore[no-untyped-def]
     assert main(["review", "--reasoning"]) == 0  # the configured local model: reports it is not available
     assert "AI review not available" in capsys.readouterr().out
+
+
+def test_the_smoke_command_exists_and_stops_cleanly_on_the_local_model(capsys) -> None:  # type: ignore[no-untyped-def]
+    assert main(["smoke"]) == 0
+    assert "AI review not available" in capsys.readouterr().out
