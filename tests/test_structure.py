@@ -102,8 +102,9 @@ def test_test_folders_mirror_the_structure() -> None:
     assert (ROOT / "tests/golden").is_dir()
 
 
-def test_frontend_holds_only_its_readme_until_it_is_built() -> None:
-    assert files_under("frontend") == {"frontend/README.md"}
+def test_frontend_is_plain_static_files() -> None:
+    names = ("README.md", "index.html", "app.js", "steps.js", "style.css")
+    assert files_under("frontend") == {f"frontend/{n}" for n in names}
 
 
 def test_top_level_files_exist() -> None:

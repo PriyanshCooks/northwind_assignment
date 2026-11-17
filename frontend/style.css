@@ -1,0 +1,29 @@
+:root { --ink: #1c2330; --muted: #5b6577; --line: #d9dee7; --bg: #f6f7f9; --card: #fff;
+        --accent: #1f5fbf; --ok: #1d7a46; --warn: #a15c00; --bad: #b3261e; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.45 system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+header { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 24px; background: var(--ink); }
+.brand { color: #fff; font-weight: 600; text-decoration: none; }
+.local { color: #aab4c5; font-size: 13px; }
+#stepper { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 24px 0; }
+#stepper a { padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px 6px 0 0; background: #eceff4;
+             color: var(--muted); text-decoration: none; }
+#stepper a.here { background: var(--card); color: var(--ink); font-weight: 600; border-bottom-color: var(--card); }
+#stepper a.locked { pointer-events: none; opacity: .5; }
+main { margin: 0 24px 40px; padding: 20px; background: var(--card); border: 1px solid var(--line); max-width: 1100px; }
+h1 { font-size: 20px; margin: 0 0 12px; } h2 { font-size: 16px; margin: 24px 0 8px; }
+table { border-collapse: collapse; width: 100%; margin: 6px 0; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 13px; }
+button, .btn { font: inherit; padding: 6px 14px; border: 1px solid var(--accent); background: var(--accent); color: #fff;
+               border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; }
+button.plain { background: #fff; color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+input, select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.tag { padding: 1px 8px; border-radius: 10px; font-size: 12px; border: 1px solid var(--line); }
+.determined, .ok { color: var(--ok); } .provisional, .warn { color: var(--warn); }
+.unknown, .bad { color: var(--bad); } .muted { color: var(--muted); }
+.note { padding: 8px 12px; border-left: 3px solid var(--accent); background: #eef3fb; margin: 10px 0; }
+.error { padding: 8px 12px; border-left: 3px solid var(--bad); background: #fbeeee; margin: 10px 0; }
+code { background: #eef0f4; padding: 1px 5px; border-radius: 4px; }
