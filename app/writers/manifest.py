@@ -21,6 +21,7 @@ def write_manifest(data_dir: Path, out: Path, outputs: list[str], config_dir: Pa
         "input_hashes": {p.name: sha256_file(p) for p in sorted(data_dir.iterdir()) if p.is_file()},
         "policy_sha256": sha256_file(config_dir / "policy.toml"),
         "assumptions_sha256": sha256_file(config_dir / "assumptions.toml"),
+        "overrides_sha256": sha256_file(config_dir / "overrides.toml"),
         "code_sha256": code_hash(),
         "ledger_sha256": None,
         "output_hashes": {name: sha256_file(out / name) for name in sorted(outputs)},

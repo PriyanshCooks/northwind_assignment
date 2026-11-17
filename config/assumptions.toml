@@ -61,10 +61,10 @@ alternative = "arbitrary; profit unchanged either way"
 [[assumption]]
 id = "A7"
 key = "map_uk_2310"
-value = "remap_2300"
-basis = "Rule-confirmed: local name exactly matches group 2300 Deferred income"
+value = "none"
+basis = "Off by default. The remap is a reviewable override (config/overrides.toml, mapping:UK:2310)"
 status = "ASSUMED"
-alternative = "left as supplied: revenue and profit overstated by 180,000 GBP"
+alternative = "see the override: with it, 180,000 GBP is deferred income; without it, revenue and profit are overstated"
 
 [[assumption]]
 id = "A8"

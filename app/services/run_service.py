@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
 
-from app.config import load_assumptions, load_policy
+from app.config import load_assumptions, load_overrides, load_policy, override_switches
 from app.core.acquisition import AcquisitionFigures, acquisition_figures, india_period_postings
 from app.core.eliminate import ic_balances, ic_income_expense, investments
 from app.core.figures import all_unknown, build_figures
@@ -80,7 +80,8 @@ def build_context(data_dir: Path, config_dir: Path = CONFIG_DIR) -> Context:
     return Context(
         inputs=load_inputs(data_dir),
         policy=load_policy(config_dir / "policy.toml"),
-        assumptions=load_assumptions(config_dir / "assumptions.toml"),
+        assumptions=load_assumptions(config_dir / "assumptions.toml")
+        | override_switches(load_overrides(config_dir / "overrides.toml")),
     )
 
 

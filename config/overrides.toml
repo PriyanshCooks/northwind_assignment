@@ -1,12 +1,12 @@
-# Human decisions on findings. Each is stored against a hash of the evidence it was made on; if the input changes the
-# decision is stale and the item returns to the review queue. Appended by `python run.py review` or by hand.
-#
-# Example (commented out):
-#
-# [[override]]
-# target = "mapping:UK:2310"
-# decision = "remap"
-# to = "2300"
-# approver = "p.bhatt"
-# reason = "Deferred income is a liability"
-# evidence_sha256 = "<hash of the mapping row and its COA entries>"
+# Human decisions on findings. Each should be stored against a hash of the evidence it was made on; if the input
+# changes the decision is stale and the item returns to the review queue (the hash check arrives with Wave 2).
+# status "open" means a person has not yet signed the decision off; it is applied meanwhile and can be reversed here.
+
+[[override]]
+target = "mapping:UK:2310"
+decision = "remap"
+to = "2300"
+approver = "pending: proposed by the assistant, needs a human sign-off"
+reason = "UK 2310 is named exactly 'Deferred income', the name of group 2300; map_uk.csv points it at 4100 (revenue)"
+status = "open"
+effect_if_reversed = "UK 2310 (-180,000 GBP) stays in revenue 4100: revenue and group profit rise by 180,000 and liabilities fall by the same"

@@ -36,6 +36,18 @@ class Policy(Model):
     rounding: Rounding
 
 
+class Override(Model):
+    """A human decision on a finding (config/overrides.toml). `open` means the reviewer has not signed it off yet."""
+
+    target: str
+    decision: str
+    to: str
+    approver: str
+    reason: str
+    status: str
+    effect_if_reversed: str
+
+
 class Assumption(Model):
     id: str
     key: str
