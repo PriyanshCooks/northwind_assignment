@@ -11,6 +11,7 @@ from app.orchestrator.edges import after_analyse
 from app.orchestrator.nodes import Answer, analyse, apply_answer, consolidate, export, intake
 from app.orchestrator.state import RunState
 from app.services.run_service import input_hash
+from app.utils.paths import CONFIG_DIR
 
 
 def resolve(state: RunState) -> RunState:
@@ -33,9 +34,9 @@ def build_graph(checkpointer: SqliteSaver) -> Any:
     return builder.compile(checkpointer=checkpointer)
 
 
-def thread_for(data_dir: Path) -> str:
-    """The thread is named after the input hash, so a second process finds the same checkpoint."""
-    return "run-" + input_hash(data_dir)[:16]
+def thread_for(data_dir: Path, config_dir: Path = CONFIG_DIR) -> str:
+    """Data and config together, so an approved override gets its own thread and a second process finds the same one."""
+    return "run-" + input_hash(data_dir, config_dir)[:16]
 
 
 def _settle(graph: Any, result: dict[str, Any], config: dict[str, Any]) -> RunState:
@@ -47,7 +48,7 @@ def _settle(graph: Any, result: dict[str, Any], config: dict[str, Any]) -> RunSt
 
 def run_graph(state: RunState, checkpoint_path: Path) -> RunState:
     graph = build_graph(open_checkpointer(checkpoint_path))
-    config = {"configurable": {"thread_id": thread_for(Path(state["data_dir"]))}}
+    config = {"configurable": {"thread_id": thread_for(Path(state["data_dir"]), Path(state["config_dir"]))}}
     return _settle(graph, graph.invoke(state, config), config)
 
 

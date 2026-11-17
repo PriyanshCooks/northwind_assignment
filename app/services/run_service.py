@@ -197,9 +197,9 @@ def write_outputs(run: Consolidation, out_dir: Path, config_dir: Path = CONFIG_D
     write_manifest(run.ctx.inputs.data_dir, out_dir, written, config_dir)
 
 
-def record(run: Consolidation, db_path: Path) -> str:
+def record(run: Consolidation, db_path: Path, config_dir: Path = CONFIG_DIR) -> str:
     """Keep the findings, origin rows and traces in the evidence store so `trace` can answer later."""
-    inputs_hash = input_hash(run.ctx.inputs.data_dir)
+    inputs_hash = input_hash(run.ctx.inputs.data_dir, config_dir)
     conn = connect(db_path)
     create_run(conn, inputs_hash[:16], inputs_hash, {"blocked": run.blocked, "checks_passed": run.checks_passed})
     upsert_findings(conn, inputs_hash[:16], run.findings)
@@ -211,8 +211,14 @@ def record(run: Consolidation, db_path: Path) -> str:
     return inputs_hash[:16]
 
 
-def input_hash(data_dir: Path) -> str:
-    return json_hash({p.name: sha256_file(p) for p in sorted(data_dir.iterdir()) if p.is_file()})
+RUN_CONFIG_FILES = ("policy.toml", "assumptions.toml", "overrides.toml")
+
+
+def input_hash(data_dir: Path, config_dir: Path = CONFIG_DIR) -> str:
+    """Data and the three config files that change a figure, so an approved override is a new run."""
+    parts = {p.name: sha256_file(p) for p in sorted(data_dir.iterdir()) if p.is_file()}
+    parts.update({"config/" + n: sha256_file(config_dir / n) for n in RUN_CONFIG_FILES if (config_dir / n).exists()})
+    return json_hash(parts)
 
 
 def run_consolidation(

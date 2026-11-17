@@ -6,6 +6,7 @@ from pathlib import Path
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
 from app.orchestrator.runner_plain import run_plain
 from app.orchestrator.state import RunState, initial_state
+from app.services.run_service import input_hash
 from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR, ROOT
 
 TARGET = "mapping:UK:2310"
@@ -31,7 +32,8 @@ def test_the_graph_pauses_at_resolve_and_resumes_to_a_finished_run(tmp_path: Pat
     paused = run_graph(_state(tmp_path / "graph", open_item=True), tmp_path / "graph" / "checkpoints.db")
     assert paused["status"] == "awaiting_review"
     assert not (tmp_path / "graph" / "out").exists()
-    resumed = resume_graph(thread_for(DEFAULT_DATA_DIR), ANSWER, tmp_path / "graph" / "checkpoints.db")
+    resumed = resume_graph(thread_for(DEFAULT_DATA_DIR, tmp_path / "graph" / "config"), ANSWER,
+                          tmp_path / "graph" / "checkpoints.db")
     assert resumed["status"] == "done"
     assert resumed["blocked"] is None and resumed["checks_passed"]
 
@@ -56,7 +58,8 @@ def test_an_open_override_stops_the_plain_runner_before_any_output(tmp_path: Pat
 
 def test_a_resumed_graph_and_an_answered_plain_run_agree_byte_for_byte(tmp_path: Path) -> None:
     run_graph(_state(tmp_path / "graph", open_item=True), tmp_path / "graph" / "checkpoints.db")
-    resumed = resume_graph(thread_for(DEFAULT_DATA_DIR), ANSWER, tmp_path / "graph" / "checkpoints.db")
+    resumed = resume_graph(thread_for(DEFAULT_DATA_DIR, tmp_path / "graph" / "config"), ANSWER,
+                          tmp_path / "graph" / "checkpoints.db")
     plain = run_plain(_state(tmp_path / "plain", open_item=True), ANSWER)
     assert resumed["output_hashes"] == plain["output_hashes"]
 
@@ -75,9 +78,26 @@ def test_a_paused_run_resumes_in_a_separate_process(tmp_path: Path) -> None:
     first = _cli("consolidate", *common)
     assert first.returncode == 2 and "paused" in first.stdout and TARGET in first.stdout
     assert not (tmp_path / "out" / "control_figures_pb.json").exists()
-    second = _cli("resume", "--thread", thread_for(DEFAULT_DATA_DIR), "--approver", "A. Reviewer", "--approve", TARGET,
+    thread = thread_for(DEFAULT_DATA_DIR, tmp_path / "config")
+    second = _cli("resume", "--thread", thread, "--approver", "A. Reviewer", "--approve", TARGET,
                   *common)
     assert second.returncode == 0, second.stdout + second.stderr
     figures = json.loads((tmp_path / "out" / "control_figures_pb.json").read_text(encoding="utf-8"))
     assert figures["group_revenue"] == 28301607.81
     assert 'status = "approved"' in (tmp_path / "config" / "overrides.toml").read_text(encoding="utf-8")
+
+
+def test_approving_an_override_changes_the_run_id_and_the_thread(tmp_path: Path) -> None:
+    open_cfg = _config(tmp_path / "open", open_item=True)
+    approved_cfg = _config(tmp_path / "approved", open_item=False)
+    assert input_hash(DEFAULT_DATA_DIR, open_cfg) != input_hash(DEFAULT_DATA_DIR, approved_cfg)
+    assert thread_for(DEFAULT_DATA_DIR, open_cfg) != thread_for(DEFAULT_DATA_DIR, approved_cfg)
+
+
+def test_a_paused_thread_is_not_reused_once_the_override_is_approved(tmp_path: Path) -> None:
+    checkpoints = tmp_path / "checkpoints.db"
+    paused = run_graph(_state(tmp_path / "a", open_item=True), checkpoints)
+    assert paused["status"] == "awaiting_review"
+    finished = run_graph(_state(tmp_path / "b", open_item=False), checkpoints)
+    assert finished["status"] == "done"
+    assert finished["run_id"] != paused["run_id"]

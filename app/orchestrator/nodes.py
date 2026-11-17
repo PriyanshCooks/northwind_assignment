@@ -23,7 +23,7 @@ def _log(state: RunState, stage_name: str, event: str, **fields: object) -> None
 
 
 def intake(state: RunState) -> RunState:
-    run_id = input_hash(Path(state["data_dir"]))[:16]
+    run_id = input_hash(Path(state["data_dir"]), Path(state["config_dir"]))[:16]
     update = RunState(run_id=run_id, status="intake")
     _log(RunState(**{**state, **update}), "intake", "inputs read", data_dir=state["data_dir"])
     return update
@@ -68,7 +68,7 @@ def export(state: RunState) -> RunState:
     config_dir, out_dir = Path(state["config_dir"]), Path(state["out_dir"])
     run = stage(build_context(Path(state["data_dir"]), config_dir))
     write_outputs(run, out_dir, config_dir)
-    record(run, Path(state["db_path"]))
+    record(run, Path(state["db_path"]), Path(state["config_dir"]))
     hashes = {p.name: sha256_file(p) for p in sorted(out_dir.iterdir()) if p.is_file()}
     _log(state, "export", "outputs written", folder=str(out_dir))
     return RunState(status="done", output_hashes=hashes)

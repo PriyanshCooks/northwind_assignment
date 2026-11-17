@@ -38,7 +38,8 @@ def _report(state: RunState, out_dir: Path) -> int:
     if state["status"] == "awaiting_review":
         items = ", ".join(state["open_items"])
         print(f"paused at the review gate; waiting for a decision on: {items}")
-        print(f"resume with: run.py resume --thread {thread_for(Path(state['data_dir']))} --approver NAME "
+        thread = thread_for(Path(state["data_dir"]), Path(state["config_dir"]))
+        print(f"resume with: run.py resume --thread {thread} --approver NAME "
               f"--approve {state['open_items'][0]}")
         return 2
     print(f"outputs written to {out_dir}")
