@@ -120,3 +120,16 @@ def test_monthly_file_that_no_longer_ties_blocks(edited_context: Edit) -> None:
     broken = edited_context("in_pl_monthly.csv", row + "65600000.00", row + "65600001.00")
     (finding,) = by_code(broken, "D10", "monthly_IN-REV")
     assert finding.amount_affected == Decimal("1.00")
+
+
+def test_d02_flags_a_liability_name_on_a_revenue_account_even_when_the_name_is_changed_slightly(
+        edited_context: Edit) -> None:
+    changed = edited_context("map_uk.csv", "2310,Deferred income,4100", "2310,Deferred income (current),4100")
+    (finding,) = by_code(changed, "D02", ":nature_name")
+    assert "reads as a liability" in finding.claim and "4100 (Revenue)" in finding.claim
+    assert (finding.file, finding.line, finding.action) == ("map_uk.csv", 12, "flagged")
+    assert finding.amount_affected == Decimal("180000.00")
+
+
+def test_d02_nature_rule_stays_quiet_on_the_supplied_data(ctx: Context) -> None:
+    assert by_code(ctx, "D02", ":nature_name") == []
