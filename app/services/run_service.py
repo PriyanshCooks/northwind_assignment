@@ -8,6 +8,7 @@ from app.core.acquisition import AcquisitionFigures, acquisition_figures, india_
 from app.core.eliminate import ic_balances, ic_income_expense, investments
 from app.core.figures import all_unknown, build_figures
 from app.core.intercompany import IcResult, reconcile
+from app.core.lineage import build_traces, origin_rows
 from app.core.post_journals import decide, import_postings, journal_postings
 from app.core.reserve import ReserveResult, reserve
 from app.core.revalue import RevalueResult, revalue
@@ -20,6 +21,10 @@ from app.core.statements import (
     profit_and_loss,
 )
 from app.core.translate import ConsolidationBlocked, translate
+from app.db.connection import connect
+from app.db.findings_service import upsert_findings
+from app.db.lineage_service import store_origin_rows, store_trace
+from app.db.runs_service import create_run
 from app.detectors.mapping import classified
 from app.detectors.registry import run_all
 from app.domain.entries import Entry, Posting
@@ -35,9 +40,16 @@ from app.parsers.journals import load_journals
 from app.parsers.mappings import apply_mapping, load_coa, load_map
 from app.parsers.policy_text import PolicyBlocked, check_binding
 from app.parsers.tb_adapters import load_india_monthly, load_tb
-from app.utils.paths import CONFIG_DIR
+from app.utils.hashing import json_hash, sha256_file
+from app.utils.paths import CONFIG_DIR, RUNTIME_DIR
 from app.verification.invariants import Check, check_invariants
 from app.verification.oracle import oracle_checks
+from app.writers.consolidated_tb import write_consolidated_tb
+from app.writers.control_figures import write_control_figures
+from app.writers.eliminations import write_eliminations
+from app.writers.issues import write_issues
+from app.writers.manifest import write_manifest
+from app.writers.statements import write_statements
 
 
 def load_inputs(data_dir: Path) -> Inputs:
@@ -159,3 +171,43 @@ def _finish(run: Consolidation, fx: FxTable) -> None:
     )
     remap = run.ctx.assumptions.get("map_uk_2310") == "remap_2300"
     run.checks += oracle_checks(inputs.data_dir, run.figures, tolerance, remap)
+
+
+OUTPUT_FILES = [
+    "consolidated_tb.csv", "balance_sheet.json", "profit_and_loss.json", "changes_in_equity.json",
+    "eliminations.csv", "issues.json", "control_figures_pb.json", "control_figures_status.json",
+]
+
+
+def write_outputs(run: Consolidation, out_dir: Path) -> None:
+    """The required files plus the run manifest. Rounding to 2 decimals happens in the writers, nowhere else."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if run.blocked is None:
+        write_consolidated_tb(run, out_dir)
+        write_eliminations(run, out_dir)
+        write_statements(run, out_dir)
+    write_issues(run, out_dir)
+    write_control_figures(run, out_dir)
+    written = [name for name in OUTPUT_FILES if (out_dir / name).exists()]
+    write_manifest(run.ctx.inputs.data_dir, out_dir, written)
+
+
+def record(run: Consolidation, db_path: Path) -> str:
+    """Keep the findings, origin rows and traces in the evidence store so `trace` can answer later."""
+    inputs_hash = json_hash({p.name: sha256_file(p) for p in sorted(run.ctx.inputs.data_dir.iterdir()) if p.is_file()})
+    conn = connect(db_path)
+    create_run(conn, inputs_hash[:16], inputs_hash, {"blocked": run.blocked, "checks_passed": run.checks_passed})
+    upsert_findings(conn, inputs_hash[:16], run.findings)
+    if run.blocked is None:
+        store_origin_rows(conn, inputs_hash[:16], origin_rows(run))
+        for figure, steps in build_traces(run).items():
+            store_trace(conn, inputs_hash[:16], figure, steps)
+    conn.close()
+    return inputs_hash[:16]
+
+
+def run_consolidation(data_dir: Path, out_dir: Path, db_path: Path | None = None) -> Consolidation:
+    run = stage(build_context(data_dir))
+    write_outputs(run, out_dir)
+    record(run, db_path or RUNTIME_DIR / "run.db")
+    return run

@@ -31,3 +31,14 @@ def round2(value: Decimal) -> Decimal:
 
 def fmt2(value: Decimal) -> str:
     return format(round2(value), "f")
+
+
+def round_tree(value: object) -> object:
+    """Round every Decimal inside nested dicts and lists to 2 decimals: the single place figures are rounded."""
+    if isinstance(value, Decimal):
+        return round2(value)
+    if isinstance(value, dict):
+        return {k: round_tree(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [round_tree(v) for v in value]
+    return value
