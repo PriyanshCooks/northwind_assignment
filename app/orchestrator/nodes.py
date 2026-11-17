@@ -17,16 +17,19 @@ Answer = dict[str, Any]
 
 
 def _log(state: RunState, stage_name: str, event: str, **fields: object) -> None:
-    log = RunLogger(Path(state["log_dir"]), state["run_id"])
+    """Every stage of one execution appends to the file that intake started."""
+    existing = Path(state["log_file"]) if "log_file" in state else None
+    log = RunLogger(Path(state["log_dir"]), state["run_id"], existing)
     log.event(stage_name, event, **fields)
     log.close()
 
 
 def intake(state: RunState) -> RunState:
     run_id = input_hash(Path(state["data_dir"]), Path(state["config_dir"]))[:16]
-    update = RunState(run_id=run_id, status="intake")
-    _log(RunState(**{**state, **update}), "intake", "inputs read", data_dir=state["data_dir"])
-    return update
+    log = RunLogger(Path(state["log_dir"]), run_id)
+    log.event("intake", "inputs read", data_dir=state["data_dir"])
+    log.close()
+    return RunState(run_id=run_id, status="intake", log_file=str(log.path))
 
 
 def analyse(state: RunState) -> RunState:
@@ -35,6 +38,8 @@ def analyse(state: RunState) -> RunState:
     findings = run_all(ctx)
     states = override_states(load_overrides(Path(state["config_dir"]) / "overrides.toml"), ctx.inputs)
     waiting = [s.override.target for s in states if s.state in {"open", "stale"}]
+    for f in findings:
+        _log(state, "analyse", "finding", finding_key=f.key, code=f.code, severity=f.severity, action=f.action)
     _log(state, "analyse", "findings", count=len(findings), waiting=waiting)
     return RunState(status="analysed", open_items=waiting)
 
@@ -60,6 +65,10 @@ def apply_answer(state: RunState, answer: Answer) -> RunState:
 
 def consolidate(state: RunState) -> RunState:
     run = stage(build_context(Path(state["data_dir"]), Path(state["config_dir"])))
+    for d in run.dispositions:
+        _log(state, "consolidate", "journal disposition", journal=d.journal_id, status=d.status)
+    for c in run.checks:
+        _log(state, "verify", "gate", check=c.name, passed=c.ok)
     _log(state, "consolidate", "done", blocked=run.blocked, checks_passed=run.checks_passed)
     return RunState(status="consolidated", blocked=run.blocked, checks_passed=run.checks_passed)
 
@@ -71,4 +80,5 @@ def export(state: RunState) -> RunState:
     record(run, Path(state["db_path"]), Path(state["config_dir"]))
     hashes = {p.name: sha256_file(p) for p in sorted(out_dir.iterdir()) if p.is_file()}
     _log(state, "export", "outputs written", folder=str(out_dir))
+    _log(state, "run", "finished", blocked=run.blocked, checks_passed=run.checks_passed)
     return RunState(status="done", output_hashes=hashes)

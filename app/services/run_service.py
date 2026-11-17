@@ -42,8 +42,7 @@ from app.parsers.policy_text import PolicyBlocked, check_binding
 from app.parsers.tb_adapters import load_india_monthly, load_tb
 from app.services.overrides_service import active_overrides
 from app.utils.hashing import json_hash, sha256_file
-from app.utils.logging import RunLogger
-from app.utils.paths import CONFIG_DIR, RUNTIME_DIR
+from app.utils.paths import CONFIG_DIR
 from app.verification.invariants import Check, check_invariants
 from app.verification.oracle import oracle_checks
 from app.writers.consolidated_tb import write_consolidated_tb
@@ -219,29 +218,3 @@ def input_hash(data_dir: Path, config_dir: Path = CONFIG_DIR) -> str:
     parts = {p.name: sha256_file(p) for p in sorted(data_dir.iterdir()) if p.is_file()}
     parts.update({"config/" + n: sha256_file(config_dir / n) for n in RUN_CONFIG_FILES if (config_dir / n).exists()})
     return json_hash(parts)
-
-
-def run_consolidation(
-    data_dir: Path, out_dir: Path, db_path: Path | None = None, log_dir: Path | None = None,
-) -> Consolidation:
-    """Intake, analyse, consolidate, verify, export, each logged. The log holds the timestamps; the outputs do not."""
-    log = RunLogger(log_dir or RUNTIME_DIR / "logs", input_hash(data_dir)[:16])
-    try:
-        log.event("intake", "inputs read", data_dir=str(data_dir))
-        run = stage(build_context(data_dir))
-        for f in run.findings:
-            log.event("analyse", "finding", finding_key=f.key, code=f.code, severity=f.severity, action=f.action)
-        for d in run.dispositions:
-            log.event("consolidate", "journal disposition", journal=d.journal_id, status=d.status)
-        if run.blocked:
-            log.event("consolidate", "blocked", reason=run.blocked)
-        for c in run.checks:
-            log.event("verify", "gate", check=c.name, passed=c.ok)
-        write_outputs(run, out_dir)
-        log.event("export", "outputs written", folder=str(out_dir))
-        record(run, db_path or RUNTIME_DIR / "run.db")
-        log.event("run", "finished", blocked=run.blocked, checks_passed=run.checks_passed)
-        run.log_path = log.path
-        return run
-    finally:
-        log.close()

@@ -9,6 +9,7 @@ class RunState(TypedDict, total=False):
     config_dir: str
     db_path: str
     log_dir: str
+    log_file: str
     run_id: str
     status: str
     open_items: list[str]

@@ -7,10 +7,11 @@ import pytest
 
 from app.cli import main
 from app.domain.runs import Context
-from app.services.run_service import Consolidation, run_consolidation
+from app.orchestrator.state import RunState
 from app.services.trace_service import trace
 from app.utils.paths import DEFAULT_DATA_DIR
 from tests.conftest import Edit
+from tests.helpers import run_pipeline
 
 BRIEF_KEYS = [
     "group_revenue", "group_profit", "profit_owners", "profit_nci", "nci_closing", "goodwill_closing",
@@ -20,9 +21,9 @@ BRIEF_KEYS = [
 
 
 @pytest.fixture(scope="module")
-def outputs(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, Path, Consolidation]:
+def outputs(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, Path, RunState]:
     base = tmp_path_factory.mktemp("run")
-    run = run_consolidation(DEFAULT_DATA_DIR, base / "out", base / "run.db")
+    run = run_pipeline(DEFAULT_DATA_DIR, base / "out", base / "run.db")
     return base / "out", base / "run.db", run
 
 
@@ -91,7 +92,7 @@ def test_issues_list_the_memo_with_file_line_and_what_was_done(outputs) -> None:
 
 def test_two_runs_give_byte_identical_outputs(outputs, tmp_path: Path) -> None:
     out, _, _ = outputs
-    run_consolidation(DEFAULT_DATA_DIR, tmp_path / "again", tmp_path / "run.db")
+    run_pipeline(DEFAULT_DATA_DIR, tmp_path / "again", tmp_path / "run.db")
     for path in out.iterdir():
         assert path.read_bytes() == (tmp_path / "again" / path.name).read_bytes(), path.name
 
@@ -115,9 +116,9 @@ def test_trace_of_an_unknown_target_says_so(outputs) -> None:
 def test_blocked_run_still_writes_issues_and_nulls(edited_context: Edit, tmp_path: Path) -> None:
     cash = "1100,Cash and cash equivalents,"
     ctx: Context = edited_context("tb_us.csv", cash + "4875000.00", cash + "4875001.00")
-    run = run_consolidation(ctx.inputs.data_dir, tmp_path / "out", tmp_path / "run.db")
+    run = run_pipeline(ctx.inputs.data_dir, tmp_path / "out", tmp_path / "run.db")
     figures = json.loads((tmp_path / "out" / "control_figures_pb.json").read_text(encoding="utf-8"))
-    assert run.blocked and all(v is None for v in figures.values())
+    assert run["blocked"] and all(v is None for v in figures.values())
     assert any(i["code"] == "RUN" for i in json.loads((tmp_path / "out" / "issues.json").read_text())["issues"])
 
 

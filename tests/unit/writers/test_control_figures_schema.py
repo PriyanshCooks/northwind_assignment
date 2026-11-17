@@ -5,9 +5,9 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, StrictFloat, StrictInt, ValidationError
 
 from app.core.figures import KEYS
-from app.services.run_service import run_consolidation
 from app.utils.paths import DEFAULT_DATA_DIR
 from tests.conftest import Edit
+from tests.helpers import run_pipeline
 
 Number = StrictFloat | StrictInt | None
 
@@ -40,13 +40,13 @@ def _read(folder: Path, name: str) -> dict[str, object]:
 
 
 def test_the_supplied_data_gives_a_file_that_passes_the_strict_schema(tmp_path: Path) -> None:
-    run_consolidation(DEFAULT_DATA_DIR, tmp_path / "out", tmp_path / "run.db", tmp_path / "logs")
+    run_pipeline(DEFAULT_DATA_DIR, tmp_path / "out", tmp_path / "run.db", tmp_path / "logs")
     figures = ControlFigures.model_validate(_read(tmp_path / "out", "control_figures_pb.json"))
     assert figures.sgd_bank_gbp is None and figures.journals == Journals(posted=15, rejected=3, held=2)
 
 
 def test_every_null_has_a_reason_in_the_status_file(tmp_path: Path) -> None:
-    run_consolidation(DEFAULT_DATA_DIR, tmp_path / "out", tmp_path / "run.db", tmp_path / "logs")
+    run_pipeline(DEFAULT_DATA_DIR, tmp_path / "out", tmp_path / "run.db", tmp_path / "logs")
     out = tmp_path / "out"
     values, status = _read(out, "control_figures_pb.json"), _read(out, "control_figures_status.json")
     assert list(values) == list(KEYS)
@@ -60,7 +60,7 @@ def test_every_null_has_a_reason_in_the_status_file(tmp_path: Path) -> None:
 def test_a_blocked_run_still_passes_the_schema_with_every_figure_null(edited_context: Edit, tmp_path: Path) -> None:
     cash = "1100,Cash and cash equivalents,"
     ctx = edited_context("tb_us.csv", cash + "4875000.00", cash + "4875001.00")
-    run_consolidation(ctx.inputs.data_dir, tmp_path / "out", tmp_path / "run.db", tmp_path / "logs")
+    run_pipeline(ctx.inputs.data_dir, tmp_path / "out", tmp_path / "run.db", tmp_path / "logs")
     figures = ControlFigures.model_validate(_read(tmp_path / "out", "control_figures_pb.json"))
     assert all(v is None for v in figures.model_dump().values())
 

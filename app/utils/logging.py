@@ -16,12 +16,12 @@ class _JsonFormatter(logging.Formatter):
 
 
 class RunLogger:
-    """One log file per execution: <run_id>_<utc time>.jsonl. Closing it releases the file."""
+    """One log file per execution: <run_id>_<utc time>.jsonl. Later stages pass that path to append to the same file."""
 
-    def __init__(self, folder: Path, run_id: str) -> None:
+    def __init__(self, folder: Path, run_id: str, path: Path | None = None) -> None:
         folder.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%f")
-        self.path = folder / f"{run_id}_{stamp}.jsonl"
+        self.path = path or folder / f"{run_id}_{stamp}.jsonl"
         self.run_id = run_id
         self._logger = logging.getLogger(f"northwind.{run_id}.{stamp}")
         self._logger.setLevel(logging.INFO)
