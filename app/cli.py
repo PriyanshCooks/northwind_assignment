@@ -4,10 +4,14 @@ import json
 import sys
 from pathlib import Path
 
+from app.llm.factory import load_llm_config
+from app.llm.ledger import Ledger
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
 from app.orchestrator.runner_plain import run_plain
 from app.orchestrator.state import RunState, initial_state
 from app.services.env_service import check_environment
+from app.services.review_service import review_all
+from app.services.run_service import build_context
 from app.services.trace_service import trace
 from app.services.whatif_service import Change, Diff, diff_inputs, impact, whatif
 from app.utils.hashing import dumps
@@ -76,6 +80,20 @@ def _trace(args: argparse.Namespace) -> int:
     return 0
 
 
+def _review(args: argparse.Namespace) -> int:
+    """Advice from the reviewers (replayed from the ledger, or recorded with --live). It changes no figure."""
+    ctx = build_context(args.data, args.config)
+    cfg = load_llm_config()
+    results = review_all(ctx, cfg, Ledger(cfg.ledger_path), "live" if args.live else "replay")
+    for r in results:
+        if r.grounded.verified or r.grounded.unverified or r.missed:
+            print(f"{r.unit.kind} {r.unit.unit_id} [{r.source}]: verified {list(r.grounded.verified)}, "
+                  f"unverified {list(r.grounded.unverified)}, model missed {list(r.missed)}")
+    answered = sum(r.source == "model" for r in results)
+    print(f"{len(results)} units, {answered} answered by {cfg.model}, {len(results) - answered} by the rule fallback")
+    return 0
+
+
 def _check(args: argparse.Namespace) -> int:
     results = check_environment(args.data)
     for name, ok, detail in results:
@@ -89,6 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
     for name, handler, text in (("consolidate", _run, "run the consolidation and write the outputs"),
                                 ("trace", _trace, "walk a figure or an account down to file:line"),
                                 ("check", _check, "check the environment and the data bundle"),
+                                ("review", _review, "AI reviewer advice per unit (replay, or --live to record)"),
                                 ("resume", _resume, "answer a paused run and let it finish"),
                                 ("whatif", _whatif, "re-run on a patched copy of the inputs and show the figure diff"),
                                 ("impact", _impact, "nudge one input row by 1% and show which figures move"),
@@ -102,6 +121,8 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "consolidate":
             command.add_argument("--engine", choices=("graph", "plain"), default="graph",
                                  help="LangGraph or plain runner")
+        if name == "review":
+            command.add_argument("--live", action="store_true", help="call the configured model for unrecorded units")
         if name == "resume":
             command.add_argument("--thread", required=True, help="thread printed when the run paused")
             command.add_argument("--approver", required=True, help="who is signing the decisions")
