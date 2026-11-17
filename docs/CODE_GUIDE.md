@@ -193,3 +193,22 @@ On the six supplied journals the cloud model found five of the six defects (unba
 
 For JE-006 the model said the entry is unbalanced and did not follow the memo; it did not flag the memo as an instruction (`text_contains_instruction` false), which the D12 lexicon does. A test replays that real answer and asserts that dispositions, the 12 figures and the findings are unchanged; another test shows they are identical with the local ledger, the cloud ledger and no model.
 
+
+## The review page (wave 4)
+
+### what it is
+`python run.py serve` starts FastAPI on 127.0.0.1:8000 and serves `frontend/` at `/ui`. It adds no accounting and no model logic: every route calls a service that already existed. Say this in the live session: the page is a window onto the CLI's own paths, and a test proves it shows the same 12 figures as `run.py consolidate`.
+
+### the pieces
+- `app/services/registry_service.py`: one folder per run under `.northwind/runs/<id>/` (`data/`, `config/`, `output/`, `run.db`, `checkpoints.db`, `logs/`, `run.json`). The config files are copied per run, so approving an override in the page edits that run's copy, never `config/overrides.toml`. The id must match a strict pattern before it touches the disk.
+- `app/services/upload_service.py`: the 15 expected names, a 1 MB limit, and one existing parser per file. A body is checked in a scratch file and stored only if it passes, so the error shown on a row is the error the run would hit. Uploaded text is data: it is parsed, never run, and shown with text nodes.
+- `app/services/pipeline_service.py`: `analyse` is the same graph as `run.py consolidate` (it pauses at the review gate), `decide` is `resume_graph`, `review_view` collects findings, dispositions, the queue and the advice, `build` re-runs the engine's 20 checks.
+- Advice is replayed from the ledger only. A unit with no recorded answer falls back to the rules and the page says "not recorded". A test makes `build_model` raise and the review route still answers.
+- `app/services/results_service.py`: reads `control_figures_pb.json` and `control_figures_status.json` (a null shows its reason), builds the zip (only names in the run's own output folder, plus `run_manifest.json`), and compares two runs with `diff_inputs` and `impact`.
+- `app/routes.py`, `app/routes_results.py`, `app/api_models.py`, `app/main.py`: thin endpoints, strict request models, handlers that turn `UnknownRun` into 404, `NotReady` into 409 and bad input into 422.
+
+### the six steps
+Runs list (new, open, resume) then 1 Upload, 2 Review (approve or reject calls the resume path), 3 Choose outputs, 4 Build (20 gates), 5 Results (figures with status, issues, what-if, compare), 6 Export (zip). A what-if patches a copy of the run's data (`file:LINE.column=value`, file must be one of the 15) and builds a new run beside the old one.
+
+### limits to state honestly
+One user, no login, no concurrency control: it is a local tool. What-if edits one cell; assumption overrides are not offered. `group_policies.md` is checked only for being readable; the policy binding is still enforced when the run starts. The gate detail text is shown tidied (Decimal reprs and long fractions shortened) in the page only.

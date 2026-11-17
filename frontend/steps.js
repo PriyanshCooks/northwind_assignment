@@ -1,6 +1,8 @@
 // The six step views. Each reads from the API and draws; no number is calculated here.
 const head = (run, title) => [h("h1", {}, title), h("p", { class: "muted" }, run.name + " · ", h("code", {}, run.id))];
 const go = (run, step) => { location.hash = `#/run/${run.id}/${step}`; };
+// Display only: the engine's gate detail carries Decimal reprs and 40-digit differences; show them readably.
+const tidy = (t) => t.replace(/Decimal\('([^']+)'\)/g, "$1").replace(/(\d+\.\d{6})\d+/g, "$1").replace(/-?\d+(\.\d+)?E-\d{2,}/g, "0");
 const button = (label, onclick, plain) => h("button", { onclick, class: plain ? "plain" : "" }, label);
 
 async function uploadStep(run) {
@@ -77,7 +79,7 @@ async function buildStep(run) {
   const b = await api("POST", `/runs/${run.id}/build`);
   show(...head(run, "4 Build"), h("div", { class: b.passed ? "note" : "error" },
     b.passed ? `All ${b.gates.length} gates passed.` : "A gate failed" + (b.blocked ? `: ${b.blocked}` : ".")),
-    table(["Gate", "Result", "Detail"], b.gates.map((g) => [g.name, h("span", { class: g.ok ? "ok" : "bad" }, g.ok ? "pass" : "FAIL"), g.detail])),
+    table(["Gate", "Result", "Detail"], b.gates.map((g) => [g.name, h("span", { class: g.ok ? "ok" : "bad" }, g.ok ? "pass" : "FAIL"), tidy(g.detail)])),
     h("div", { class: "row" }, button("Next: results", () => go(run, "results"))));
 }
 

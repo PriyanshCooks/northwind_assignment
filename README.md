@@ -4,7 +4,7 @@ Consolidates a three-entity, multi-currency group (a US parent, a UK subsidiary 
 for FY2024 and produces its statements. An AI review layer reads the data and **can only recommend**.
 Assignment bundle ID **NWG-D0BC**.
 
-> **Status: the deterministic spine (wave 1) is built; orchestration, the review UI and the AI layer are not.**
+> **Status: the engine, orchestration, the AI review layer and a local review page are built.**
 > `python run.py consolidate` writes the required outputs. The table at the end says exactly what exists.
 
 ## Principles
@@ -62,7 +62,7 @@ python -m pytest
 python run.py consolidate     # the one command: reads Northwind_TakeHome_v2/data/, writes output/
 python run.py trace goodwill_closing   # walk a figure (or an account such as 1100) down to file:line
 python run.py check           # Python version, data integrity, policy binding
-python run.py serve           # not built yet (Wave 2): prints a message and exits with code 2
+python run.py serve           # review page at http://127.0.0.1:8000/ (this machine only, no live model call)
 ```
 
 Tests and checks: `python -m pytest && python -m ruff check . && python -m mypy app`
@@ -89,5 +89,5 @@ Set `model` in `config/llm.toml`, or the `NORTHWIND_MODEL` environment variable.
 | Continuous integration workflow | Present; not yet seen green on Linux |
 | Orchestration with pause and resume, `whatif`, review queue, API | Not built (wave 2) |
 | AI reviewers, model ledger, model switch | Not built (wave 3); the run needs no model |
-| `frontend/` | `README.md` only |
+| Review page: `app/main.py`, `routes*.py`, run registry under `.northwind/runs/`, `frontend/` (plain files, no build) | Built, tested with `TestClient`; walked once in a browser |
 | `docs/CODE_GUIDE.md` | Present; covers wave 0 and wave 1 |
