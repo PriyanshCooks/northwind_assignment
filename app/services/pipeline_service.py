@@ -10,7 +10,7 @@ from app.llm.ledger import Ledger
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
 from app.orchestrator.state import RunState
 from app.services import ai_service
-from app.services.cards_service import build_cards, waiting_cards
+from app.services.cards_service import build_cards, held_cards, waiting_cards
 from app.services.overrides_service import override_states, review_queue
 from app.services.registry_service import Registry
 from app.services.review_service import review_all
@@ -26,9 +26,30 @@ def _checkpoints(registry: Registry, run_id: str) -> Path:
     return registry.folder(run_id) / "checkpoints.db"
 
 
+HELD = "journal:"
+
+
+def _held_pending(registry: Registry, run_id: str, meta: dict[str, Any]) -> list[str]:
+    """Journals the rules held ('needs a human') that nobody has decided yet, as 'journal:JE-016'."""
+    run = stage(build_context(registry.data_dir(run_id), registry.config_dir(run_id)))
+    decided = meta.get("held_decisions", {})
+    return [f"{HELD}{d.journal_id}" for d in run.dispositions if d.status == "HOLD" and d.journal_id not in decided]
+
+
+def _with_held(registry: Registry, run_id: str, meta: dict[str, Any]) -> dict[str, Any]:
+    """A finished run still waits while a held journal is undecided: its status goes back to awaiting_review."""
+    if meta["status"] not in {"done", "awaiting_review"}:
+        return meta
+    waiting = [k for k in meta["open_items"] if not k.startswith(HELD)] + _held_pending(registry, run_id, meta)
+    if not waiting and meta["status"] == "awaiting_review":
+        return registry.update(run_id, status="done", open_items=[])
+    return registry.update(run_id, status="awaiting_review" if waiting else "done", open_items=waiting)
+
+
 def _store(registry: Registry, run_id: str, state: RunState) -> dict[str, Any]:
-    return registry.update(run_id, status=state["status"], open_items=state.get("open_items", []),
+    meta = registry.update(run_id, status=state["status"], open_items=state.get("open_items", []),
                            blocked=state.get("blocked"), checks_passed=state.get("checks_passed"))
+    return _with_held(registry, run_id, meta)
 
 
 def analyse(registry: Registry, run_id: str) -> dict[str, Any]:
@@ -47,7 +68,12 @@ def decide(registry: Registry, run_id: str, approver: str, decisions: dict[str, 
     unknown = sorted(set(decisions) - set(meta["open_items"]))
     if unknown:
         raise NotReady("not open for decision: " + ", ".join(unknown))
-    answer = {"approver": approver, "decisions": decisions}
+    held = {k[len(HELD):]: {"choice": v, "approver": approver} for k, v in decisions.items() if k.startswith(HELD)}
+    meta = registry.update(run_id, held_decisions=meta.get("held_decisions", {}) | held)
+    chosen = {k: v for k, v in decisions.items() if not k.startswith(HELD)}
+    if not chosen:
+        return _with_held(registry, run_id, meta)
+    answer = {"approver": approver, "decisions": chosen}
     return _store(registry, run_id, resume_graph(meta["thread"], answer, _checkpoints(registry, run_id)))
 
 
@@ -89,7 +115,8 @@ def review_view(registry: Registry, run_id: str) -> dict[str, Any]:
     units = ai["units"]
     return {
         "ai": ai, "findings": findings, "cards": build_cards(findings, units, dispositions, open_items, _memos(run)),
-        "dispositions": dispositions, "waiting": waiting_cards(states, open_items),
+        "dispositions": dispositions,
+        "waiting": waiting_cards(states, open_items) + held_cards(dispositions, open_items),
         "queue": review_queue(run.findings, states),
         "open_items": open_items,
         "advice": _advice(registry, run_id),

@@ -10,8 +10,9 @@ from fastapi.testclient import TestClient
 
 from app.cli import main as cli_main
 from app.utils.paths import CONFIG_DIR, ROOT
-from tests.api.conftest import finished_run, sample_run
+from tests.api.conftest import finished_run, sample_run, settle
 
+HELD = ["journal:JE-009", "journal:JE-016"]
 APPROVED = 'status = "approved"'
 CLOSING_GBP_USD = "fx_rates.csv:6.rate=1.3000"
 
@@ -42,10 +43,10 @@ def test_figures_after_a_pause_and_an_approval_still_equal_the_cli(client: TestC
     run_id = sample_run(client)
     _reopen_the_override(client, run_id)
     paused = client.post(f"/api/runs/{run_id}/analyse").json()
-    assert paused["status"] == "awaiting_review" and paused["open_items"] == ["mapping:UK:2310"]
+    assert paused["status"] == "awaiting_review" and paused["open_items"] == ["mapping:UK:2310", *HELD]
     queue = client.get(f"/api/runs/{run_id}/review").json()["queue"]
     assert any(q["kind"] == "override" and q["key"] == "mapping:UK:2310" for q in queue)
-    body = {"approver": "tester", "decisions": {"mapping:UK:2310": "approve"}}
+    body = {"approver": "tester", "decisions": {k: "approve" for k in paused["open_items"]}}
     assert client.post(f"/api/runs/{run_id}/decisions", json=body).json()["status"] == "done"
     assert _api_figures(client, run_id) == _cli_figures(tmp_path)
 
@@ -65,7 +66,7 @@ def test_rejecting_changes_the_run_not_the_repository_config(client: TestClient)
     _reopen_the_override(client, run_id)
     client.post(f"/api/runs/{run_id}/analyse")
     body = {"approver": "tester", "decisions": {"mapping:UK:2310": "reject"}}
-    assert client.post(f"/api/runs/{run_id}/decisions", json=body).json()["status"] == "done"
+    assert client.post(f"/api/runs/{run_id}/decisions", json=body).json()["open_items"] == HELD
     assert APPROVED in (CONFIG_DIR / "overrides.toml").read_text(encoding="utf-8")
 
 
@@ -112,6 +113,7 @@ def test_what_if_builds_a_new_run_and_leaves_the_old_one(client: TestClient) -> 
     run_id = finished_run(client)
     before = _api_figures(client, run_id)
     new = client.post(f"/api/runs/{run_id}/whatif", json={"name": "closing 1.30", "patches": [CLOSING_GBP_USD]}).json()
+    new = settle(client, new)
     assert new["parent"] == run_id and new["status"] == "done" and new["id"] != run_id
     assert _api_figures(client, run_id) == before
     assert _api_figures(client, new["id"])["total_assets"] != before["total_assets"]
@@ -126,7 +128,7 @@ def test_what_if_refuses_a_file_that_is_not_one_of_the_fifteen(client: TestClien
 
 def test_compare_lists_the_changed_lines_and_the_moved_figures(client: TestClient) -> None:
     run_id = finished_run(client)
-    new = client.post(f"/api/runs/{run_id}/whatif", json={"patches": [CLOSING_GBP_USD]}).json()
+    new = settle(client, client.post(f"/api/runs/{run_id}/whatif", json={"patches": [CLOSING_GBP_USD]}).json())
     out = client.get(f"/api/runs/{new['id']}/compare/{run_id}").json()
     assert out["input_changes"] == ["fx_rates.csv: changed at line(s) 6"]
     assert any(f["key"] == "total_assets" for f in out["figures"])
@@ -137,7 +139,8 @@ def test_a_waiting_override_gets_a_card_with_its_reason_and_both_effects(client:
     run_id = sample_run(client)
     _reopen_the_override(client, run_id)
     client.post(f"/api/runs/{run_id}/analyse")
-    (card,) = client.get(f"/api/runs/{run_id}/review").json()["waiting"]
+    cards = client.get(f"/api/runs/{run_id}/review").json()["waiting"]
+    (card,) = [c for c in cards if c["key"] == "mapping:UK:2310"]
     assert card["key"] == "mapping:UK:2310" and card["state"] == "open"
     assert "named exactly 'Deferred income'" in card["reason"]
     assert "signed off" in card["approve_effect"] and "stays in revenue 4100" in card["reject_effect"]
@@ -187,3 +190,18 @@ def _walk(node: object) -> list[object]:
     if isinstance(node, list):
         return [x for v in node for x in _walk(v)]
     return [node]
+
+
+def test_held_journals_wait_for_a_named_decision_and_move_no_figure(client: TestClient, tmp_path: Path) -> None:
+    run_id = sample_run(client)
+    paused = client.post(f"/api/runs/{run_id}/analyse").json()
+    assert paused["status"] == "awaiting_review" and paused["open_items"] == HELD
+    cards = {c["key"]: c for c in client.get(f"/api/runs/{run_id}/review").json()["waiting"]}
+    assert set(cards) == set(HELD) and "stays out of the figures" in cards["journal:JE-016"]["approve_effect"]
+    blocked = client.get(f"/api/runs/{run_id}/results")
+    assert blocked.status_code == 409 and all(k in blocked.json()["detail"] for k in HELD)
+    one = client.post(f"/api/runs/{run_id}/decisions", json={"approver": "tester", "decisions": {HELD[0]: "reject"}})
+    assert one.json()["open_items"] == [HELD[1]]
+    both = {"approver": "tester", "decisions": {HELD[1]: "approve"}}
+    assert client.post(f"/api/runs/{run_id}/decisions", json=both).json()["status"] == "done"
+    assert _api_figures(client, run_id) == _cli_figures(tmp_path)

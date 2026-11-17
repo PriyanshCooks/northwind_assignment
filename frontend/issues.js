@@ -37,7 +37,7 @@ function waitingCard(item, marks, refresh) {
   const pick = (action, label) => h("button", { class: marks[item.key] === action ? "" : "plain", "aria-pressed": String(marks[item.key] === action),
     onclick: choose(action) }, label);
   return h("article", { class: "card sev-warn" },
-    h("div", { class: "card-head" }, h("span", { class: "tag warn" }, item.state === "stale" ? "Stale" : "Open"), h("code", {}, item.key)),
+    h("div", { class: "card-head" }, h("span", { class: "tag warn" }, { stale: "Stale", held: "Held" }[item.state] || "Open"), h("code", {}, item.key)),
     h("h3", {}, item.headline),
     h("dl", {}, field("Why it is waiting", item.reason), field("If you approve", item.approve_effect), field("If you reject", item.reject_effect)),
     h("div", { class: "row" }, pick("approve", "Approve"), pick("reject", "Reject")));

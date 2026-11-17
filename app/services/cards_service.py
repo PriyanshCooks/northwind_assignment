@@ -136,3 +136,19 @@ def waiting_cards(states: list[OverrideState], open_items: list[str]) -> list[di
             "reject_effect": f"The {o.decision} is dropped. {o.effect_if_reversed}",
         })
     return cards
+
+
+def held_cards(dispositions: list[dict[str, Any]], open_items: list[str]) -> list[dict[str, Any]]:
+    """A journal the rules held is not posted and no figure rests on it, so neither choice moves a figure. A person's
+    answer is recorded with their name; the run waits for it (assumed: the brief says a held journal needs a human)."""
+    cards = []
+    for d in dispositions:
+        key = f"journal:{d['journal_id']}"
+        if d["status"] == "HOLD" and key in open_items:
+            cards.append({
+                "key": key, "state": "held", "headline": f"{d['journal_id']} is held and not posted",
+                "reason": "; ".join(d["reasons"]) or "The rules held this journal for a person to decide.",
+                "approve_effect": "Recorded as reviewed and accepted as held. It stays out of the figures.",
+                "reject_effect": "Recorded as disputed. It still stays out of the figures; the dispute is on record.",
+            })
+    return cards

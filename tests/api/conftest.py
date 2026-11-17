@@ -1,5 +1,6 @@
 """A test client over a scratch runs folder, so no test touches .northwind/."""
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,6 +15,15 @@ def client(tmp_path: Path) -> TestClient:
 
 def sample_run(client: TestClient) -> str:
     return str(client.post("/api/runs", json={"name": "sample", "use_sample": True}).json()["id"])
+
+
+def settle(client: TestClient, meta: dict[str, Any], approver: str = "tester") -> dict[str, Any]:
+    """Approve whatever a run is waiting on, so tests about later steps start from a finished run."""
+    if meta["status"] == "awaiting_review":
+        decisions = {t: "approve" for t in meta["open_items"]}
+        body = {"approver": approver, "decisions": decisions}
+        meta = client.post(f"/api/runs/{meta['id']}/decisions", json=body).json()
+    return meta
 
 
 def finished_run(client: TestClient, approver: str = "tester") -> str:
