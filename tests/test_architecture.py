@@ -58,7 +58,7 @@ def test_engine_imports_no_web_or_model_library() -> None:
 
 
 def test_agents_never_import_core() -> None:
-    assert violations(("agents",), ("app.core",)) == []
+    assert violations(("agents", "reasoning"), ("app.core",)) == []
 
 
 def test_only_the_llm_folder_imports_a_model_library() -> None:
