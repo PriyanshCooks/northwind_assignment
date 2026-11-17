@@ -6,7 +6,7 @@ from app.detectors.duplicates import d14_exact_duplicates
 from app.detectors.expectations import d13_expectations
 from app.detectors.journals import d04_period, d05_duplicate, d06_account_exists, d07_reversal_exceeds_balance
 from app.detectors.mapping import d02_mapping
-from app.detectors.rates import d08_required_rates
+from app.detectors.rates import d08_required_rates, d15_rate_plausibility
 from app.detectors.reconciliation import d09_subledger, d10_cross_file_ties, d11_intercompany_pairing
 from app.detectors.text_scan import d12_instruction_wording
 from app.domain.findings import Finding
@@ -17,7 +17,7 @@ Detector = Callable[[Context], list[Finding]]
 DETECTORS: tuple[Detector, ...] = (
     d01_trial_balance, d02_mapping, d03_journal_balance, d04_period, d05_duplicate, d06_account_exists,
     d07_reversal_exceeds_balance, d08_required_rates, d09_subledger, d10_cross_file_ties,
-    d11_intercompany_pairing, d12_instruction_wording, d13_expectations, d14_exact_duplicates,
+    d11_intercompany_pairing, d12_instruction_wording, d13_expectations, d14_exact_duplicates, d15_rate_plausibility,
 )
 
 

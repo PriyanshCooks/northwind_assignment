@@ -113,3 +113,19 @@ value = "half_up"
 basis = "Own: the brief fixes 2 decimals but not the rounding mode"
 status = "ASSUMED"
 alternative = "half-even changes at most one cent on a figure"
+
+[[assumption]]
+id = "A14"
+key = "rate_neighbour_tolerance_pct"
+value = "10"
+basis = "Own: the supplied rates sit within 2.5 percent of their neighbours; a one-year move above 10 percent is rare for these pairs"
+status = "ASSUMED"
+alternative = "a lower figure flags more genuine moves, a higher one misses a small typo"
+
+[[assumption]]
+id = "A15"
+key = "rate_implied_tolerance_pct"
+value = "10"
+basis = "Own: the supplied SGD booking implies 1.7384 against 1.7120 average, 1.5 percent apart"
+status = "ASSUMED"
+alternative = "same trade-off as A14"
