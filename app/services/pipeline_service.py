@@ -114,11 +114,20 @@ def build(registry: Registry, run_id: str) -> dict[str, Any]:
     return {"gates": gates, "passed": run.checks_passed, "blocked": run.blocked, "stages": run_log(registry, run_id)}
 
 
+_CARDS: dict[tuple[str, int, int], list[dict[str, Any]]] = {}
+
+
 def result_cards(registry: Registry, run_id: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Cards for a finished run's issues.json rows: the same wording as the review step, with no decision buttons."""
-    run = stage(build_context(registry.data_dir(run_id), registry.config_dir(run_id)))
-    units = ai_service.review_units(registry, run_id)["units"]
-    return build_cards(items, units, [d.model_dump(mode="json") for d in run.dispositions], [], _memos(run))
+    """Cards for a finished run's issues.json rows: the same wording as the review step, with no decision buttons.
+    Building them re-runs the engine and the ledger replay (about 70 ms), and the page asks for them on every file it
+    shows, so they are kept per run until its issues file or the ledger changes."""
+    issues = registry.out_dir(run_id) / "issues.json"
+    key = (run_id, issues.stat().st_mtime_ns, load_llm_config().ledger_path.stat().st_mtime_ns)
+    if key not in _CARDS:
+        run = stage(build_context(registry.data_dir(run_id), registry.config_dir(run_id)))
+        units = ai_service.review_units(registry, run_id)["units"]
+        _CARDS[key] = build_cards(items, units, [d.model_dump(mode="json") for d in run.dispositions], [], _memos(run))
+    return _CARDS[key]
 
 
 def run_log(registry: Registry, run_id: str) -> list[dict[str, Any]]:

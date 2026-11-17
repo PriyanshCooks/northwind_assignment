@@ -1,6 +1,7 @@
 """The output viewer's routes: a list with metadata, one file as tables, the issues that touch it, and a download."""
 import hashlib
 
+import pytest
 from fastapi.testclient import TestClient
 
 from tests.api.conftest import finished_run
@@ -65,3 +66,15 @@ def test_a_list_in_a_json_file_is_one_cell_with_a_line_for_each_entry() -> None:
     from app.services.output_service import _sections
     (section,) = _sections({"provisional": ["first reason", "second reason"]})
     assert section["rows"] == [["provisional", "first reason\nsecond reason"]]
+
+
+def test_issue_cards_are_built_once_per_run(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.services import pipeline_service
+    run_id = finished_run(client)
+    pipeline_service._CARDS.clear()
+    calls = []
+    real = pipeline_service.stage
+    monkeypatch.setattr(pipeline_service, "stage", lambda ctx: calls.append(1) or real(ctx))
+    for name in ("balance_sheet.json", "consolidated_tb.csv", "eliminations.csv"):
+        assert client.get(f"/api/runs/{run_id}/output-files/{name}/issues").status_code == 200
+    assert len(calls) == 1

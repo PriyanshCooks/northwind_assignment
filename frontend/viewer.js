@@ -29,13 +29,16 @@ async function affecting(run, file) {
     got.run_wide.length ? issueGroups(got.run_wide, {}, () => {}) : none("None."));
 }
 
+const FILE_LISTS = {};  // a finished run's files do not change while the page is open, so the list is read once
+
 async function filesStep(run) {
-  const list = await api("GET", `/runs/${run.id}/output-files`);
+  const list = FILE_LISTS[run.id] ||= await api("GET", `/runs/${run.id}/output-files`);
   if (!list.length) return show(...head(run, "6 Output files"), h("div", { class: "callout" }, "This run has no output files yet."));
   const wanted = decodeURIComponent(location.hash.split("/")[4] || "");
   const at = Math.max(0, list.findIndex((f) => f.name === wanted));
   const file = list[at];
   const open = (i) => () => { location.hash = `#/run/${run.id}/files/${encodeURIComponent(list[i].name)}`; };
+  const [body, side] = await Promise.all([fileBody(run, file), affecting(run, file)]);  // both requests go out together
   show(...head(run, "6 Output files"),
     h("div", { class: "row" }, button("Previous", open(at - 1), true), h("strong", {}, `File ${at + 1} of ${list.length}`),
       button("Next", open(at + 1), true)),
@@ -44,7 +47,7 @@ async function filesStep(run) {
     h("h2", {}, file.name),
     h("p", { class: "muted" }, `${file.rows === null ? "rows not counted" : `${file.rows} rows`} · ${file.bytes.toLocaleString("en-GB")} bytes · sha256 `, h("code", {}, file.sha256)),
     h("div", { class: "row" }, h("a", { class: "btn", href: `/api/runs/${run.id}/output-files/${file.name}/download`, download: file.name }, "Download")),
-    await fileBody(run, file), h("h2", {}, "Issues and AI notes affecting this file"), await affecting(run, file));
+    body, h("h2", {}, "Issues and AI notes affecting this file"), side);
   const buttons = view.querySelectorAll("button.plain");
   if (at === 0) buttons[0].disabled = true;
   if (at === list.length - 1) buttons[1].disabled = true;
