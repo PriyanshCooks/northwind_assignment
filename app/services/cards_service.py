@@ -4,6 +4,8 @@ from the recorded review of the same journal or account. A finding with no match
 import re
 from typing import Any
 
+from app.services.overrides_service import OverrideState
+
 AMOUNT = re.compile(r"(?<![\w.])(\d{4,})\.(\d{2})\b")
 ENTITY_CODE = re.compile(r"\b(UK|US|IN) ([A-Z0-9-]{3,})\b")
 JOURNAL = re.compile(r"\bJE-\d+\b")
@@ -109,3 +111,22 @@ def build_cards(items: list[dict[str, Any]], units: list[dict[str, Any]], dispos
             "actions": ["approve", "reject"] if needs else [],
         })
     return sorted(cards, key=lambda c: (not c["needs_decision"], ORDER[c["severity"]]))
+
+
+def waiting_cards(states: list[OverrideState], open_items: list[str]) -> list[dict[str, Any]]:
+    """One card per item a person must decide: its reason and what each choice does to the run. Approving signs the
+    decision off on today's evidence; rejecting drops it, and the override's effect_if_reversed says what follows."""
+    stale = "The evidence changed since this was decided, so the decision no longer applies. "
+    cards = []
+    for s in states:
+        o = s.override
+        if o.target not in open_items:
+            continue
+        place = o.target.split(":", 1)[1].replace(":", " ")
+        cards.append({
+            "key": o.target, "state": s.state, "headline": f"{place}: {o.decision} to {o.to}",
+            "reason": (stale if s.state == "stale" else "") + o.reason,
+            "approve_effect": f"The {o.decision} to {o.to} applies and is signed off in your name on today's evidence.",
+            "reject_effect": f"The {o.decision} is dropped. {o.effect_if_reversed}",
+        })
+    return cards

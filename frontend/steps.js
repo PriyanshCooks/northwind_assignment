@@ -36,20 +36,18 @@ async function reviewStep(run) {
   const rv = await api("GET", `/runs/${run.id}/review`);
   const marks = {};
   const approver = h("input", { placeholder: "your name", maxlength: 60, "aria-label": "Your name" });
-  const cardKeys = new Set(rv.cards.map((c) => c.key));
-  const others = rv.queue.filter((q) => rv.open_items.includes(q.key) && !cardKeys.has(q.key));
   const send = async () => {
     const decisions = Object.fromEntries(Object.entries(marks).filter(([, v]) => v));
     try { await api("POST", `/runs/${run.id}/decisions`, { approver: approver.value, decisions }); await route(); }
     catch (e) { fail(e); }
   };
   const holder = h("div");
-  const draw = () => holder.replaceChildren(...issueGroups(rv.cards, marks, draw));
+  const draw = () => holder.replaceChildren(...(rv.waiting.length ? [h("section", {}, h("h2", {}, `Needs your decision (${rv.waiting.length})`),
+    rv.waiting.map((w) => waitingCard(w, marks, draw)))] : []), ...issueGroups(rv.cards, marks, draw));
   draw();
   show(...head(run, "2 Review"), h("p", {}, "Status: ", h("span", { class: "tag" }, run.status)),
     rv.open_items.length ? h("div", { class: "callout warn" }, `${rv.open_items.length} item(s) wait for a decision. Approve or reject each card, add your name and submit.`) :
       h("div", { class: "callout ok" }, "Nothing is waiting for a decision."),
-    others.length ? h("div", {}, h("h2", {}, "Other items waiting"), table(["Item", "State", "Reason"], others.map((q) => [h("code", {}, q.key), q.state, q.reason]))) : null,
     holder,
     rv.open_items.length ? h("div", { class: "row" }, approver, button("Submit decisions", send)) : null,
     h("h2", {}, "Journal dispositions"),

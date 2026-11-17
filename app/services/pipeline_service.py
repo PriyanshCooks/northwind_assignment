@@ -10,7 +10,7 @@ from app.llm.ledger import Ledger
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
 from app.orchestrator.state import RunState
 from app.services import ai_service
-from app.services.cards_service import build_cards
+from app.services.cards_service import build_cards, waiting_cards
 from app.services.overrides_service import override_states, review_queue
 from app.services.registry_service import Registry
 from app.services.review_service import review_all
@@ -89,7 +89,7 @@ def review_view(registry: Registry, run_id: str) -> dict[str, Any]:
     units = ai["units"]
     return {
         "ai": ai, "findings": findings, "cards": build_cards(findings, units, dispositions, open_items, _memos(run)),
-        "dispositions": dispositions,
+        "dispositions": dispositions, "waiting": waiting_cards(states, open_items),
         "queue": review_queue(run.findings, states),
         "open_items": open_items,
         "advice": _advice(registry, run_id),

@@ -128,3 +128,13 @@ def test_compare_lists_the_changed_lines_and_the_moved_figures(client: TestClien
     assert out["input_changes"] == ["fx_rates.csv: changed at line(s) 6"]
     assert any(f["key"] == "total_assets" for f in out["figures"])
     assert "fx_rates.csv:6" in out["impact"]
+
+
+def test_a_waiting_override_gets_a_card_with_its_reason_and_both_effects(client: TestClient) -> None:
+    run_id = sample_run(client)
+    _reopen_the_override(client, run_id)
+    client.post(f"/api/runs/{run_id}/analyse")
+    (card,) = client.get(f"/api/runs/{run_id}/review").json()["waiting"]
+    assert card["key"] == "mapping:UK:2310" and card["state"] == "open"
+    assert "named exactly 'Deferred income'" in card["reason"]
+    assert "signed off" in card["approve_effect"] and "stays in revenue 4100" in card["reject_effect"]

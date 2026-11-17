@@ -30,3 +30,15 @@ function issueGroups(cards, marks, refresh) {
   return groups.filter(([, list]) => list.length).map(([title, list]) =>
     h("section", {}, h("h2", {}, `${title} (${list.length})`), list.map((c) => issueCard(c, marks, refresh))));
 }
+
+// A waiting item (an override that is open or stale): what it is, why, and what each choice does.
+function waitingCard(item, marks, refresh) {
+  const choose = (action) => () => { marks[item.key] = marks[item.key] === action ? undefined : action; refresh(); };
+  const pick = (action, label) => h("button", { class: marks[item.key] === action ? "" : "plain", "aria-pressed": String(marks[item.key] === action),
+    onclick: choose(action) }, label);
+  return h("article", { class: "card sev-warn" },
+    h("div", { class: "card-head" }, h("span", { class: "tag warn" }, item.state === "stale" ? "Stale" : "Open"), h("code", {}, item.key)),
+    h("h3", {}, item.headline),
+    h("dl", {}, field("Why it is waiting", item.reason), field("If you approve", item.approve_effect), field("If you reject", item.reject_effect)),
+    h("div", { class: "row" }, pick("approve", "Approve"), pick("reject", "Reject")));
+}
