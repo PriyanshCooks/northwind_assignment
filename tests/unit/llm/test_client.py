@@ -74,3 +74,17 @@ def test_the_config_names_the_local_model_and_only_listed_settings_are_sent() ->
     assert cfg.model.startswith("ollama:qwen3:4b-instruct") and cfg.ledger_path.name == "qwen3-4b-dev.jsonl"
     assert model_settings(cfg) == {"max_tokens": 400, "temperature": 0.0, "seed": 7}
     assert model_settings(CFG.model_copy(update={"settings": {}})) == {"max_tokens": 100}
+
+
+def test_a_timeout_is_not_recorded_and_falls_back_without_crashing(tmp_path: Path) -> None:
+    from pydantic_ai.exceptions import ModelAPIError
+
+    from app.llm.ledger import LlmUnavailable
+
+    def fail(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        raise ModelAPIError("test-model", "Request timed out.")
+
+    ledger = Ledger(tmp_path / "l.jsonl")
+    with pytest.raises(LlmUnavailable):
+        ask(ledger, FunctionModel(fail))
+    assert not (tmp_path / "l.jsonl").exists()

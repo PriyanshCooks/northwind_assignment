@@ -5,14 +5,14 @@ from typing import Any, Literal, TypeVar, cast
 
 from pydantic import BaseModel
 from pydantic_ai import Agent, NativeOutput
-from pydantic_ai.exceptions import UnexpectedModelBehavior
+from pydantic_ai.exceptions import ModelAPIError, UnexpectedModelBehavior
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
 from pydantic_ai.usage import UsageLimits
 
 from app.llm.factory import LlmConfig, build_model, model_settings
 from app.llm.instrumentation import describe, quiet_environment
-from app.llm.ledger import Ledger, RecordedFailure, call_key
+from app.llm.ledger import Ledger, LlmUnavailable, RecordedFailure, call_key
 from app.llm.replay import replay
 
 T = TypeVar("T", bound=BaseModel)
@@ -41,6 +41,8 @@ def run_structured(
     except UnexpectedModelBehavior as error:
         ledger.append({**entry, "validated": False, "error": str(error)[:300], "response": None})
         raise RecordedFailure(f"the model did not give a valid answer: {error}") from error
+    except ModelAPIError as error:  # a timeout or a refused connection says nothing about the unit: not recorded
+        raise LlmUnavailable(f"the model could not be reached: {error}") from error
     ledger.append({**entry, "validated": True, "response": result.output.model_dump(mode="json"),
                    **describe(result)})
     return result.output
