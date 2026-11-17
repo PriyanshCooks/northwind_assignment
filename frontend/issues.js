@@ -10,7 +10,7 @@ function issueCard(card, marks, refresh) {
   const choose = (action) => () => { marks[card.key] = marks[card.key] === action ? undefined : action; refresh(); };
   const buttons = card.actions.map((a) => h("button", { class: marks[card.key] === a ? "" : "plain", "aria-pressed": String(marks[card.key] === a),
     onclick: choose(a) }, a === "approve" ? "Approve" : "Reject"));
-  return h("article", { class: `card ${sevClass}` },
+  return h("article", { class: `card sev-${sevClass}` },
     h("div", { class: "card-head" }, h("span", { class: `tag ${sevClass}` }, sevText), h("code", { title: "detector code" }, card.code)),
     h("h3", {}, card.headline),
     h("dl", {}, field("Evidence", where), card.quote ? field("The text, quoted as data", h("q", {}, card.quote)) : null,
@@ -24,8 +24,9 @@ function issueCard(card, marks, refresh) {
 function issueGroups(cards, marks, refresh) {
   const groups = [["Needs your decision", cards.filter((c) => c.needs_decision)]];
   for (const sev of ["BLOCK", "FLAG", "NOTE"]) {
-    groups.push([`${SEVERITY[sev][0]} and handled by the rules`, cards.filter((c) => !c.needs_decision && c.severity === sev)]);
+    groups.push([`${SEVERITY[sev][0]}, decided by the rules`, cards.filter((c) => !c.needs_decision && c.severity === sev)]);
   }
+  if (!cards.length) return [h("div", { class: "callout ok" }, "No issues were found.")];
   return groups.filter(([, list]) => list.length).map(([title, list]) =>
     h("section", {}, h("h2", {}, `${title} (${list.length})`), list.map((c) => issueCard(c, marks, refresh))));
 }

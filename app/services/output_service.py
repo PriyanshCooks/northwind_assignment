@@ -3,7 +3,6 @@ Money stays as the exact text in the file (JSON numbers are read as strings), so
 import csv
 import io
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +11,6 @@ from app.utils.hashing import sha256_file
 
 MAX_BYTES = 2_000_000
 MAX_ROWS = 500
-FIGURE_KEY = re.compile(r"^(\w+) is (?:provisional|null)")
 STATEMENTS = {"balance_sheet.json", "profit_and_loss.json", "changes_in_equity.json"}
 
 
@@ -114,9 +112,7 @@ def issues_by_file(out_dir: Path, cards: list[dict[str, Any]], name: str) -> dic
     wide: list[dict[str, Any]] = []
     for card in cards:
         where = f"{card['evidence']['file']}:{card['evidence']['line']}"
-        figure = FIGURE_KEY.match(card["headline"].lower())
-        names_a_figure = figure is not None and figure[1] in figures
         affects = (name == "issues.json" or where in refs
-                   or (name.startswith("control_figures") and names_a_figure))
+                   or (name.startswith("control_figures") and card["figure"] in figures))
         (hit if affects else wide).append(card)
     return {"affecting": hit, "run_wide": wide}

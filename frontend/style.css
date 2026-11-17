@@ -67,7 +67,7 @@ code { background: var(--soft); padding: 1px 6px; border-radius: 4px; font-size:
 .tag.unknown { border-color: var(--bad); color: var(--bad); }
 .tag.determined { border-color: var(--ok); color: var(--ok); }
 .card { border: 1px solid var(--line); border-left-width: 5px; border-radius: 10px; padding: 14px 16px; margin: 10px 0; background: var(--card); }
-.card.bad { border-left-color: var(--bad); } .card.warn { border-left-color: var(--warn); } .card.muted { border-left-color: var(--muted); }
+.card.sev-bad { border-left-color: var(--bad); } .card.sev-warn { border-left-color: var(--warn); } .card.sev-muted { border-left-color: var(--muted); }
 .card-head { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
 .card-head code { font-size: 12px; color: var(--muted); }
 .tag.bad { border-color: var(--bad); color: var(--bad); } .tag.warn { border-color: var(--warn); color: var(--warn); }
@@ -81,3 +81,4 @@ q { font-style: italic; }
 .unit { border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; margin: 6px 0; } .unit summary { cursor: pointer; padding: 4px 0; }
 pre { background: var(--soft); padding: 10px; border-radius: 6px; overflow-x: auto; max-height: 320px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
 h4 { margin: 12px 0 4px; font-size: 14px; color: var(--muted); } .stages { padding-left: 20px; } .stages li { margin: 4px 0; }
+@media (max-width: 800px) { .figkey { display: none; } th, td { padding: 8px 6px; } }

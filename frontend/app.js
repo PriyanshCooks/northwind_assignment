@@ -26,7 +26,7 @@ async function api(method, path, body, raw) {
   return data;
 }
 
-function show(...nodes) { view.replaceChildren(...nodes); }
+function show(...nodes) { view.replaceChildren(...nodes.filter((n) => n != null)); }
 function fail(error) { view.prepend(h("div", { class: "error" }, String(error.message || error))); }
 function table(head, rows) {
   return h("table", {}, h("thead", {}, h("tr", {}, head.map((t) => h("th", {}, t)))),
@@ -89,6 +89,18 @@ async function runsList() {
         r.status === "awaiting_review" ? "Resume" : "Open")])) : h("p", { class: "muted" }, "No runs yet."));
 }
 
+// A step that needs a finished run says why it cannot open yet and what to do, instead of showing an error.
+function holdBack(run, step) {
+  if (["upload", "review"].includes(step) || run.status === "done") return null;
+  const to = (key, label) => h("a", { class: "btn", href: `#/run/${run.id}/${key}` }, label);
+  if (run.blocked) return [h("h1", {}, "This run is blocked"), h("div", { class: "callout bad" }, run.blocked), to("review", "Open the review")];
+  if (run.status === "awaiting_review") {
+    return [h("h1", {}, "This run is paused"), h("div", { class: "callout warn" }, `${run.open_items.length} item(s) wait for a decision. ` +
+      "Nothing after the review can run until each is approved or rejected and the decisions are submitted."), to("review", "Go to the review")];
+  }
+  return [h("h1", {}, "This run has not been analysed"), h("div", { class: "callout" }, "Upload the 15 files, or start from the sample, then analyse them."), to("upload", "Go to upload")];
+}
+
 async function route() {
   const [, kind, id, step] = location.hash.split("/");
   try {
@@ -96,7 +108,13 @@ async function route() {
     const run = await api("GET", `/runs/${id}`);
     const chosen = STEPS.some(([k]) => k === step) ? step : nextStep(run);
     drawStepper(run, chosen);
+    const waiting = holdBack(run, chosen);
+    if (waiting) return show(...waiting);
+    show(h("p", { role: "status", class: "muted" }, "Loading…"));
     await STEP_VIEWS[chosen](run);
-  } catch (e) { show(h("div", { class: "error" }, String(e.message || e)), h("a", { href: "#/" }, "Back to runs")); }
+  } catch (e) {
+    show(h("div", { class: "error", role: "alert" }, String(e.message || e)),
+      h("div", { class: "row" }, h("button", { onclick: route }, "Try again"), h("a", { class: "btn plain", href: "#/" }, "Back to runs")));
+  }
 }
 window.addEventListener("hashchange", route);

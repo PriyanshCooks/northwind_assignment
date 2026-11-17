@@ -35,7 +35,7 @@ function statusBadge(x) {
   return h("span", { class: `tag ${x.status}`, title: why || null, tabindex: why ? "0" : null }, label);
 }
 function figuresTable(figures) {
-  const rows = figures.map((x) => h("tr", {}, h("td", {}, FIGURE_NAMES[x.key] || x.key, h("div", { class: "muted small" }, h("code", {}, x.key))),
+  const rows = figures.map((x) => h("tr", {}, h("td", {}, FIGURE_NAMES[x.key] || x.key, h("div", { class: "muted small figkey" }, h("code", {}, x.key))),
     h("td", { class: "num" }, figureValue(x)), h("td", {}, statusBadge(x))));
   const notes = figures.filter((x) => x.value === null || x.status === "provisional").map((x) =>
     h("div", { class: `callout ${x.value === null ? "bad" : "warn"}` }, h("strong", {}, `${FIGURE_NAMES[x.key] || x.key}: `),

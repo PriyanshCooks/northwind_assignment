@@ -63,6 +63,8 @@ python run.py consolidate     # the one command: reads Northwind_TakeHome_v2/dat
 python run.py trace goodwill_closing   # walk a figure (or an account such as 1100) down to file:line
 python run.py check           # Python version, data integrity, policy binding
 python run.py serve           # review page at http://127.0.0.1:8000/ (this machine only, no live model call)
+                              # seven steps: upload, review (issue cards and the recorded AI review), outputs, build,
+                              # results, output file viewer, export
 ```
 
 Tests and checks: `python -m pytest && python -m ruff check . && python -m mypy app`

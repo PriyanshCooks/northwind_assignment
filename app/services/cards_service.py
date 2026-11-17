@@ -15,6 +15,15 @@ RULES = {
 }
 DISPOSITION = {"POST": "posted", "REJECT": "rejected and not posted", "HOLD": "held for a person to decide"}
 ORDER = {"BLOCK": 0, "FLAG": 1, "NOTE": 2}
+FIGURE_NAMES = {
+    "group_revenue": "Group revenue", "group_profit": "Group profit", "profit_owners": "Profit attributable to owners",
+    "profit_nci": "Profit attributable to non-controlling interest", "nci_closing": "Closing non-controlling interest",
+    "goodwill_closing": "Closing goodwill", "translation_reserve_movement": "Translation reserve movement",
+    "total_assets": "Total assets", "total_equity": "Total equity",
+    "intercompany_difference": "Intercompany difference",
+    "sgd_bank_gbp": "The Singapore dollar bank balance in GBP", "journals": "The journal counts",
+}
+FIGURE_CLAIM = re.compile(r"^(\w+) is (provisional|null)")
 
 
 def plain(text: str) -> str:
@@ -53,6 +62,11 @@ def _ai(unit: dict[str, Any] | None) -> dict[str, str]:
     return {"state": "no_claim", "text": "The AI reviewed this item and raised no claim."}
 
 
+def _figure(item: dict[str, Any]) -> str | None:
+    found = FIGURE_CLAIM.match(item["claim"]) if item["code"] == "FIG" else None
+    return found[1] if found and found[1] in FIGURE_NAMES else None
+
+
 def _memo_note(memo: dict[str, Any]) -> str:
     """Say what the memo asks only when its own words say so; otherwise just that it is addressed to reviewers."""
     asks = re.search(r"skip.{0,40}check", memo["text"], re.IGNORECASE)
@@ -62,6 +76,10 @@ def _memo_note(memo: dict[str, Any]) -> str:
 
 def _headline(item: dict[str, Any], memos: dict[str, dict[str, Any]]) -> str:
     text = plain(item["claim"]).replace(" is unbalanced", " does not balance")
+    figure = FIGURE_CLAIM.match(text)
+    if item["code"] == "FIG" and figure and figure[1] in FIGURE_NAMES:
+        verb = "is provisional" if figure[2] == "provisional" else "cannot be determined"
+        text = f"{FIGURE_NAMES[figure[1]]} {verb}" + text[figure.end():]
     if item["code"] == "D12":
         owner = next((j for j, m in memos.items() if m["line"] == item["line"]), None)
         where = f"{item['file']} line {item['line']}" + (f" ({owner})" if owner else "")
@@ -82,7 +100,7 @@ def build_cards(items: list[dict[str, Any]], units: list[dict[str, Any]], dispos
             rules += f" {subject} is {DISPOSITION[decided[subject]['status']]}."
         needs = item.get("key") in open_items
         cards.append({
-            "key": item.get("key"), "code": item["code"], "severity": item["severity"],
+            "key": item.get("key"), "figure": _figure(item), "code": item["code"], "severity": item["severity"],
             "headline": _headline(item, memos),
             "evidence": {"file": item["file"], "line": item.get("line")}, "rules": rules, "ai": _ai(unit),
             "quote": next((m["text"] for m in memos.values() if item["code"] == "D12" and m["line"] == item["line"]),
