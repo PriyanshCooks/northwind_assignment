@@ -6,16 +6,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.llm.tooluse import ToolRefused
 from app.reasoning.evidence import Evidence
 
 MAX_CALLS = 5  # per item under review
 MAX_LINES = 40
 MAX_MATCHES = 20
 TOOL_NAMES = ("read_lines", "find_in_file", "get_rule", "get_lineage", "get_calculation", "get_related")
-
-
-class ToolRefused(Exception):
-    """A call over the cap, repeated, or about something that does not exist. The model is told why and goes on."""
 
 
 def quote(source: str, text: str) -> dict[str, str]:

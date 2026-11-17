@@ -7,6 +7,7 @@ from typing import Any
 from app.llm.client import Mode, run_structured
 from app.llm.factory import LlmConfig
 from app.llm.ledger import Ledger, LlmUnavailable
+from app.reasoning.budget import UnitBudget
 from app.reasoning.evidence import Evidence
 from app.reasoning.grounding import Dropped, Grounded, ground_line_claims
 from app.reasoning.meanings import MEANINGS
@@ -31,6 +32,7 @@ class InputReport:
     findings: list[Grounded] = field(default_factory=list)
     dropped: list[Dropped] = field(default_factory=list)
     unavailable: list[str] = field(default_factory=list)  # chunks the model could not answer: rules still ran
+    stopped_early: bool = False  # the per-run unit limit was reached
 
     @property
     def verified(self) -> list[Grounded]:
@@ -52,10 +54,14 @@ def chunk_packets(evidence: Evidence, file: str) -> list[tuple[dict[str, Any], s
 
 def read_inputs(
     cfg: LlmConfig, ledger: Ledger, evidence: Evidence, mode: Mode = "replay", model: object | None = None,
+    budget: UnitBudget | None = None,
 ) -> InputReport:
-    report = InputReport()
+    report, budget = InputReport(), (budget or UnitBudget()).begin(ledger)
     for file in sorted(evidence.files):
         for number, (packet, shown) in enumerate(chunk_packets(evidence, file), 1):
+            if budget.exhausted(ledger):
+                report.stopped_early = True
+                return report
             try:
                 reading = run_structured(cfg, ledger, agent="input_reader", system_prompt=SYSTEM,
                                          prompt_version=PROMPT_VERSION, packet=packet, schema=InputReading,

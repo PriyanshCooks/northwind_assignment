@@ -6,9 +6,10 @@ ROOT = Path(__file__).resolve().parents[1]
 APP_FILES = {
     "app": ["main.py", "routes.py", "routes_results.py", "api_models.py", "cli.py", "config.py"],
     "app/agents": [],
-    "app/reasoning": ["evidence.py", "tools.py", "schema.py", "grounding.py", "meanings.py", "reader.py"],
+    "app/reasoning": ["evidence.py", "tools.py", "schema.py", "grounding.py", "meanings.py", "reader.py",
+                      "budget.py", "calc_review.py", "investigator.py"],
     "app/orchestrator": ["state.py", "nodes.py", "edges.py", "graph.py", "runner_plain.py"],
-    "app/llm": ["client.py", "factory.py", "ledger.py", "instrumentation.py", "replay.py", "cost.py"],
+    "app/llm": ["client.py", "factory.py", "ledger.py", "instrumentation.py", "replay.py", "cost.py", "tooluse.py"],
     "app/review": ["units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
     "app/core": [
         "post_journals.py", "revalue.py", "translate.py", "intercompany.py", "eliminate.py",
@@ -37,7 +38,7 @@ APP_FILES = {
     "app/services": [
         "run_service.py", "trace_service.py", "whatif_service.py", "overrides_service.py", "env_service.py",
         "review_service.py", "registry_service.py", "upload_service.py", "pipeline_service.py", "results_service.py",
-        "ai_service.py", "cards_service.py", "output_service.py",
+        "ai_service.py", "cards_service.py", "output_service.py", "reasoning_service.py",
     ],
     "app/utils": ["env.py", "hashing.py", "logging.py", "money.py", "paths.py"],
 }

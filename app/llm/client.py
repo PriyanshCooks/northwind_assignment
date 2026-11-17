@@ -94,10 +94,12 @@ def run_structured(
     return result.output
 
 
-def _attempt(runner: Agent[None, T], packet: dict[str, Any], sleep: Callable[[float], Any]) -> Any:
+def _attempt(runner: Agent[None, T], packet: dict[str, Any], sleep: Callable[[float], Any],
+             limits: UsageLimits | None = None) -> Any:
+    limits = limits or UsageLimits(request_limit=2)
     for wait in (*BACKOFF_SECONDS, None):
         try:
-            return runner.run_sync(json.dumps(packet, default=str), usage_limits=UsageLimits(request_limit=2))
+            return runner.run_sync(json.dumps(packet, default=str), usage_limits=limits)
         except ModelAPIError as error:
             if wait is None or _stops_the_run(error) or not _worth_retrying(error):
                 raise
