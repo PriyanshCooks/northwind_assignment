@@ -63,3 +63,24 @@ def test_the_recorder_prints_its_summary_and_exits_with_code_zero() -> None:
                           timeout=300)
     assert done.returncode == 0, done.stderr[-300:]
     assert "answered by the model" in done.stdout
+
+
+def _record(*args: str, **env: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run([sys.executable, "-m", "tests.evals.record", *args], cwd=ROOT, capture_output=True,
+                          text=True, timeout=300, env={**os.environ, **env})
+
+
+def test_the_smoke_run_covers_one_journal_and_one_mapping_unit_and_prints_ten_lines_at_most() -> None:
+    done = _record("--smoke")
+    assert done.returncode == 0, done.stderr[-300:]
+    lines = done.stdout.splitlines()
+    assert len(lines) <= 10
+    kinds = [line.split()[0] for line in lines if line.startswith(("journal ", "mapping "))]
+    assert sorted(kinds) == ["journal", "mapping"]
+
+
+def test_a_live_run_with_no_key_stops_with_a_clear_message_and_makes_no_call() -> None:
+    done = _record("--live", "--smoke", NORTHWIND_MODEL="openai:gpt-4o-mini", OPENAI_API_KEY="")
+    assert done.returncode == 3
+    assert "OPENAI_API_KEY is not set" in done.stdout and len(done.stdout.splitlines()) <= 10
+    assert not (ROOT / "ledger" / "openai-gpt-4o-mini.jsonl").exists()
