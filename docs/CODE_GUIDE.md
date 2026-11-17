@@ -1,0 +1,55 @@
+# Code guide
+
+A plain-English guide to the repository. It describes what exists now; each wave adds to it.
+Current state: **Wave 0 done** (structure, tooling, guard tests). No consolidation logic yet.
+
+## Run and test
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m pytest
+python -m ruff check .
+python -m mypy app
+python run.py consolidate         # prints "not built yet (Wave 1)" and exits 2
+```
+
+## What each top-level folder is for
+
+| Folder | Role |
+|---|---|
+| `Northwind_TakeHome_v2/` | The supplied brief and data. Never edited. |
+| `app/` | The application. Every file is a docstring-only shell until its wave. |
+| `config/` | Hand-edited TOML settings, and `bundle_manifest.sha256`, the SHA-256 of each supplied data file. |
+| `tests/` | `test_structure`, `test_architecture` and `test_bundle` today; unit, golden, perturbation, property, red-team and eval folders later. |
+| `ledger/`, `output/`, `transcripts/` | Recorded AI calls, generated results and AI session records. Empty for now. |
+
+## How `app/` is divided
+
+The split exists to keep AI output away from numbers.
+
+- `core`, `parsers`, `detectors`, `verification`, `writers`, `domain` touch numbers. They import no AI, web or
+  model code.
+- `agents` hold AI reviewers. They never import `core`, so a reviewer can read evidence but cannot calculate.
+- `llm` is the only place that imports a model library.
+- `db` is the only place that uses `sqlite3`.
+
+`tests/test_architecture.py` reads every source file with Python's `ast` module and fails if one of these rules is
+broken. It also tests its own checker on small snippets, so it cannot pass by checking nothing.
+
+## What the three tests prove
+
+- `test_structure.py`: `app/` contains exactly the files in the structure plan (no missing, no extra), every folder is
+  a package, each full agent folder has its four files, the stretch agents have only `__init__.py`.
+- `test_architecture.py`: the import rules above.
+- `test_bundle.py`: the 15 supplied data files hash to the values in `config/bundle_manifest.sha256`. In a fresh clone
+  this checks the committed bytes, because `.gitattributes` stops git from changing line endings in the data folder.
+
+## Choices worth explaining
+
+- **Pinned requirements.** Exact versions, so a fresh clone installs what was tested. Pins were checked against PyPI
+  on 2026-11-17. `google-genai` is left unpinned until Gemini is first used.
+- **TOML for config.** YAML reads `0031` as the number 25; TOML refuses it.
+- **No line-ending conversion for the data.** The first commit stored 12 CSV files with changed line endings; the
+  second commit ("store data files byte for byte") corrected it.
