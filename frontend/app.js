@@ -33,7 +33,6 @@ function table(head, rows) {
            h("tbody", {}, rows.map((r) => h("tr", {}, r.map((c) => h("td", {}, c))))));
 }
 function when(text) { return new Date(text).toLocaleString(); }
-function shown(v) { return v === null ? "null" : typeof v === "object" ? JSON.stringify(v) : String(v); }
 
 const STATUS = { new: "Not analysed", awaiting_review: "Waiting for a decision", done: "Finished", blocked: "Blocked" };
 

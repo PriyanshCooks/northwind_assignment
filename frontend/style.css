@@ -61,3 +61,8 @@ code { background: var(--soft); padding: 1px 6px; border-radius: 4px; font-size:
   .stepper { flex-direction: row; overflow-x: auto; position: static; padding-bottom: 4px; }
   .stepper .item { flex: none; padding: 6px 8px; } .stepper .state { display: none; }
   main { padding: 16px; } .top { padding: 10px 12px; } h1 { font-size: 21px; } }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.small { font-size: 13px; }
+.tag.provisional { border-color: var(--warn); color: var(--warn); }
+.tag.unknown { border-color: var(--bad); color: var(--bad); }
+.tag.determined { border-color: var(--ok); color: var(--ok); }

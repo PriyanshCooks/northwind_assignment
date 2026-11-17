@@ -1,8 +1,6 @@
 // The six step views. Each reads from the API and draws; no number is calculated here.
 const head = (run, title) => [h("h1", {}, title), h("p", { class: "muted" }, run.name + " · ", h("code", {}, run.id))];
 const go = (run, step) => { location.hash = `#/run/${run.id}/${step}`; };
-// Display only: the engine's gate detail carries Decimal reprs and 40-digit differences; show them readably.
-const tidy = (t) => t.replace(/Decimal\('([^']+)'\)/g, "$1").replace(/(\d+\.\d{6})\d+/g, "$1").replace(/-?\d+(\.\d+)?E-\d{2,}/g, "0");
 const button = (label, onclick, plain) => h("button", { onclick, class: plain ? "plain" : "" }, label);
 
 async function uploadStep(run) {
@@ -103,13 +101,12 @@ async function resultsStep(run) {
       const c = await api("GET", `/runs/${run.id}/compare/${other.value}`);
       holder.replaceChildren(h("h2", {}, "Input changes"), h("ul", {}, (c.input_changes.length ? c.input_changes : ["identical inputs"]).map((t) => h("li", {}, t))),
         h("h2", {}, "What each changed line feeds (1% nudge)"),
-        table(["Line", "Figures that move"], Object.entries(c.impact).map(([t, m]) => [h("code", {}, t), Object.entries(m).map(([k, v]) => `${k}: ${v.before} → ${v.after}`).join("; ") || "none"])),
-        h("h2", {}, "Figures that differ"), table(["Figure", "Other run", "This run"], c.figures.map((x) => [x.key, shown(x.other), shown(x.this)])));
+        table(["Line", "Figures that move"], Object.entries(c.impact).map(([t, m]) => [h("code", {}, t), Object.entries(m).map(([k, v]) => `${k}: ${amount(v.before)} → ${amount(v.after)}`).join("; ") || "none"])),
+        h("h2", {}, "Figures that differ"), table(["Figure", "Other run", "This run"], c.figures.map((x) => [x.key, figureValue({ value: x.other }), figureValue({ value: x.this })])));
     } catch (e) { fail(e); }
   };
   show(...head(run, "5 Results"), h("h2", {}, "The 12 control figures"),
-    table(["Figure", "Value", "Status", "Why / open items"], r.figures.map((x) => [x.key, shown(x.value),
-      h("span", { class: x.status }, x.status), x.reason || (x.open_items || []).join("; ")])),
+    figuresTable(r.figures),
     h("h2", {}, `Issues (${r.issues.length})`),
     table(["Code", "Severity", "Where", "Action", "Claim"], r.issues.map((i) => [i.code, i.severity, `${i.file}:${i.line ?? ""}`, i.action, i.claim])),
     h("h2", {}, "What if an input changes?"), h("p", { class: "muted" }, "Builds a new run from a changed cell (line 1 is the header); this run is left as it is."),
