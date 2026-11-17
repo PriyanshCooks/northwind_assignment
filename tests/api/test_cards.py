@@ -42,3 +42,20 @@ def test_results_carry_the_same_cards_without_buttons(client: TestClient) -> Non
     run_id = finished_run(client)
     cards = client.get(f"/api/runs/{run_id}/results").json()["cards"]
     assert cards and all(c["actions"] == [] for c in cards)
+
+
+def test_the_review_carries_the_recorded_review_totals_and_every_unit(client: TestClient) -> None:
+    run_id = finished_run(client)
+    ai = client.get(f"/api/runs/{run_id}/review").json()["ai"]
+    assert ai["label"] == "recorded review" and ai["totals"]["units"] == len(ai["units"]) == 63
+    unchecked = sum(len(u["unverified"]) for u in ai["units"])
+    assert ai["totals"]["claims"] == ai["totals"]["verified"] + ai["totals"]["dropped"] + unchecked
+    je006 = next(u for u in ai["units"] if u["unit"] == "JE-006")
+    assert je006["packet"]["total_debit"] == "51200.00" and je006["answer"]["unbalanced"] is True
+
+
+def test_build_lists_the_stages_the_run_really_logged(client: TestClient) -> None:
+    run_id = finished_run(client)
+    stages = client.post(f"/api/runs/{run_id}/build").json()["stages"]
+    assert [s["stage"] for s in stages][:2] == ["intake", "analyse"] and "export" in {s["stage"] for s in stages}
+    assert all("data_dir" not in s and "folder" not in s for s in stages)

@@ -1,5 +1,6 @@
 """The steps behind the UI, each a thin call into an existing service: analyse and resume go through the same graph
 the command line uses, review advice is replayed from the ledger only, and the gates are the engine's own checks."""
+import json
 from pathlib import Path
 from typing import Any
 
@@ -84,9 +85,10 @@ def review_view(registry: Registry, run_id: str) -> dict[str, Any]:
     findings = [{k: v for k, v in f.model_dump(mode="json").items() if k in keep} for f in run.findings]
     dispositions = [d.model_dump(mode="json") for d in run.dispositions]
     open_items = registry.meta(run_id)["open_items"]
-    units = ai_service.review_units(registry, run_id)["units"]
+    ai = ai_service.review_units(registry, run_id)
+    units = ai["units"]
     return {
-        "findings": findings, "cards": build_cards(findings, units, dispositions, open_items, _memos(run)),
+        "ai": ai, "findings": findings, "cards": build_cards(findings, units, dispositions, open_items, _memos(run)),
         "dispositions": dispositions,
         "queue": review_queue(run.findings, states),
         "open_items": open_items,
@@ -101,7 +103,7 @@ def build(registry: Registry, run_id: str) -> dict[str, Any]:
     run = stage(build_context(registry.data_dir(run_id), registry.config_dir(run_id)))
     registry.update(run_id, built=True)
     gates = [{"name": c.name, "ok": c.ok, "detail": c.detail} for c in run.checks]
-    return {"gates": gates, "passed": run.checks_passed, "blocked": run.blocked}
+    return {"gates": gates, "passed": run.checks_passed, "blocked": run.blocked, "stages": run_log(registry, run_id)}
 
 
 def result_cards(registry: Registry, run_id: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -109,3 +111,13 @@ def result_cards(registry: Registry, run_id: str, items: list[dict[str, Any]]) -
     run = stage(build_context(registry.data_dir(run_id), registry.config_dir(run_id)))
     units = ai_service.review_units(registry, run_id)["units"]
     return build_cards(items, units, [d.model_dump(mode="json") for d in run.dispositions], [], _memos(run))
+
+
+def run_log(registry: Registry, run_id: str) -> list[dict[str, Any]]:
+    """The stages this run really logged, oldest first, without file paths."""
+    events = []
+    for path in sorted((registry.folder(run_id) / "logs").glob("*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            row = json.loads(line)
+            events.append({k: v for k, v in row.items() if k not in {"run_id", "data_dir", "folder"}})
+    return sorted(events, key=lambda e: str(e["ts"]))

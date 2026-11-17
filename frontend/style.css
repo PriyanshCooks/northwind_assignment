@@ -76,3 +76,8 @@ dl { margin: 8px 0 0; } .field { display: grid; grid-template-columns: 190px min
 dt { color: var(--muted); font-size: 14px; } dd { margin: 0; } dd ul { margin: 0; padding-left: 18px; }
 q { font-style: italic; }
 @media (max-width: 800px) { .field { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 12px 0; }
+.stat { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; } .big { font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.unit { border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; margin: 6px 0; } .unit summary { cursor: pointer; padding: 4px 0; }
+pre { background: var(--soft); padding: 10px; border-radius: 6px; overflow-x: auto; max-height: 320px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+h4 { margin: 12px 0 4px; font-size: 14px; color: var(--muted); } .stages { padding-left: 20px; } .stages li { margin: 4px 0; }

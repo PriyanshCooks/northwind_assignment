@@ -46,8 +46,6 @@ async function reviewStep(run) {
   const holder = h("div");
   const draw = () => holder.replaceChildren(...issueGroups(rv.cards, marks, draw));
   draw();
-  const advice = rv.advice.map((a) => [a.kind, a.unit, a.recorded ? "recorded model answer" : "not recorded (rule fallback)",
-    a.verified.join(", "), a.unverified.join(", "), a.dropped.map((d) => `${d.claim}: ${d.why}`).join("; "), a.missed.join(", ")]);
   show(...head(run, "2 Review"), h("p", {}, "Status: ", h("span", { class: "tag" }, run.status)),
     rv.open_items.length ? h("div", { class: "callout warn" }, `${rv.open_items.length} item(s) wait for a decision. Approve or reject each card, add your name and submit.`) :
       h("div", { class: "callout ok" }, "Nothing is waiting for a decision."),
@@ -56,9 +54,7 @@ async function reviewStep(run) {
     rv.open_items.length ? h("div", { class: "row" }, approver, button("Submit decisions", send)) : null,
     h("h2", {}, "Journal dispositions"),
     table(["Journal", "Disposition", "Reasons"], rv.dispositions.map((d) => [d.journal_id, d.status, d.reasons.join("; ")])),
-    h("h2", {}, "Recorded AI advice"), h("p", { class: "muted" }, "Advice only: it changes no figure. Claims the packet does not " +
-      "support are dropped and shown here. No model is called from this page."),
-    table(["Kind", "Unit", "Source", "Verified", "Unverified", "Dropped claims", "Model missed"], advice),
+    aiPanel(rv.ai),
     h("div", { class: "row" }, button("Next: choose outputs", () => go(run, "outputs"))));
 }
 
@@ -77,6 +73,7 @@ async function buildStep(run) {
   const b = await api("POST", `/runs/${run.id}/build`);
   show(...head(run, "4 Build"), h("div", { class: b.passed ? "callout ok" : "error" },
     b.passed ? `All ${b.gates.length} gates passed.` : "A gate failed" + (b.blocked ? `: ${b.blocked}` : ".")),
+    h("h2", {}, "Stages this run logged"), stageList(b.stages), h("h2", {}, `Gates (${b.gates.length})`),
     table(["Gate", "Result", "Detail"], b.gates.map((g) => [g.name, h("span", { class: g.ok ? "ok" : "bad" }, g.ok ? "pass" : "FAIL"), tidy(g.detail)])),
     h("div", { class: "row" }, button("Next: results", () => go(run, "results"))));
 }

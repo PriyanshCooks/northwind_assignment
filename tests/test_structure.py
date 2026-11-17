@@ -104,7 +104,7 @@ def test_test_folders_mirror_the_structure() -> None:
 
 
 def test_frontend_is_plain_static_files() -> None:
-    names = ("README.md", "index.html", "app.js", "format.js", "issues.js", "steps.js", "style.css")
+    names = ("README.md", "index.html", "app.js", "format.js", "issues.js", "ai.js", "steps.js", "style.css")
     assert files_under("frontend") == {f"frontend/{n}" for n in names}
 
 
