@@ -5,13 +5,24 @@ from pathlib import Path
 from app.config import load_assumptions, load_policy
 from app.core.acquisition import AcquisitionFigures, acquisition_figures, india_period_postings
 from app.core.eliminate import ic_balances, ic_income_expense, investments
+from app.core.figures import all_unknown, build_figures
 from app.core.intercompany import IcResult, reconcile
 from app.core.post_journals import decide, import_postings, journal_postings
+from app.core.reserve import ReserveResult, reserve
 from app.core.revalue import RevalueResult, revalue
+from app.core.statements import (
+    Balances,
+    EquityView,
+    balance_sheet,
+    balances_by_account,
+    changes_in_equity,
+    profit_and_loss,
+)
 from app.core.translate import ConsolidationBlocked, translate
 from app.detectors.mapping import classified
 from app.detectors.registry import run_all
 from app.domain.entries import Entry, Posting
+from app.domain.figures import Figure
 from app.domain.findings import Finding
 from app.domain.journals import Disposition
 from app.domain.ledger import MappedLine
@@ -70,6 +81,10 @@ class Consolidation:
     translated: list[Posting] = field(default_factory=list)
     acquisition: AcquisitionFigures | None = None
     eliminations: list[Entry] = field(default_factory=list)
+    balances: Balances = field(default_factory=dict)
+    reserve: ReserveResult | None = None
+    statements: dict[str, dict[str, object]] = field(default_factory=dict)
+    figures: dict[str, Figure] = field(default_factory=dict)
     blocked: str | None = None
 
 
@@ -91,6 +106,29 @@ def stage(ctx: Context) -> Consolidation:
         residual = ctx.policy.intercompany.residual_account
         result.eliminations = [ic_balances(result.translated), ic_income_expense(result.translated, residual)]
         result.eliminations += investments(ctx.inputs, local, result.translated, result.acquisition)
+        _finish(result, fx)
     except ConsolidationBlocked as stop:
         result.blocked = str(stop)
+        result.figures = all_unknown(result.blocked)
     return result
+
+
+def _finish(run: Consolidation, fx: FxTable) -> None:
+    """Balances, reserve, statements and the 12 figures, once every posting and elimination exists."""
+    inputs, acq = run.ctx.inputs, run.acquisition
+    assert acq is not None and run.ic is not None and run.revalue is not None
+    run.balances = balances_by_account(run.translated, run.eliminations, inputs.coa)
+    run.reserve = reserve(inputs, fx, run.local, run.translated, run.balances, acq)
+    equity = EquityView(
+        share_capital=inputs.prior_equity["3100"].amount_gbp, retained_opening=inputs.prior_equity["3200"].amount_gbp,
+        reserve_opening=run.reserve.opening, nci_opening=inputs.prior_equity["3400"].amount_gbp,
+        owners_profit=run.reserve.owners_profit, nci_acquired=acq.nci_at_acquisition, nci_profit=acq.nci_profit,
+        nci_translation=acq.nci_translation, reserve_movement=run.reserve.movement_balance,
+    )
+    period = (run.ctx.policy.period.start, run.ctx.policy.period.end)
+    run.statements = {
+        "balance_sheet": balance_sheet(run.balances, inputs.coa, equity, period[1]),
+        "profit_and_loss": profit_and_loss(run.balances, inputs.coa, period, (equity.owners_profit, acq.nci_profit)),
+        "changes_in_equity": changes_in_equity(equity, period),
+    }
+    run.figures = build_figures(inputs, fx, run.balances, run.reserve, acq, run.ic, run.dispositions, run.revalue)
