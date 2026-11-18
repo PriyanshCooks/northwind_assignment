@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from app.detectors.mapping import classified
 from app.domain.findings import Finding, new_finding
-from app.domain.runs import Context
+from app.domain.runs import Context, IcInvoice
 from app.parsers.acquisition_note import table_foots
 from app.parsers.fx_rates import FxTable
 
@@ -82,12 +82,35 @@ def d10_cross_file_ties(ctx: Context) -> list[Finding]:
     return found + _opening_equity_tie(ctx, fx)
 
 
+def _repeats_and_mismatches(ctx: Context) -> list[Finding]:
+    """The same document twice for one entity, or the two entities disagreeing on what the document says."""
+    found: list[Finding] = []
+    seen: dict[tuple[str, str], IcInvoice] = {}
+    for inv in ctx.inputs.intercompany:
+        first = seen.setdefault((inv.reporting_entity, inv.doc_ref), inv)
+        if first is not inv:
+            claim = (f"{inv.doc_ref} is listed twice for {inv.reporting_entity} (lines {first.ref.line} and "
+                     f"{inv.ref.line}): the second is counted again")
+            found.append(new_finding("D11", "FLAG", claim, inv.ref.file, inv.ref.line, "flagged", abs(inv.doc_amount),
+                                     "duplicate", (inv.ref, first.ref)))
+    for (entity, doc_ref), inv in seen.items():
+        other = seen.get((inv.counterparty, doc_ref))
+        if other is None or entity > inv.counterparty:
+            continue
+        if (inv.doc_amount, inv.doc_currency) != (other.doc_amount, other.doc_currency):
+            claim = (f"{doc_ref}: {entity} says {inv.doc_currency} {inv.doc_amount}, {inv.counterparty} says "
+                     f"{other.doc_currency} {other.doc_amount}")
+            found.append(new_finding("D11", "FLAG", claim, other.ref.file, other.ref.line, "flagged",
+                                     abs(inv.doc_amount - other.doc_amount), "mismatch", (inv.ref, other.ref)))
+    return found
+
+
 def d11_intercompany_pairing(ctx: Context) -> list[Finding]:
     fx = FxTable(ctx.inputs.rates)
     by_side: dict[str, dict[str, object]] = {}
     for inv in ctx.inputs.intercompany:
         by_side.setdefault(inv.reporting_entity, {})[inv.doc_ref] = inv
-    found = []
+    found = _repeats_and_mismatches(ctx)
     for inv in ctx.inputs.intercompany:
         other = by_side.get(inv.counterparty, {}).get(inv.doc_ref)
         if other is None:

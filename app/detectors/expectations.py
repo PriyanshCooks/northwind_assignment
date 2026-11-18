@@ -18,8 +18,12 @@ def _by_month(ctx: Context) -> dict[str, list[MonthlyRow]]:
 
 def _tax_rate(ctx: Context, rows: list[MonthlyRow]) -> Decimal | None:
     index = ctx.inputs.maps["IN"]
-    tax = sum((r.amount for r in rows if index[r.ledger_code][0].group_code == TAX_GROUP), Decimal(0))
-    pretax = -sum((r.amount for r in rows if index[r.ledger_code][0].group_code != TAX_GROUP), Decimal(0))
+    def is_tax(row: MonthlyRow) -> bool:
+        mapped = index.get(row.ledger_code)
+        return mapped is not None and mapped[0].group_code == TAX_GROUP
+
+    tax = sum((r.amount for r in rows if is_tax(r)), Decimal(0))
+    pretax = -sum((r.amount for r in rows if not is_tax(r)), Decimal(0))
     return tax / pretax if pretax else None
 
 

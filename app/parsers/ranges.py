@@ -9,7 +9,11 @@ from app.parsers.contracts import ContractError
 def check_period(inputs: Inputs, start: date, end: date) -> None:
     """policy 1: the group year. India's monthly P&L, the invoices and the closing and opening rates sit in it."""
     for row in inputs.india_monthly:
-        first = date.fromisoformat(row.month + "-01")
+        try:
+            first = date.fromisoformat(row.month + "-01")
+        except ValueError as error:
+            reason = f"column month: not a year and month: {row.month!r}"
+            raise ContractError(row.ref.file, row.ref.line, reason) from error
         if not start <= first <= end:
             raise ContractError(row.ref.file, row.ref.line, f"column month: {row.month} is outside {start} to {end}")
     for invoice in inputs.intercompany:

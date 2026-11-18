@@ -1,7 +1,9 @@
 """Impossible inputs stop the run before any figure, with the file, the line and the column named."""
 import pytest
 
+from app.detectors.registry import run_all
 from app.parsers.contracts import ContractError
+from app.services.run_service import stage
 from tests.conftest import Edit
 
 CLOSING = "GBP,USD,closing,1.2530,2024-12-31,USD per 1 GBP"
@@ -32,6 +34,15 @@ CASES = [
      "column month: 2023-04"),
     ("invoice dated outside the year", "intercompany.csv", "2024-03-31,USD,157460.00", "2023-03-31,USD,157460.00", 2,
      "column doc_date: 2023-03-31"),
+    ("the India entity row is deleted", "entities.csv",
+     "IN,Northwind India Pvt Ltd,India,INR,80,2024-07-01,31-Mar,Tally Prime,tb_in.csv", "", 1,
+     "missing from the file: IN"),
+    ("the acquisition date is not a date", "entities.csv", "2024-07-01", "2024-07--1", 4, "not a date"),
+    ("opening share capital row is deleted", "prior_year_group.csv",
+     "3100,Share capital,1250000.00,2023-12-31,Parent share capital at historical rate" + chr(10), "", 1,
+     "missing: 3100"),
+    ("a month that is not a month", "in_pl_monthly.csv", "2024-04,65600000.00", "2024--4,65600000.00", 2,
+     "not a year and month"),
 ]
 
 
@@ -43,3 +54,24 @@ def test_the_run_stops_and_names_the_place(
         edited_context(file, old, new)
     assert (caught.value.file, caught.value.line) == (file, line)
     assert reason in caught.value.reason
+
+
+MISSING_MAP_ROW = "4000,Sales,4100\n"
+
+
+def test_a_deleted_map_row_is_a_finding_and_a_failed_check_never_a_crash(edited_context: Edit) -> None:
+    run = stage(edited_context("map_uk.csv", MISSING_MAP_ROW, ""))
+    assert any(f.code == "D02" for f in run.findings)
+    assert any(c.name.startswith("oracle") and not c.ok for c in run.checks)
+
+
+def test_an_invoice_listed_twice_is_flagged(edited_context: Edit) -> None:
+    again = "US,UK,INV-US-2201,2024-03-31,USD,157460.00,USD,157460.00,Management fee\n"
+    ctx = edited_context("intercompany.csv", "US,UK,INV-US-2224", again + "US,UK,INV-US-2224")
+    assert any(f.code == "D11" and f.key.endswith(":duplicate") for f in run_all(ctx))
+
+
+def test_a_side_of_an_invoice_that_disagrees_is_flagged(edited_context: Edit) -> None:
+    ctx = edited_context("intercompany.csv", "UK,US,INV-US-2201,2024-03-31,USD,157460.00",
+                         "UK,US,INV-US-2201,2024-03-31,USD,-157460.00")
+    assert any(f.code == "D11" and f.key.endswith(":mismatch") for f in run_all(ctx))

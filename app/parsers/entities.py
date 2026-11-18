@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 
 from app.domain.runs import Entity, IcInvoice, PriorEquity, SubledgerControl
-from app.parsers.contracts import Contract, check_percentage, read_rows
+from app.parsers.contracts import Contract, ContractError, check_percentage, read_rows
 from app.utils.money import to_decimal
 
 ENTITIES = Contract(
@@ -29,12 +29,19 @@ def load_entities(path: Path) -> dict[str, Entity]:
         v = row.values
         if v["ownership_pct"]:
             check_percentage(path.name, row.line, "ownership_pct", v["ownership_pct"])
+        try:
+            acquired = date.fromisoformat(v["acquisition_date"]) if v["acquisition_date"] else None
+        except ValueError as error:
+            reason = f"column acquisition_date: not a date: {v['acquisition_date']!r}"
+            raise ContractError(path.name, row.line, reason) from error
         entities[v["entity_id"]] = Entity(
             ref=row.ref, id=v["entity_id"], currency=v["functional_currency"],
             ownership_pct=to_decimal(v["ownership_pct"]) if v["ownership_pct"] else None,
-            acquisition_date=date.fromisoformat(v["acquisition_date"]) if v["acquisition_date"] else None,
-            tb_file=v["tb_file"],
+            acquisition_date=acquired, tb_file=v["tb_file"],
         )
+    missing = sorted({"US", "UK", "IN"} - set(entities))
+    if missing:
+        raise ContractError(path.name, 1, f"the group has three entities; missing from the file: {', '.join(missing)}")
     return entities
 
 
@@ -50,12 +57,17 @@ def load_subledger(path: Path) -> list[SubledgerControl]:
 
 def load_prior_equity(path: Path) -> dict[str, PriorEquity]:
     rows = read_rows(path, PRIOR)
-    return {
+    found = {
         r.values["group_account"]: PriorEquity(
             ref=r.ref, account=r.values["group_account"], amount_gbp=to_decimal(r.values["amount_gbp"]),
         )
         for r in rows
     }
+    missing = sorted({"3100", "3200", "3300", "3400"} - set(found))
+    if missing:
+        reason = f"opening equity needs accounts 3100, 3200, 3300 and 3400; missing: {', '.join(missing)}"
+        raise ContractError(path.name, 1, reason)
+    return found
 
 
 def load_intercompany(path: Path) -> list[IcInvoice]:

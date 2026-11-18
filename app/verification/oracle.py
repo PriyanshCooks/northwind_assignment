@@ -164,7 +164,12 @@ def recompute(data: Path, remap_deferred_income: bool = True) -> dict[str, objec
 
 def oracle_checks(data: Path, figures: dict[str, Figure], tolerance: D, remap: bool = True) -> list[Check]:
     """One check per figure: the pipeline and the oracle must agree within the tolerance (assumption A12)."""
-    expected = recompute(data, remap)
+    try:
+        expected = recompute(data, remap)
+    except (KeyError, AttributeError, StopIteration, ArithmeticError, ValueError) as error:
+        # a row the oracle cannot follow (an unmapped account, a missing rate) is a result for the reviewer, not a crash
+        return [Check("oracle: recompute", False, f"the oracle could not recompute from the raw files "
+                                                  f"({type(error).__name__}: {error}); the figures are not verified")]
     out = []
     for key in NUMERIC:
         figure = figures[key]
