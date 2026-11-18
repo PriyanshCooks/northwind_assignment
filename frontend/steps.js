@@ -17,14 +17,15 @@ async function uploadStep(run, notes = {}) {
     } catch (err) { notes[f.name] = err.message; }
     await uploadStep(run, notes);
   } });
-  const mark = (f) => notes[f.name] ? h("span", { class: "bad" }, "Rejected") :
+  const mark = (f) => notes[f.name] || f.rejected ? h("span", { class: "bad" }, "Rejected") :
     f.present && !f.error ? h("span", { class: "ok" }, "Uploaded") : h("span", { class: "muted" }, "Not uploaded");
   const rows = fresh.files.map((f) => [h("code", {}, f.name), mark(f), f.present ? `${f.bytes} bytes` : "",
     notes[f.name] || f.error || "", pick(f)]);
   const uploaded = fresh.files.filter((f) => f.present && !f.error).length;
   const next = () => go(run, "scan");
   show(...head(run, "1 Upload"), h("div", { class: "callout" }, "Add the files one at a time: choose a file on its own row. Only the 15 " +
-    "expected names are accepted, up to 1 MB each, and a file that breaks its contract is refused with the reason shown."),
+    "expected names are accepted, up to 1 MB each. A file that breaks its contract is refused with the reason shown and its row is left empty: " +
+    "nothing earlier is kept in its place."),
     h("p", { role: "status" }, `${uploaded} of ${fresh.files.length} files uploaded.`),
     table(["File", "Mark", "Size", "Contract", "Choose a file"], rows),
     h("div", { class: "row" }, h("button", { onclick: next, disabled: !ready }, "Next: scan the files")));

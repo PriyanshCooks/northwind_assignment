@@ -49,7 +49,7 @@ APP_FILES = {
     "app/utils": ["env.py", "hashing.py", "logging.py", "money.py", "paths.py"],
 }
 AGENT_FILES = ["llm_model.py", "prompts.py", "schema.py", "tools.py"]
-FULL_AGENTS = ["mapping_reviewer", "journal_reviewer"]
+FULL_AGENTS = ["mapping_reviewer", "journal_reviewer", "injection_screen"]
 TEST_FOLDERS = ["unit", "perturbation", "property", "redteam", "evals", "api"]
 UNIT_FOLDERS = [folder.removeprefix("app/") for folder in APP_FILES if folder != "app"]
 TOP_LEVEL = [

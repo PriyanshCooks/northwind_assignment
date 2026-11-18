@@ -47,6 +47,12 @@ def _line(ctx: Context, journal: Journal, line: JournalLine, balances: Running) 
     return out
 
 
+def screen_packet(packet: dict[str, Any]) -> dict[str, Any]:
+    """Only the quoted free text of a journal, so the screen cannot be steered by numbers and sees nothing else."""
+    texts = [packet["description"], *(line["memo"] for line in packet["lines"] if line["memo"])]
+    return {"id": packet["id"], "texts": texts}
+
+
 def journal_packet(ctx: Context, journal: Journal, balances: Running) -> dict[str, Any]:
     """Balances run in file order, as D07 reads them: each journal sees the account as earlier journals left it."""
     others = [j for j in ctx.inputs.journals if j.id != journal.id and j.entity == journal.entity]

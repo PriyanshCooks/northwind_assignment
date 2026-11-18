@@ -47,6 +47,11 @@ def journal_facts(packet: dict[str, Any]) -> dict[str, bool]:
     }
 
 
+def lexicon_matches(packet: dict[str, Any]) -> bool:
+    """Detector D12's wording check, run on the journal's own texts."""
+    return any(p.search(t) for t in _texts(packet) for p in PATTERNS)
+
+
 def _texts(packet: dict[str, Any]) -> list[str]:
     quoted = [packet["description"], *(line["memo"] for line in packet["lines"] if line["memo"])]
     return [json.loads(q) for q in quoted]
@@ -59,8 +64,7 @@ def ground_journal(verdict: JournalVerdict, packet: dict[str, Any]) -> Grounded:
     unverified: list[str] = []
     for flag in verdict.flags:
         if flag == "text_contains_instruction":
-            lexicon = any(p.search(t) for t in _texts(packet) for p in PATTERNS)
-            (verified if lexicon else unverified).append(flag)
+            (verified if lexicon_matches(packet) else unverified).append(flag)
         elif facts[flag]:
             verified.append(flag)
         else:

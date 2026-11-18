@@ -41,7 +41,12 @@ def create_run(body: NewRun, reg: Reg) -> dict[str, Any]:
 
 @router.get("/runs/{run_id}")
 def open_run(run_id: str, reg: Reg) -> dict[str, Any]:
-    return reg.meta(run_id) | {"files": file_status(reg.data_dir(run_id))}
+    meta = reg.meta(run_id)
+    files = file_status(reg.data_dir(run_id))
+    for row in files:  # a file that was refused stays marked, with the reason, until a valid one replaces it
+        if not row["present"] and row["name"] in meta.get("rejected", {}):
+            row["error"], row["rejected"] = meta["rejected"][row["name"]], True
+    return meta | {"files": files}
 
 
 @router.put("/runs/{run_id}/files/{name}")
@@ -54,9 +59,14 @@ async def upload(run_id: str, name: str, request: Request, reg: Reg) -> dict[str
     if len(body) > MAX_BYTES:
         raise HTTPException(413, f"{name} is larger than {MAX_BYTES} bytes")
     error = validate_bytes(name, body)
+    rejected = {k: v for k, v in reg.meta(run_id).get("rejected", {}).items() if k != name}
     if error is None:
         (folder / name).write_bytes(body)
-        pipeline.invalidate(reg, run_id)
+    else:  # a refused file leaves its slot empty: the earlier version is not quietly kept in use
+        (folder / name).unlink(missing_ok=True)
+        rejected[name] = error
+    reg.update(run_id, rejected=rejected)
+    pipeline.invalidate(reg, run_id)
     return {"name": name, "stored": error is None, "error": error}
 
 

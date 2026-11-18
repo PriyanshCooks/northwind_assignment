@@ -133,3 +133,10 @@ def test_d02_flags_a_liability_name_on_a_revenue_account_even_when_the_name_is_c
 
 def test_d02_nature_rule_stays_quiet_on_the_supplied_data(ctx: Context) -> None:
     assert by_code(ctx, "D02", ":nature_name") == []
+
+
+def test_a_flipped_sign_is_pointed_at_the_line_that_would_balance_the_file(edited_context: Edit) -> None:
+    revenue = "4100,Revenue,0.00,18400000.00"
+    broken = edited_context("tb_us.csv", revenue, "4100,Revenue,18400000.00,0.00")
+    (finding,) = by_code(broken, "D01")
+    assert finding.line == 18 and "turning over the sign of line 18 (4100)" in finding.claim
