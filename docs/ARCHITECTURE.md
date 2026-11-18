@@ -66,7 +66,8 @@ Two kinds of reviewer run on recorded answers by default.
 
 - **Per-unit reviewers** (`app/agents/journal_reviewer`, `mapping_reviewer`, `review/`): one unit per mapped trial-balance line (43) and per journal (20).
   The packet holds exact joins of the data and never a detector verdict. The answer is a set of booleans and a short
-  reason. `risk` is computed in code, so a model cannot say "no risk" while flagging a category.
+  reason. A third narrow call, the injection screen, sees only each journal's quoted free text and asks whether it is aimed at a
+  reviewer; its yes is proved by the D12 wording lexicon or kept as unverified. `risk` is computed in code, so a model cannot say "no risk" while flagging a category.
 - **Reasoning layer** (`app/agents/reasoning/`): three read-only checkpoints. A *reader* goes through every input line in chunks.
   A *calculation reviewer* looks at each calculation record (formula, inputs with `file:line`, result). An *investigator*
   follows a concern back to its sources with six capped lookup tools. An *explain* step for rule findings is built and tested, but nothing in the CLI or the UI calls it yet.
