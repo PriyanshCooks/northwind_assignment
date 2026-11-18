@@ -6,8 +6,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from app.agents.review.units import Unit, journal_units, mapping_units
 from app.domain.runs import Context
-from app.review.units import Unit, journal_units, mapping_units
 
 Edit = Callable[[dict[str, Any]], None]
 

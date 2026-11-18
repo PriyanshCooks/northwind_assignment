@@ -9,7 +9,8 @@ from app.orchestrator.state import RunState
 from app.services import inputs_service as inputs
 from app.services.pipeline_service import NotReady, build, run_log
 from app.services.registry_service import Registry
-from app.services.run_service import build_context, input_hash, stage
+from app.services.run_output_service import input_hash
+from app.services.run_service import build_context, stage
 
 
 def unanswered(registry: Registry, run_id: str) -> dict[str, Any]:

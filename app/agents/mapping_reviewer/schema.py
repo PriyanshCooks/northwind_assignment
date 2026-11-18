@@ -4,7 +4,7 @@ from typing import ClassVar, Literal
 
 from pydantic import create_model
 
-from app.review.verdict import Verdict
+from app.agents.review.verdict import Verdict
 
 
 class MappingVerdictBase(Verdict):

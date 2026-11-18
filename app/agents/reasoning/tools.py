@@ -7,8 +7,8 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
+from app.agents.reasoning.evidence import Evidence
 from app.llm.tooluse import ToolRefused
-from app.reasoning.evidence import Evidence
 
 MAX_CALLS = 5  # per item under review
 MAX_LINES = 40

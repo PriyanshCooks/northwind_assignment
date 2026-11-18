@@ -4,16 +4,16 @@ from pathlib import Path
 
 import pytest
 
+from app.agents.reasoning.calc_review import review_calculations
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.grounding import ground_line_claims
+from app.agents.reasoning.schema import LineClaim
 from app.domain.runs import Context
 from app.llm.ledger import Ledger
-from app.reasoning.calc_review import review_calculations
-from app.reasoning.evidence import Evidence
-from app.reasoning.grounding import ground_line_claims
-from app.reasoning.schema import LineClaim
 from app.services.reasoning_service import build_evidence
 from app.services.run_service import stage
 from app.utils.paths import DEFAULT_DATA_DIR
-from tests.unit.reasoning.fakes import CFG, scripted
+from tests.unit.agents.reasoning.fakes import CFG, scripted
 
 FILES = frozenset(p.name for p in DEFAULT_DATA_DIR.iterdir() if p.is_file())
 

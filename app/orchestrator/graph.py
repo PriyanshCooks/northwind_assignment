@@ -10,7 +10,7 @@ from app.db.checkpoint import open_checkpointer
 from app.orchestrator.edges import after_analyse
 from app.orchestrator.nodes import Answer, analyse, apply_answer, consolidate, export, intake
 from app.orchestrator.state import RunState
-from app.services.run_service import input_hash
+from app.services.run_output_service import input_hash
 from app.utils.paths import CONFIG_DIR
 
 

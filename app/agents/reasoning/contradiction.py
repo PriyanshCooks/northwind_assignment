@@ -2,8 +2,8 @@
 a suspicion means the code cannot tell, not that the code has looked and the claim failed."""
 from decimal import Decimal
 
-from app.reasoning.evidence import Evidence
-from app.reasoning.text_checks import DATE, WORD, invalid_date
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.text_checks import DATE, WORD, invalid_date
 
 RATE_FLAGS = frozenset({"unit_or_direction_suspect", "inconsistent_with_neighbours", "value_not_plausible"})
 NATURE_FLAGS = frozenset({"nature_mismatch", "label_contradicts_meaning"})

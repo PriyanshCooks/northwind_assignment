@@ -10,7 +10,7 @@ import pytest
 from app.llm.ledger import Ledger
 from app.utils.paths import DEFAULT_DATA_DIR
 from tests.evals.seeded_faults import FAULTS, evaluate, plant, summary
-from tests.unit.reasoning.fakes import CFG, scripted
+from tests.unit.agents.reasoning.fakes import CFG, scripted
 
 
 @pytest.fixture(scope="module")

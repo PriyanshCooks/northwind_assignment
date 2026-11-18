@@ -10,10 +10,10 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.agents.reasoning.evidence import Evidence
 from app.llm.client import Mode
 from app.llm.factory import LlmConfig, load_llm_config
 from app.llm.ledger import Ledger
-from app.reasoning.evidence import Evidence
 from app.services.reasoning_service import ReasoningReport, build_evidence, run_reasoning
 from app.services.run_service import Consolidation, build_context, stage
 from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR, RUNTIME_DIR

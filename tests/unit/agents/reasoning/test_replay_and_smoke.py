@@ -1,14 +1,14 @@
 """The ledger replays unchanged units and only changed units go live; the smoke run sends one unit per checkpoint."""
 from pathlib import Path
 
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.reader import chunk_packets, read_inputs
 from app.cli import main
 from app.llm.ledger import Ledger
-from app.reasoning.evidence import Evidence
-from app.reasoning.reader import chunk_packets, read_inputs
 from app.services.reasoning_service import NOT_AVAILABLE, run_reasoning
 from app.services.run_service import stage
-from tests.unit.reasoning.fakes import CFG, scripted
-from tests.unit.reasoning.test_guardrails import CLOUD, layer_answer
+from tests.unit.agents.reasoning.fakes import CFG, scripted
+from tests.unit.agents.reasoning.test_guardrails import CLOUD, layer_answer
 
 
 def hundred_lines(tmp_path: Path, last: str = "line 100") -> Evidence:

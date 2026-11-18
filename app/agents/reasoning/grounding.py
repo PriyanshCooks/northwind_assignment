@@ -5,10 +5,10 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
-from app.reasoning.contradiction import contradicted_line
-from app.reasoning.evidence import Evidence
-from app.reasoning.schema import LineClaim
-from app.reasoning.text_checks import WORD, invalid_date
+from app.agents.reasoning.contradiction import contradicted_line
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.schema import LineClaim
+from app.agents.reasoning.text_checks import WORD, invalid_date
 
 Tier = Literal["verified", "suspicion"]
 NUMBER = re.compile(r"\d[\d,.]*\d|\d")

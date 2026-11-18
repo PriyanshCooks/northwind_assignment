@@ -11,14 +11,15 @@ import sys
 sys.path.insert(0, {root!r})
 import run
 import app.cli as cli
-from tests.unit.reasoning.fakes import CFG, scripted
-from tests.unit.reasoning.test_guardrails import layer_answer
+import app.cli_review as review
+from tests.unit.agents.reasoning.fakes import CFG, scripted
+from tests.unit.agents.reasoning.test_guardrails import layer_answer
 from app.services.reasoning_service import run_reasoning
 
 model, _ = scripted(layer_answer)
-cli.load_llm_config = lambda: CFG.model_copy(update={{"model": "openai:test", "ledger": {ledger!r}}})
-real = cli.run_reasoning
-cli.run_reasoning = lambda r, c, l, mode, _m, n, smoke: real(r, c, l, mode, model, n, smoke)
+review.load_llm_config = lambda: CFG.model_copy(update={{"model": "openai:test", "ledger": {ledger!r}}})
+real = review.run_reasoning
+review.run_reasoning = lambda r, c, l, mode, _m, n, smoke: real(r, c, l, mode, model, n, smoke)
 run.finish(cli.main(["smoke"]))
 """
 

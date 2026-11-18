@@ -15,7 +15,8 @@ from app.services.cards_service import build_cards, held_cards, waiting_cards
 from app.services.overrides_service import override_states, review_queue
 from app.services.registry_service import Registry
 from app.services.review_service import review_all
-from app.services.run_service import Consolidation, build_context, input_hash, stage
+from app.services.run_output_service import input_hash
+from app.services.run_service import Consolidation, build_context, stage
 from app.services.upload_service import file_status
 
 

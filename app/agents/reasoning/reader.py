@@ -4,14 +4,14 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.agents.reasoning.budget import UnitBudget
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.grounding import Dropped, Grounded, ground_line_claims
+from app.agents.reasoning.meanings import MEANINGS
+from app.agents.reasoning.schema import InputReading
 from app.llm.client import Mode, run_structured
 from app.llm.factory import LlmConfig
 from app.llm.ledger import Ledger, LlmUnavailable
-from app.reasoning.budget import UnitBudget
-from app.reasoning.evidence import Evidence
-from app.reasoning.grounding import Dropped, Grounded, ground_line_claims
-from app.reasoning.meanings import MEANINGS
-from app.reasoning.schema import InputReading
 
 CHUNK = 40  # lines per call; two lines of the chunk before are shown again as context
 CONTEXT = 2

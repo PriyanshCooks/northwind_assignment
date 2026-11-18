@@ -1,6 +1,7 @@
 """run_with_tools(): a typed model call that may look things up. Same ledger rules as run_structured, and the tool
 trail is recorded with the answer, so a replay shows what the model looked at without calling anything."""
 import functools
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Generic, Protocol, TypeVar, cast
@@ -67,6 +68,7 @@ def _hidden_when_spent(toolbox: Tools) -> Callable[[RunContext[None], ToolDefini
 def run_with_tools(
     cfg: LlmConfig, ledger: Ledger, *, agent: str, system_prompt: str, prompt_version: str, packet: dict[str, Any],
     schema: type[T], toolbox: Tools, mode: Mode = "replay", model: Model | None = None,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> Answered[T]:
     settings = model_settings(cfg)
     settings["max_tokens"] = 3 * int(settings["max_tokens"])  # a chain of steps does not fit the reviewers' 400 tokens
@@ -90,7 +92,7 @@ def run_with_tools(
     # the toolbox refuses calls past MAX_TOOL_CALLS with a message; this cap only stops a model that never gives up
     limits = UsageLimits(request_limit=3 * MAX_TOOL_CALLS, tool_calls_limit=3 * MAX_TOOL_CALLS)
     try:
-        result = _attempt(runner, packet, lambda s: None, limits)
+        result = _attempt(runner, packet, sleep, limits)
     except (UnexpectedModelBehavior, UsageLimitExceeded) as error:
         ledger.failed_in_a_row += 1
         ledger.append({**record, "validated": False, "error": scrub(str(error))[:300], "response": None,

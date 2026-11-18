@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
+from app.agents.review.packets import journal_packet, mapping_packet
 from app.detectors.mapping import classified
 from app.domain.runs import Context
-from app.review.packets import journal_packet, mapping_packet
 
 
 @dataclass(frozen=True)

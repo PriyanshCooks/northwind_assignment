@@ -7,7 +7,7 @@ APP = ROOT / "app"
 
 # The engine touches numbers, so no model output and no web or model library may reach it.
 ENGINE = ("core", "parsers", "detectors", "verification", "writers", "domain")
-FORBIDDEN_APP = ("app.agents", "app.llm", "app.review", "app.orchestrator", "app.routes", "app.main")
+FORBIDDEN_APP = ("app.agents", "app.llm", "app.orchestrator", "app.routes", "app.main")
 FORBIDDEN_LIBS = ("fastapi", "langgraph", "pydantic_ai", "openai", "anthropic", "google")
 MODEL_LIBS = ("pydantic_ai", "openai", "anthropic", "google")
 
@@ -58,7 +58,7 @@ def test_engine_imports_no_web_or_model_library() -> None:
 
 
 def test_agents_never_import_core() -> None:
-    assert violations(("agents", "reasoning"), ("app.core",)) == []
+    assert violations(("agents",), ("app.core",)) == []
 
 
 def test_only_the_llm_folder_imports_a_model_library() -> None:

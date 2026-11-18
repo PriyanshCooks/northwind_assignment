@@ -20,12 +20,13 @@ Assignment bundle ID **NWG-D0BC**.
 .
 ├── Northwind_TakeHome_v2/   the supplied assignment: brief PDF, its README, data/ (never edited)
 ├── app/                     the application
-│   ├── main.py  routes.py  api_models.py  cli.py  config.py
-│   ├── agents/              the journal and mapping reviewers: llm_model.py  prompts.py  schema.py  tools.py
-│   ├── reasoning/           read-only reasoning checkpoints, claim grounding, injection guard
+│   ├── main.py  routes.py  api_models.py  cli.py  cli_review.py  config.py
+│   ├── agents/              every AI reader, none imports core
+│   │   ├── journal_reviewer/  mapping_reviewer/   per-unit reviewers: llm_model.py  prompts.py  schema.py  tools.py
+│   │   ├── review/          review units, evidence packets, grounding of those two reviewers' answers
+│   │   └── reasoning/       read-only reasoning checkpoints, claim grounding, injection guard
 │   ├── orchestrator/        the LangGraph workflow
 │   ├── llm/                 the only code that talks to a model provider
-│   ├── review/              review units, evidence packets, grounding of the two reviewers' answers
 │   ├── core/                the deterministic consolidation
 │   ├── parsers/  detectors/  verification/  writers/  domain/
 │   └── db/  services/  utils/

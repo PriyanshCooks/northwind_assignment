@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from app.reasoning import tools
-from app.reasoning.evidence import Evidence
-from app.reasoning.tools import MAX_CALLS, TOOL_NAMES, ToolBox, ToolRefused
+from app.agents.reasoning import tools
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.tools import MAX_CALLS, TOOL_NAMES, ToolBox, ToolRefused
 from app.utils.paths import DEFAULT_DATA_DIR
 
 FILES = frozenset(p.name for p in DEFAULT_DATA_DIR.iterdir() if p.is_file())

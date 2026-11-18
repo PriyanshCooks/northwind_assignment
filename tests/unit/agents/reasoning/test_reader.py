@@ -6,12 +6,12 @@ import pytest
 from pydantic_ai import ModelResponse, TextPart
 from pydantic_ai.models.function import FunctionModel
 
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.reader import CHUNK, chunk_packets, read_inputs
+from app.agents.reasoning.schema import CalcReview, InputReading, Investigation
 from app.llm.ledger import Ledger, LlmStop
-from app.reasoning.evidence import Evidence
-from app.reasoning.reader import CHUNK, chunk_packets, read_inputs
-from app.reasoning.schema import CalcReview, InputReading, Investigation
 from app.utils.paths import DEFAULT_DATA_DIR
-from tests.unit.reasoning.fakes import CFG, scripted
+from tests.unit.agents.reasoning.fakes import CFG, scripted
 
 FILES = frozenset(p.name for p in DEFAULT_DATA_DIR.iterdir() if p.is_file())
 LINE = "map_uk.csv:12"  # UK 2310 Deferred income, mapped to a revenue account

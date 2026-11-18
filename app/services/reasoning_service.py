@@ -7,6 +7,13 @@ from dataclasses import dataclass
 from decimal import Decimal
 from statistics import median
 
+from app.agents.reasoning.budget import UnitBudget
+from app.agents.reasoning.calc_review import CalcReport, review_calculations
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.grounding import Grounded
+from app.agents.reasoning.investigator import TraceReport, investigate
+from app.agents.reasoning.reader import InputReport, read_inputs
+from app.agents.reasoning.tools import lineage_text
 from app.core.calculations import calculation_records
 from app.detectors.mapping import classified, name_nature
 from app.detectors.rates import CHECKED_TYPES, percent_apart
@@ -14,13 +21,6 @@ from app.domain.calculations import CalcRecord
 from app.llm.client import Mode
 from app.llm.factory import LlmConfig
 from app.llm.ledger import Ledger
-from app.reasoning.budget import UnitBudget
-from app.reasoning.calc_review import CalcReport, review_calculations
-from app.reasoning.evidence import Evidence
-from app.reasoning.grounding import Grounded
-from app.reasoning.investigator import TraceReport, investigate
-from app.reasoning.reader import InputReport, read_inputs
-from app.reasoning.tools import lineage_text
 from app.services.run_service import Consolidation
 from app.utils.money import to_decimal
 

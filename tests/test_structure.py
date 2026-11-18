@@ -5,13 +5,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 APP_FILES = {
     "app": ["main.py", "routes.py", "routes_results.py", "routes_inputs.py", "routes_signoff.py", "api_models.py",
-            "cli.py", "config.py"],
+            "cli.py", "cli_review.py", "config.py"],
     "app/agents": [],
-    "app/reasoning": ["evidence.py", "tools.py", "schema.py", "grounding.py", "contradiction.py", "text_checks.py",
-                      "meanings.py", "reader.py", "budget.py", "calc_review.py", "investigator.py", "explain.py"],
+    "app/agents/reasoning": [
+        "evidence.py", "tools.py", "schema.py", "grounding.py", "contradiction.py", "text_checks.py",
+        "meanings.py", "reader.py", "budget.py", "calc_review.py", "investigator.py", "explain.py",
+    ],
     "app/orchestrator": ["state.py", "nodes.py", "edges.py", "graph.py", "runner_plain.py"],
     "app/llm": ["client.py", "factory.py", "ledger.py", "instrumentation.py", "replay.py", "cost.py", "tooluse.py"],
-    "app/review": ["units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
+    "app/agents/review": ["units.py", "packets.py", "grounding.py", "fallback.py", "verdict.py"],
     "app/core": [
         "post_journals.py", "revalue.py", "translate.py", "intercompany.py", "eliminate.py",
         "acquisition.py", "reserve.py", "statements.py", "figures.py", "lineage.py", "calculations.py",
@@ -42,7 +44,7 @@ APP_FILES = {
         "ai_service.py", "cards_service.py", "output_service.py", "reasoning_service.py", "rows_service.py",
         "rule_text.py", "inputs_service.py", "scan_service.py",
         "decisions_service.py", "review_actions_service.py", "generate_service.py", "signoff_service.py",
-        "calculation_service.py",
+        "calculation_service.py", "row_explain_service.py", "run_output_service.py",
     ],
     "app/utils": ["env.py", "hashing.py", "logging.py", "money.py", "paths.py"],
 }

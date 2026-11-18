@@ -3,17 +3,17 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from app.agents.reasoning.calc_review import review_calculations
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.investigator import investigate
+from app.agents.reasoning.reader import read_inputs
 from app.domain.calculations import CalcRecord
 from app.llm.ledger import Ledger
-from app.reasoning.calc_review import review_calculations
-from app.reasoning.evidence import Evidence
-from app.reasoning.investigator import investigate
-from app.reasoning.reader import read_inputs
 from app.services.reasoning_service import record_text
 from app.verification.recalc import failures
-from tests.unit.reasoning.fakes import CFG, scripted
-from tests.unit.reasoning.test_checkpoints import tool_model
-from tests.unit.reasoning.test_reader import claim
+from tests.unit.agents.reasoning.fakes import CFG, scripted
+from tests.unit.agents.reasoning.test_checkpoints import tool_model
+from tests.unit.agents.reasoning.test_reader import claim
 
 FILE_A = "Boy1 = 1.1.2000\n236fev2 ed = 00.02.2222\nBoii1 = 1.1.2000\nGirl1 = 1.1.2001\nBoy1 = 11.18.2026\n"
 FILE_B = "Boy2 = 1.1.2000\n"

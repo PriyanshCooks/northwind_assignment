@@ -1,7 +1,7 @@
 """Pydantic output model only: one boolean per risk category."""
 from typing import ClassVar
 
-from app.review.verdict import Verdict
+from app.agents.review.verdict import Verdict
 
 
 class JournalVerdict(Verdict):

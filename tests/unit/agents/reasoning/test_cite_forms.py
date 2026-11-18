@@ -1,11 +1,11 @@
 """The investigator may cite a step in any id form the tools print; an id nothing returned is dropped."""
 import pytest
 
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.grounding import cite_exists
+from app.agents.reasoning.investigator import ground_investigation
+from app.agents.reasoning.schema import Investigation
 from app.domain.runs import Context
-from app.reasoning.evidence import Evidence
-from app.reasoning.grounding import cite_exists
-from app.reasoning.investigator import ground_investigation
-from app.reasoning.schema import Investigation
 from app.services.reasoning_service import build_evidence
 from app.services.run_service import stage
 

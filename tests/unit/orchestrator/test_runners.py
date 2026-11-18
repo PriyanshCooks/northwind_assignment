@@ -7,7 +7,7 @@ from pathlib import Path
 from app.orchestrator.graph import resume_graph, run_graph, thread_for
 from app.orchestrator.runner_plain import run_plain
 from app.orchestrator.state import RunState, initial_state
-from app.services.run_service import input_hash
+from app.services.run_output_service import input_hash
 from app.utils.paths import CONFIG_DIR, DEFAULT_DATA_DIR, ROOT
 
 TARGET = "mapping:UK:2310"

@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pytest
 
+from app.agents.reasoning.calc_review import review_calculations
+from app.agents.reasoning.evidence import Evidence
 from app.domain.runs import Context
 from app.llm.ledger import Ledger
-from app.reasoning.calc_review import review_calculations
-from app.reasoning.evidence import Evidence
 from app.services.reasoning_service import build_evidence
 from app.services.run_service import stage
-from tests.unit.reasoning.fakes import CFG, scripted
+from tests.unit.agents.reasoning.fakes import CFG, scripted
 
 
 @pytest.fixture(scope="module")

@@ -10,7 +10,8 @@ from app.config import load_overrides
 from app.detectors.registry import run_all
 from app.orchestrator.state import RunState
 from app.services.overrides_service import approve, override_states, reject
-from app.services.run_service import build_context, input_hash, record, stage, write_outputs
+from app.services.run_output_service import input_hash, record, write_outputs
+from app.services.run_service import build_context, stage
 from app.services.upload_service import EXPECTED_FILES
 from app.utils.hashing import sha256_file
 from app.utils.logging import RunLogger

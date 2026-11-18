@@ -11,6 +11,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from app.llm.client import BREAKER_LIMIT, run_structured
 from app.llm.factory import LlmConfig
 from app.llm.ledger import Ledger, LlmStop, LlmUnavailable
+from app.llm.tooluse import run_with_tools
 
 SECRET = "sk-proj-FAKEKEY1234567890abcdef"
 CFG = LlmConfig(model="openai:gpt-4o-mini", ledger="ledger/test.jsonl", max_output_tokens=100,
@@ -122,3 +123,22 @@ def test_a_key_in_an_error_never_reaches_the_ledger_or_the_message(
     assert SECRET not in str(invalid.value)
     text = (tmp_path / "l.jsonl").read_text(encoding="utf-8")
     assert text and SECRET not in text and "FAKEKEY" not in json.dumps(ledger.entries)
+
+
+class NoTools:
+    trail: list[dict[str, object]] = []
+
+    def exhausted(self) -> bool:
+        return False
+
+    def tools(self) -> list[object]:
+        return []
+
+
+def test_a_429_on_a_tool_call_waits_before_it_retries(tmp_path: Path) -> None:
+    model, calls = failing(http(429, "rate limit"), then=GOOD, times=2)
+    waits: list[float] = []
+    answered = run_with_tools(CFG, Ledger(tmp_path / "l.jsonl"), agent="investigator", system_prompt="Look.",
+                              prompt_version="v1", packet={"unit": "x"}, schema=Verdict, toolbox=NoTools(),  # type: ignore[arg-type]
+                              mode="live", model=model, sleep=waits.append)
+    assert answered.output.flag is True and len(calls) == 3 and waits == [2.0, 8.0]

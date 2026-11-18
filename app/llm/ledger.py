@@ -41,10 +41,15 @@ class Ledger:
         self.new_keys: set[str] = set()
         self.failed_in_a_row = 0  # live calls only: the circuit breaker in client.py reads it
         if path.exists():
-            for line in path.read_text(encoding="utf-8").splitlines():
-                if line.strip():
+            lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            for number, line in enumerate(lines):
+                try:
                     entry = json.loads(line)
-                    self.entries[entry["key"]] = entry
+                except json.JSONDecodeError:
+                    if number == len(lines) - 1:
+                        continue  # a write cut off by a crash: that call is simply asked again
+                    raise
+                self.entries[entry["key"]] = entry
 
     def get(self, key: str) -> dict[str, Any] | None:
         entry = self.entries.get(key)

@@ -5,16 +5,16 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.agents.reasoning.budget import UnitBudget
+from app.agents.reasoning.calc_review import CalcReport
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.grounding import Dropped, cite_exists, numbers_outside
+from app.agents.reasoning.schema import Investigation
+from app.agents.reasoning.tools import ToolBox
 from app.llm.client import Mode
 from app.llm.factory import LlmConfig
 from app.llm.ledger import Ledger, LlmUnavailable
 from app.llm.tooluse import run_with_tools
-from app.reasoning.budget import UnitBudget
-from app.reasoning.calc_review import CalcReport
-from app.reasoning.evidence import Evidence
-from app.reasoning.grounding import Dropped, cite_exists, numbers_outside
-from app.reasoning.schema import Investigation
-from app.reasoning.tools import ToolBox
 
 PROMPT_VERSION = "investigator-v1"
 SYSTEM = (

@@ -5,16 +5,16 @@ Steps are grounded exactly like the investigator's."""
 import json
 from dataclasses import dataclass, field
 
+from app.agents.reasoning.budget import UnitBudget
+from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.investigator import TraceResult, ground_investigation
+from app.agents.reasoning.schema import Investigation
+from app.agents.reasoning.tools import ToolBox
 from app.domain.findings import Finding
 from app.llm.client import Mode
 from app.llm.factory import LlmConfig
 from app.llm.ledger import Ledger, LlmUnavailable
 from app.llm.tooluse import run_with_tools
-from app.reasoning.budget import UnitBudget
-from app.reasoning.evidence import Evidence
-from app.reasoning.investigator import TraceResult, ground_investigation
-from app.reasoning.schema import Investigation
-from app.reasoning.tools import ToolBox
 
 PROMPT_VERSION = "explain-v1"
 SYSTEM = (

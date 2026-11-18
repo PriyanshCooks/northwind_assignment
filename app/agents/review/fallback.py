@@ -4,7 +4,7 @@ from typing import Any
 
 from app.agents.journal_reviewer.schema import JournalVerdict
 from app.agents.mapping_reviewer.schema import MappingVerdictBase, mapping_verdict_model
-from app.review.grounding import journal_facts, mapping_facts
+from app.agents.review.grounding import journal_facts, mapping_facts
 
 
 def journal_by_rules(packet: dict[str, Any]) -> JournalVerdict:

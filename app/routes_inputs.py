@@ -8,6 +8,7 @@ from app.routes import Reg
 from app.services import generate_service as generate
 from app.services import inputs_service as inputs
 from app.services import review_actions_service as actions
+from app.services import row_explain_service as row_explain
 from app.services.scan_service import progress as scan_progress
 
 router = APIRouter(prefix="/api")
@@ -53,6 +54,6 @@ def rows(run_id: str, name: str, reg: Reg) -> dict[str, Any]:
 @router.get("/runs/{run_id}/inputs/{name}/rows/{line}/explain")
 def explain(run_id: str, name: str, line: int, reg: Reg) -> dict[str, Any]:
     try:
-        return inputs.explain_row(reg, run_id, name, line)
+        return row_explain.explain_row(reg, run_id, name, line)
     except inputs.NoSuchFile as error:
         raise HTTPException(404, str(error)) from error

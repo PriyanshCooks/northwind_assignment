@@ -1,7 +1,7 @@
 import json
 
+from app.agents.review.units import journal_units, mapping_units
 from app.domain.runs import Context
-from app.review.units import journal_units, mapping_units
 
 
 def packets(ctx: Context) -> dict[str, dict]:  # type: ignore[type-arg]

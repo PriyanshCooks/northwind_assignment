@@ -52,7 +52,7 @@ runs the same node functions, and a test checks that both give the same output h
 | Which figures are `null` | Suspicions about input lines, calculations and traces |
 
 The boundary is built into the folders. `core`, `parsers`, `detectors`, `verification`, `writers` and `domain` import no AI
-or web code. The AI packages never import `core`. Only `app/llm/` imports a model library. `tests/test_architecture.py`
+or web code. Everything under `app/agents/` is kept away from `core`. Only `app/llm/` imports a model library. `tests/test_architecture.py`
 reads every source file and fails if a rule is broken.
 
 **Three kinds of gap.** A *data gap* (the files do not give the value) is `null` with a reason: the UK SGD bank has no
@@ -64,10 +64,10 @@ assets are marked provisional. A *method gap* (the policy is silent) is an `ASSU
 
 Two kinds of reviewer run on recorded answers by default.
 
-- **Per-unit reviewers** (`app/agents/`, `app/review/`): one unit per mapped trial-balance line (43) and per journal (20).
+- **Per-unit reviewers** (`app/agents/journal_reviewer`, `mapping_reviewer`, `review/`): one unit per mapped trial-balance line (43) and per journal (20).
   The packet holds exact joins of the data and never a detector verdict. The answer is a set of booleans and a short
   reason. `risk` is computed in code, so a model cannot say "no risk" while flagging a category.
-- **Reasoning layer** (`app/reasoning/`): three read-only checkpoints. A *reader* goes through every input line in chunks.
+- **Reasoning layer** (`app/agents/reasoning/`): three read-only checkpoints. A *reader* goes through every input line in chunks.
   A *calculation reviewer* looks at each calculation record (formula, inputs with `file:line`, result). An *investigator*
   follows a concern back to its sources with six capped lookup tools. An *explain* step reads rule findings.
 
@@ -85,7 +85,7 @@ birth dates. One file holds garbage lines (`236fev2 ed = 00.02.2222`, a misspelt
 four bad lines, and code proves only what it can (an impossible date, a line with no readable name). When a birth year is
 after the current year the age is negative: the calculation reviewer sees it, and code has already re-checked the
 arithmetic. The investigator traces the age back to `fileA.txt:1` and never writes a corrected value.
-`tests/unit/reasoning/test_brothers.py` runs all three checkpoints on it.
+`tests/unit/agents/reasoning/test_brothers.py` runs all three checkpoints on it.
 
 **Measured result.** On gpt-4o-mini, recorded once with no prompt tuning, the layer hit 1 of 7 labelled defects. Calculation
 concerns fell from 26 to 4 after the contradiction and normal-side checks, and 9 of 21 trace steps survived grounding. So

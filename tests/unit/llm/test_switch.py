@@ -6,10 +6,10 @@ import pytest
 from app.agents.journal_reviewer.llm_model import review_journal
 from app.agents.journal_reviewer.prompts import PROMPT_VERSION
 from app.agents.journal_reviewer.schema import JournalVerdict
+from app.agents.review.units import journal_units
 from app.domain.runs import Context
 from app.llm.factory import LlmConfig, load_llm_config, model_settings
 from app.llm.ledger import Ledger, LedgerMiss, call_key
-from app.review.units import journal_units
 from app.services.review_service import review_all, review_unit
 from app.services.run_service import stage
 from app.utils.hashing import json_hash
