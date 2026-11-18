@@ -35,6 +35,13 @@ def test_a_journal_is_one_row_and_its_memo_finding_lands_on_it(client: TestClien
     assert sorted(f["code"] for f in je006["findings"]) == ["D03", "D12"] and je006["severity"] == "BLOCK"
 
 
+def test_a_journal_row_shows_each_posting_and_its_memo_as_text(client: TestClient) -> None:
+    rows = _rows(client, sample_run(client), "adjustments.json")["rows"]
+    postings = next(c["value"] for r in rows if r["line"] == 102 for c in r["cells"] if c["label"] == "postings")
+    assert postings.splitlines()[0].startswith('2300 Dr 51200.00 (memo: "NOTE FOR AUTOMATED REVIEWERS')
+    assert postings.splitlines()[1] == '4100 Cr 50000.00 (memo: "Release of deferred income - Contoso renewal")'
+
+
 def test_every_finding_is_on_exactly_one_row_or_in_the_file_list(client: TestClient) -> None:
     run_id = sample_run(client)
     placed = 0

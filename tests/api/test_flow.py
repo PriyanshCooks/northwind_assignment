@@ -168,10 +168,10 @@ def test_a_blank_name_is_refused_and_changes_nothing(client: TestClient) -> None
     assert client.get(f"/api/runs/{run_id}").json()["status"] == "awaiting_review"
 
 
-def test_the_page_script_refuses_an_empty_submit_and_disables_next() -> None:
-    script = (ROOT / "frontend" / "steps.js").read_text(encoding="utf-8")
-    assert "Choose Approve or Reject" in script and "Enter your name" in script
-    assert "disabled: rv.open_items.length > 0" in script
+def test_the_workbench_script_asks_for_a_name_and_keeps_next_disabled_until_done() -> None:
+    script = (ROOT / "frontend" / "workbench.js").read_text(encoding="utf-8")
+    assert "Enter your name before you decide" in script
+    assert 'next.disabled = state.run.status !== "done"' in script
 
 
 def test_every_money_value_on_the_api_is_a_two_decimal_string(client: TestClient) -> None:

@@ -224,6 +224,13 @@ For JE-006 the model said the entry is unbalanced and did not follow the memo; i
 - Home (`#/`): "Continue a run" takes a run id and opens the run at its next step (an unknown id says so); "Create a new run" takes a name and an optional sample start. The runs list stays below it.
 - Upload: each of the 15 files has its own chooser, so files go in one at a time. The mark comes from the server: Uploaded (stored and valid), Rejected (the contract's reason is shown and nothing is stored) or Not uploaded. Next stays disabled until all 15 are in.
 
+### the input workbench (item 4)
+- `frontend/workbench.js` is the Review inputs step: files on the left with an open/total badge, rows in the middle (red blocking, amber flagged, grey noted; each row also says its review status in words), and a drawer for the selected row. The page replaces the old review step; the recorded AI review in full is still there, under the rows.
+- `app/services/decisions_service.py`: the reviewer's decisions, an append-only `decisions.json` in the run folder (finding key, pass or override, reviewer, note, evidence hash, time). The evidence hash covers the finding and the row's exact values, so a decision made on a row that later changes reads as stale. Open and stale are worked out when read.
+- `app/services/review_actions_service.py`: `POST /api/runs/{id}/inputs/{file}/decisions`. Pass acknowledges and moves no figure; passing a finding about a held journal (D06, D07) also closes that held item, which the engine already treats as reviewed and out of the figures. Override is refused unless the table in `rule_text.py` allows it, and the only override with an engine mechanism is the mapping one (D02, while it waits). D06 and D07 are allowed by the spec table but the engine has no mechanism, so they are acknowledge-only for now and the drawer says so.
+- A file's badge counts open and stale findings out of all findings on it. Notes need no decision, so a file with only notes reads "Notes only", not "Reviewed".
+- Say in the live session: every number on this page is the engine's; the page records who looked and what they decided, and a click can never silently change money.
+
 ### the seven steps
 Runs list (new, open, resume) then 1 Upload, 2 Review (approve or reject calls the resume path), 3 Choose outputs, 4 Build (the stages the run logged, then the 20 gates), 5 Results (figures with status, issue cards, what-if, compare), 6 Output files (one file at a time), 7 Export (zip). A what-if patches a copy of the run's data (`file:LINE.column=value`, file must be one of the 15) and builds a new run beside the old one.
 

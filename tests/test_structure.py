@@ -40,6 +40,7 @@ APP_FILES = {
         "review_service.py", "registry_service.py", "upload_service.py", "pipeline_service.py", "results_service.py",
         "ai_service.py", "cards_service.py", "output_service.py", "reasoning_service.py", "rows_service.py",
         "rule_text.py", "inputs_service.py", "scan_service.py",
+        "decisions_service.py", "review_actions_service.py",
     ],
     "app/utils": ["env.py", "hashing.py", "logging.py", "money.py", "paths.py"],
 }
@@ -108,7 +109,7 @@ def test_test_folders_mirror_the_structure() -> None:
 
 def test_frontend_is_plain_static_files() -> None:
     names = ("README.md", "index.html", "style.css", "app.js", "format.js", "issues.js", "ai.js", "viewer.js",
-             "steps.js")
+             "steps.js", "workbench.js")
     assert files_under("frontend") == {f"frontend/{n}" for n in names}
 
 

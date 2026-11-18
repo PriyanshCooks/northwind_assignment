@@ -27,12 +27,14 @@ def _csv_rows(text: str) -> list[dict[str, Any]]:
 
 
 def _postings(lines: list[dict[str, Any]]) -> str:
-    """'6100 Dr 85000.00; 2200 Cr 85000.00', amounts exactly as the file has them."""
+    """One posting per line, '6100 Dr 85000.00', amounts exactly as the file has them, with the posting's memo if it has
+    one. The memo is shown as text and never acted on (JE-006's memo is a finding, not an instruction)."""
     parts = []
     for p in lines:
         side, amount = ("Dr", p.get("debit")) if p.get("debit") not in (None, "", "0.00") else ("Cr", p.get("credit"))
-        parts.append(f"{p.get('account')} {side} {amount}")
-    return "; ".join(parts)
+        memo = f' (memo: "{p["memo"]}")' if p.get("memo") else ""
+        parts.append(f"{p.get('account')} {side} {amount}{memo}")
+    return "\n".join(parts)
 
 
 def _journal_rows(text: str) -> list[dict[str, Any]]:

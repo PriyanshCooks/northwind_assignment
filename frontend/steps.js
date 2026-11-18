@@ -58,41 +58,6 @@ async function scanStep(run) {
   next.disabled = false;
 }
 
-async function reviewStep(run) {
-  if (run.status === "new") {
-    return show(...head(run, "2 Review"), h("p", {}, "This run has not been analysed yet."),
-      button("Analyse", async () => { try { await api("POST", `/runs/${run.id}/analyse`); await route(); } catch (e) { fail(e); } }));
-  }
-  const rv = await api("GET", `/runs/${run.id}/review`);
-  const marks = {};
-  const approver = h("input", { placeholder: "your name", maxlength: 60, "aria-label": "Your name" });
-  const problem = h("div", { class: "error", role: "alert", hidden: true });
-  const send = async () => {
-    const decisions = Object.fromEntries(Object.entries(marks).filter(([, v]) => v));
-    const message = !Object.keys(decisions).length ? "Choose Approve or Reject on at least one card before you submit."
-      : !approver.value.trim() ? "Enter your name before you submit." : "";
-    problem.textContent = message;
-    problem.hidden = !message;
-    if (message) return;
-    try { await api("POST", `/runs/${run.id}/decisions`, { approver: approver.value.trim(), decisions }); await route(); }
-    catch (e) { fail(e); }
-  };
-  const holder = h("div");
-  const draw = () => holder.replaceChildren(...(rv.waiting.length ? [h("section", {}, h("h2", {}, `Needs your decision (${rv.waiting.length})`),
-    rv.waiting.map((w) => waitingCard(w, marks, draw)))] : []), ...issueGroups(rv.cards, marks, draw));
-  draw();
-  show(...head(run, "2 Review"), h("p", {}, "Status: ", h("span", { class: "tag" }, run.status)),
-    rv.open_items.length ? h("div", { class: "callout warn" }, `${rv.open_items.length} item(s) wait for a decision. Approve or reject each card, add your name and submit.`) :
-      h("div", { class: "callout ok" }, "Nothing is waiting for a decision."),
-    holder,
-    rv.open_items.length ? h("div", { class: "row" }, approver, button("Submit decisions", send)) : null, problem,
-    h("h2", {}, "Journal dispositions"),
-    table(["Journal", "Disposition", "Reasons"], rv.dispositions.map((d) => [d.journal_id, d.status, d.reasons.join("; ")])),
-    aiPanel(rv.ai),
-    h("div", { class: "row" }, h("button", { onclick: () => go(run, "outputs"), disabled: rv.open_items.length > 0,
-      title: rv.open_items.length ? "Decide every waiting item first" : "" }, "Next: choose outputs")));
-}
-
 async function outputsStep(run) {
   const out = await api("GET", `/runs/${run.id}/outputs`);
   const picked = new Set(out.chosen || out.available.map((o) => o.name));

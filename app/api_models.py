@@ -1,5 +1,6 @@
 """Request and response shapes for the review UI. Plain data: no figure is computed here."""
 import re
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -47,3 +48,12 @@ class WhatIf(BaseModel):
             if not match or match["file"] not in EXPECTED_FILES:
                 raise ValueError(f"{text!r}: expected a change to one of the 15 supplied files")
         return value
+
+
+class RowDecision(BaseModel):
+    """One reviewer decision on one finding: pass (acknowledge) or override (only where the rules allow it)."""
+
+    key: str = Field(min_length=1, max_length=200)
+    action: Literal["pass", "override"]
+    reviewer: str = Field(min_length=1, max_length=60)
+    note: str = Field(default="", max_length=500)
