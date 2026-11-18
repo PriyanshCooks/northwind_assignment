@@ -178,25 +178,25 @@ Recorded with `qwen3:4b-instruct-2507-q4_K_M` (78 units, ledger `ledger/qwen3-4b
 
 | Reviewer | Units | Recall | False alarms | Claims dropped by grounding |
 |---|---|---|---|---|
-| Local model, supplied data | 63 | 0.33 | 0.00 | 0.62 |
-| Local model, seeded | 14 | 0.17 | 0.00 | 0.71 |
+| Local model, supplied data | 63 | 0.56 | 0.00 | 0.38 |
+| Local model, seeded | 14 | 0.25 | 0.00 | 0.57 |
 | Rule-based baseline, supplied | 63 | 0.89 | 0.00 | 0 |
-| Rule-based baseline, seeded | 15 | 0.46 | 0.00 | 0 |
+| Rule-based baseline, seeded | 15 | 0.54 | 0.00 | 0 |
 
-Read these as agreement with those checks, not accuracy. Part of the dropped share measures how strict the two-word name rule in grounding is. The model reliably found duplicates, the unbalanced journal and mirror images. It missed all three out-of-period dates, the exceeds-balance case and the unknown account, and its mapping claims mostly failed grounding (10 name-mismatch claims dropped, 9 real ones missed). Grounding removed every false claim (false alarms 0.00 after it), which is what it is for, but the cost is low recall: a 4B model is a weak second opinion here and the rules do better on every category they can compute. The rules cannot read wording, so the model's value is limited to cases like the reworded memo. Prompts were not tuned further (journal prompt on its second version, mapping on its first); the result is a finding, not a target. The sample is small and the labels are mine.
+Read these as agreement with those checks, not accuracy. These figures were re-scored on 2026-11-18 from the same recorded answers, after grounding began to accept a mapping claim that detector D02's nature test can prove (a name that reads as income or a liability mapped to an account of another type): a live test with a deliberately wrong map row showed the model describing the mismatch correctly while grounding dropped it. Part of the dropped share still measures how strict the two-word name rule is. The model reliably found duplicates, the unbalanced journal and mirror images, and missed all three out-of-period dates, the exceeds-balance case and the unknown account. Grounding removed every false claim (false alarms 0.00), which is what it is for, but a 4B model is a weak second opinion and the rules do better on every category they can compute. The rules cannot read wording, so the model's value is limited to cases like the reworded memo. Prompts were not tuned further (journal prompt on its second version, mapping on its first); the result is a finding, not a target. The sample is small and the labels are mine.
 
 ### results of the cloud model (task 3.7)
 Recorded with `openai:gpt-4o-mini` (78 units, 78 recorded calls, ledger `ledger/openai-gpt-4o-mini.jsonl`, which also holds the later reasoning-layer calls; the reviewer calls used 35,060 input and 5,484 output tokens, about $0.009 at the ASSUMED prices in `config/pricing.toml`). Every unit was answered by the model, none by the fallback. Same wording rule as above: agreement with deterministic checks on author-written labels, not accuracy.
 
 | Reviewer | Units | Recall | False alarms | Claims dropped by grounding |
 |---|---|---|---|---|
-| Cloud model, supplied data | 63 | 0.56 | 0.00 | 0.80 |
-| Cloud model, seeded | 15 | 0.29 | 0.00 | 0.60 |
-| Local model, supplied data | 63 | 0.33 | 0.00 | 0.62 |
+| Cloud model, supplied data | 63 | 0.67 | 0.00 | 0.76 |
+| Cloud model, seeded | 15 | 0.38 | 0.00 | 0.50 |
+| Local model, supplied data | 63 | 0.56 | 0.00 | 0.38 |
 | Rule-based baseline, supplied | 63 | 0.89 | 0.00 | 0 |
-| Rule-based baseline, seeded | 15 | 0.46 | 0.00 | 0 |
+| Rule-based baseline, seeded | 15 | 0.54 | 0.00 | 0 |
 
-On the six supplied journals the cloud model found five of the six defects (unbalanced, two duplicates, unknown account, out-of-period) and missed the exceeds-balance case. Its mapping answers were mostly dropped by grounding. It is a better second opinion than the 4B model, and still below the rules on everything the rules can compute. Prompts were not tuned after the first recording.
+On the six supplied journals the cloud model found five of the six defects (unbalanced, two duplicates, unknown account, out-of-period) and missed the exceeds-balance case. Its mapping answers were partly dropped by grounding (see the note above the local-model table). It is a better second opinion than the 4B model, and still below the rules on everything the rules can compute. Prompts were not tuned after the first recording.
 
 For JE-006 the model said the entry is unbalanced and did not follow the memo; it did not flag the memo as an instruction (`text_contains_instruction` false), which the D12 lexicon does. A test replays that real answer and asserts that dispositions, the 12 figures and the findings are unchanged; another test shows they are identical with the local ledger, the cloud ledger and no model.
 

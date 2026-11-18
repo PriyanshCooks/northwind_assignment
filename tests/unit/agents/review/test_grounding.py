@@ -88,3 +88,19 @@ def test_a_recorded_model_answer_is_used_and_still_grounded(ctx: Context, tmp_pa
                    "response": verdict(unbalanced=True, text_contains_instruction=False).model_dump()})
     result = review_unit(ctx, cfg, ledger, unit)
     assert result.source == "model" and result.grounded.verified == () and result.grounded.dropped[0][0] == "unbalanced"
+
+
+def test_a_name_that_reads_as_income_mapped_to_a_liability_is_proved_whatever_account_the_model_suggests(
+    ctx: Context,
+) -> None:
+    """Found in a live test: the model described the mismatch correctly but proposed a poor better account, so the
+    claim was dropped. D02's nature test proves the fact without the proposal."""
+    model, coa = mapping_verdict_model(tuple(sorted(ctx.inputs.coa))), coa_view(ctx)
+    sales = next(u for u in mapping_units(ctx) if u.packet["local_code"] == "4000" and u.packet["entity"] == "UK")
+    packet = {**sales.packet, "mapped_to": {**sales.packet["mapped_to"], "code": "2100", "name": "Trade payables",
+                                            "type": "Liability", "statement": "BS", "normal_balance": "Credit"}}
+    flags = {"name_mismatch": True, "wrong_statement_type": True, "sign_unusual": False, "reason": "x"}
+    got = ground_mapping(model(**flags, better_group_code="1250"), packet, coa)  # type: ignore[call-arg]
+    assert set(got.verified) == {"name_mismatch", "wrong_statement_type"}
+    right = ground_mapping(model(**flags, better_group_code="4200"), sales.packet, coa)  # type: ignore[call-arg]
+    assert right.verified == ()  # the real mapping (Sales to Revenue) is fine, so the same claim is dropped

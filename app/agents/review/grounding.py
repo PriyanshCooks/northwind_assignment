@@ -8,8 +8,10 @@ from typing import Any
 
 from app.agents.journal_reviewer.schema import JournalVerdict
 from app.agents.mapping_reviewer.schema import MappingVerdictBase
+from app.detectors.mapping import name_nature
 from app.detectors.text_scan import PATTERNS
 
+NATURE_STATEMENT = {"Liability": "BS", "Revenue": "PL"}  # the statement an account of that type belongs to
 MIN_SHARED = 2  # a name matches another account only if they share two words: one word ("costs") is not enough
 
 
@@ -70,6 +72,16 @@ def _words(text: str) -> set[str]:
     return {w for w in re.findall(r"[a-z]+", text.lower()) if len(w) > 3}
 
 
+def _nature_contradiction(packet: dict[str, Any]) -> tuple[bool, bool]:
+    """(name contradicts the account type, and so the statement): a name that reads as income or a liability mapped to
+    an account of another type, the same test as detector D02, so a reviewer's claim about it can be proved."""
+    nature = name_nature(json.loads(packet["local_name"]))
+    mapped = packet["mapped_to"]
+    if nature is None or mapped["type"] == nature[1]:
+        return False, False
+    return True, mapped["statement"] != NATURE_STATEMENT[nature[1]]
+
+
 def mapping_facts(packet: dict[str, Any], coa: dict[str, dict[str, str]]) -> tuple[dict[str, bool], str]:
     """Exact sign test, and the best other group account by shared words with the local name (or "none")."""
     mapped = packet["mapped_to"]
@@ -81,10 +93,11 @@ def mapping_facts(packet: dict[str, Any], coa: dict[str, dict[str, str]]) -> tup
         if code != mapped["code"] and score > best_score:
             best, best_score = code, score
     side, normal = packet["balance_side"], mapped["normal_balance"]
+    type_wrong, statement_wrong = _nature_contradiction(packet)
     return {
         "sign_unusual": Decimal(packet["balance"]) != 0 and side != normal.lower(),
-        "name_mismatch": best != "none",
-        "wrong_statement_type": best != "none" and coa[best]["statement"] != mapped["statement"],
+        "name_mismatch": best != "none" or type_wrong,
+        "wrong_statement_type": (best != "none" and coa[best]["statement"] != mapped["statement"]) or statement_wrong,
     }, best
 
 
@@ -92,6 +105,9 @@ def _mapping_claim_holds(flag: str, proposed: str, packet: dict[str, Any], coa: 
     mapped = packet["mapped_to"]
     if flag == "sign_unusual":
         return mapping_facts(packet, coa)[0][flag]
+    type_wrong, statement_wrong = _nature_contradiction(packet)
+    if (flag == "name_mismatch" and type_wrong) or (flag == "wrong_statement_type" and statement_wrong):
+        return True
     if proposed == "none" or proposed not in coa or proposed == mapped["code"]:
         return False
     if flag == "wrong_statement_type":
