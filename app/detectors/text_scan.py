@@ -13,6 +13,13 @@ PATTERNS = tuple(re.compile(p, re.IGNORECASE) for p in (
     r"\bdo not (list|report|flag|mention)\b",
     r"\bignore (all |any )?(previous |prior |above )?(instructions|rules|checks)",
     r"\bmark (it |this )?as (accepted|approved)\b",
+    r"\bsystem prompt\b",
+    r"\b(reveal|expose|print|show|display|output|repeat|leak|dump)\b.{0,20}\b(your|the|all|any)\b.{0,15}\b(instructions?|prompts?|rules)\b",
+    r"\b(run|call|use|invoke|execute)\b.{0,15}\b(all|every|any)\b.{0,10}\btools?\b",
+    r"\byou are now\b",
+    r"\bdisregard\b",
+    r"\bforget\b.{0,30}\b(instructions?|rules)\b",
+    r"\bas an ai\b",
 ))
 
 
