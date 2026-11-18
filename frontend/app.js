@@ -1,7 +1,7 @@
 // Review UI: hash router, API helper and the runs list. Everything from the server is put on the page with
 // text nodes (never as HTML), so uploaded text is shown as data and cannot run as script.
-const STEPS = [["upload", "1 Upload"], ["review", "2 Review"], ["outputs", "3 Choose outputs"],
-               ["build", "4 Build"], ["results", "5 Results"], ["files", "6 Output files"], ["export", "7 Export"]];
+const STEPS = [["upload", "1 Upload"], ["scan", "2 Scan"], ["review", "3 Review inputs"], ["outputs", "4 Choose outputs"],
+               ["build", "5 Build"], ["results", "6 Results"], ["files", "7 Output files"], ["export", "8 Export"]];
 const view = document.getElementById("view");
 const stepper = document.getElementById("stepper");
 
@@ -41,10 +41,10 @@ function stepState(run, key, step) {
   const finished = run.status === "done", analysed = run.status !== "new";
   if (key === step) return "current";
   if (run.blocked && key === "review") return "blocked";
-  const done = { upload: analysed, review: finished, outputs: Boolean(run.outputs), build: Boolean(run.built), results: false, files: false, export: false }[key];
+  const done = { upload: analysed, scan: analysed, review: finished, outputs: Boolean(run.outputs), build: Boolean(run.built), results: false, files: false, export: false }[key];
   if (done) return "done";
   if (key === "review" && run.status === "awaiting_review") return "blocked";
-  const locked = { review: !analysed, outputs: !finished, build: !finished, results: !finished, files: !finished, export: !finished }[key];
+  const locked = { scan: !analysed, review: !analysed, outputs: !finished, build: !finished, results: !finished, files: !finished, export: !finished }[key];
   return locked ? "locked" : "todo";
 }
 const STATE_TEXT = { done: "Done", current: "Current", blocked: "Needs you", locked: "Not yet", todo: "Ready" };
@@ -96,7 +96,7 @@ async function runsList() {
 
 // A step that needs a finished run says why it cannot open yet and what to do, instead of showing an error.
 function holdBack(run, step) {
-  if (["upload", "review"].includes(step) || run.status === "done") return null;
+  if (["upload", "scan", "review"].includes(step) || run.status === "done") return null;
   const to = (key, label) => h("a", { class: "btn", href: `#/run/${run.id}/${key}` }, label);
   if (run.blocked) return [h("h1", {}, "This run is blocked"), h("div", { class: "callout bad" }, run.blocked), to("review", "Open the review")];
   if (run.status === "awaiting_review") {

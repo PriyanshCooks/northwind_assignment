@@ -21,11 +21,39 @@ async function uploadStep(run) {
   };
   const fresh = await api("GET", `/runs/${run.id}`);
   const ready = fresh.files.every((f) => f.present && !f.error);
-  const next = async () => { try { await api("POST", `/runs/${run.id}/analyse`); go(run, "review"); } catch (e) { fail(e); } };
+  const next = () => go(run, "scan");
   show(...head(run, "1 Upload"), h("div", { class: "callout" }, "Only the 15 expected file names are accepted, up to 1 MB each. " +
     "A file that breaks its contract is refused and the reason is shown on its row."),
     h("div", { class: "row" }, input, button("Upload", upload)), rows(fresh.files),
-    h("div", { class: "row" }, h("button", { onclick: next, disabled: !ready }, "Analyse and go to Review")));
+    h("div", { class: "row" }, h("button", { onclick: next, disabled: !ready }, "Next: scan the files")));
+}
+
+// Scan: the analysis runs on the server and the page reads the run log while it works. Each file's status is a log event.
+async function scanStep(run) {
+  const holder = h("div");
+  const draw = (p) => holder.replaceChildren(
+    h("progress", { max: p.total, value: p.scanned, "aria-label": "Files scanned" }),
+    h("p", { role: "status" }, `${p.scanned} of ${p.total} files scanned` + (p.finished ? ". The scan is finished." : "…")),
+    table(["File", "Status", "Findings"], p.files.map((f) => [h("code", {}, f.name),
+      h("span", { class: f.status === "scanned" ? "ok" : f.status === "missing" ? "bad" : "muted" },
+        { scanned: "Scanned", waiting: "Waiting", missing: "Not uploaded" }[f.status]), f.findings == null ? "" : f.findings])));
+  const next = h("button", { onclick: () => go(run, "review"), disabled: true }, "Next: review the inputs");
+  show(...head(run, "2 Scan"), h("div", { class: "callout" }, "The rules (D01 to D15) read every file. The AI reviewers read journals and " +
+    "trial-balance mappings only, and their answers are replayed from the recorded ledger: no model is called."), holder,
+    h("div", { class: "row" }, next));
+  draw(await api("GET", `/runs/${run.id}/scan`));
+  let failure = null;
+  const working = run.status === "new" ? api("POST", `/runs/${run.id}/analyse`).catch((e) => { failure = e; }) : Promise.resolve();
+  let p = await api("GET", `/runs/${run.id}/scan`);
+  while (!p.finished && !failure && location.hash.includes("/scan")) {
+    draw(p);
+    await new Promise((r) => setTimeout(r, 300));
+    p = await api("GET", `/runs/${run.id}/scan`);
+  }
+  await working;
+  if (failure) return fail(failure);
+  draw(p);
+  next.disabled = false;
 }
 
 async function reviewStep(run) {
@@ -124,4 +152,4 @@ async function exportStep(run) {
     h("a", { class: "btn", href: `/api/runs/${run.id}/export` }, "Download zip"));
 }
 
-const STEP_VIEWS = { upload: uploadStep, review: reviewStep, outputs: outputsStep, build: buildStep, results: resultsStep, files: filesStep, export: exportStep };
+const STEP_VIEWS = { upload: uploadStep, scan: scanStep, review: reviewStep, outputs: outputsStep, build: buildStep, results: resultsStep, files: filesStep, export: exportStep };

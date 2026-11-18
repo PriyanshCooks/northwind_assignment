@@ -2,6 +2,7 @@
 
 A node rebuilds what it needs from the files named in the state (the whole run takes about 20 ms), so nothing large
 has to be checkpointed and a resumed process starts from the same bytes."""
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,7 @@ from app.detectors.registry import run_all
 from app.orchestrator.state import RunState
 from app.services.overrides_service import approve, override_states, reject
 from app.services.run_service import build_context, input_hash, record, stage, write_outputs
+from app.services.upload_service import EXPECTED_FILES
 from app.utils.hashing import sha256_file
 from app.utils.logging import RunLogger
 
@@ -40,6 +42,10 @@ def analyse(state: RunState) -> RunState:
     waiting = [s.override.target for s in states if s.state in {"open", "stale"}]
     for f in findings:
         _log(state, "analyse", "finding", finding_key=f.key, code=f.code, severity=f.severity, action=f.action)
+    per_file = Counter(f.file for f in findings)
+    for name in sorted(EXPECTED_FILES):
+        if (Path(state["data_dir"]) / name).is_file():
+            _log(state, "analyse", "file scanned", file=name, findings=per_file.get(name, 0))
     _log(state, "analyse", "findings", count=len(findings), waiting=waiting)
     return RunState(status="analysed", open_items=waiting)
 

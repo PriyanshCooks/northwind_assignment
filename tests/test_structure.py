@@ -39,7 +39,7 @@ APP_FILES = {
         "run_service.py", "trace_service.py", "whatif_service.py", "overrides_service.py", "env_service.py",
         "review_service.py", "registry_service.py", "upload_service.py", "pipeline_service.py", "results_service.py",
         "ai_service.py", "cards_service.py", "output_service.py", "reasoning_service.py", "rows_service.py",
-        "rule_text.py", "inputs_service.py",
+        "rule_text.py", "inputs_service.py", "scan_service.py",
     ],
     "app/utils": ["env.py", "hashing.py", "logging.py", "money.py", "paths.py"],
 }

@@ -216,6 +216,10 @@ For JE-006 the model said the entry is unbalanced and did not follow the memo; i
 - `app/services/rule_text.py`: one sentence and one policy reference per detector, and which reviewer actions the workbench offers on it.
 - Endpoints: `GET /api/runs/{id}/inputs/{file}/rows` and `GET /api/runs/{id}/inputs/{file}/rows/{line}/explain`. No model is called.
 
+### scan progress (item 2)
+- `app/orchestrator/nodes.py`: the analyse stage now logs one `file scanned` event per file (with its finding count) before the `findings` event. The log is not an output, so no output hash moves.
+- `app/services/scan_service.py`: `GET /api/runs/{id}/scan` reads the newest log of the run: a file with an event is scanned, one without is waiting, one not uploaded is missing; the scan is finished when the `findings` event exists. The Scan page starts the analysis and polls this every 300 ms, so the bar shows what the log holds.
+
 ### the seven steps
 Runs list (new, open, resume) then 1 Upload, 2 Review (approve or reject calls the resume path), 3 Choose outputs, 4 Build (the stages the run logged, then the 20 gates), 5 Results (figures with status, issue cards, what-if, compare), 6 Output files (one file at a time), 7 Export (zip). A what-if patches a copy of the run's data (`file:LINE.column=value`, file must be one of the 15) and builds a new run beside the old one.
 

@@ -5,8 +5,14 @@ from fastapi import APIRouter, HTTPException
 
 from app.routes import Reg
 from app.services import inputs_service as inputs
+from app.services.scan_service import progress as scan_progress
 
 router = APIRouter(prefix="/api")
+
+
+@router.get("/runs/{run_id}/scan")
+def scan(run_id: str, reg: Reg) -> dict[str, Any]:
+    return scan_progress(reg, run_id)
 
 
 @router.get("/runs/{run_id}/inputs/{name}/rows")
