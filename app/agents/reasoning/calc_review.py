@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from app.agents.reasoning.budget import UnitBudget
 from app.agents.reasoning.contradiction import NONNEGATIVE, contradicted_calc
 from app.agents.reasoning.evidence import Evidence
-from app.agents.reasoning.grounding import Dropped, Grounded, Tier, numbers_outside
+from app.agents.reasoning.grounding import Dropped, Grounded, Tier, numbers_outside, shown_text
 from app.agents.reasoning.schema import CalcReview
 from app.llm.client import Mode, run_structured
 from app.llm.factory import LlmConfig
@@ -52,7 +52,7 @@ def review_calculations(
             report.stopped_early = True
             break
         packet = {"calculation_id": calc_id, "record": json.loads(text)}
-        shown = json.dumps(packet, ensure_ascii=False)
+        shown = shown_text(packet)
         try:
             review = run_structured(cfg, ledger, agent="calc_reviewer", system_prompt=SYSTEM,
                                     prompt_version=PROMPT_VERSION, packet=packet, schema=CalcReview, mode=mode,

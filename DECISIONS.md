@@ -10,8 +10,9 @@ taken. The AI tool was Claude Code; it wrote most of the code and I decided what
   against the evidence it was shown (grounding) and can never change a figure, a journal disposition or a rule.
 - **Trade-off:** slower to apply, but a wrong hold of a valid entry would misstate profit.
 - **AI suggestion:** it first proposed one-way holds by the model. I challenged it and the accounting argument won.
-- **Measured result:** on the supplied data the model found 1 of 7 labelled faults, so the rules are the detector and
-  the AI layer is advice. Figures, dispositions and findings are identical with the local ledger, the cloud ledger and
+- **Measured result:** replaying the recorded gpt-4o-mini answers, the reasoning layer hit 4 of the 7 labelled faults in the
+  supplied data (the rules flag all 7) and kept 48 reader claims, 1 of them verified; 38 fall on lines no label covers
+  and are shown as suspicions. So the rules are the detector and the AI layer is advice. Figures, dispositions and findings are identical with the local ledger, the cloud ledger and
   no model (`tests/unit/llm/test_switch.py`).
 
 ## 2. Three kinds of gap, three different answers

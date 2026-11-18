@@ -2,11 +2,11 @@
 the source lines. It sees the finding because it explains one; it is never run before detection, so no detection packet
 holds a verdict. It reports and changes nothing: a finding, figure or disposition is the same with it on or off.
 Steps are grounded exactly like the investigator's."""
-import json
 from dataclasses import dataclass, field
 
 from app.agents.reasoning.budget import UnitBudget
 from app.agents.reasoning.evidence import Evidence
+from app.agents.reasoning.grounding import shown_text
 from app.agents.reasoning.investigator import TraceResult, ground_investigation
 from app.agents.reasoning.schema import Investigation
 from app.agents.reasoning.tools import ToolBox
@@ -51,7 +51,7 @@ def explain_findings(
         except LlmUnavailable:
             report.unavailable.append(finding.key)
             continue
-        shown = json.dumps(packet)
+        shown = shown_text(packet)
         report.explained[finding.key] = ground_investigation(finding.key, answered.output, shown, answered.trail,
                                                              evidence)
     return report

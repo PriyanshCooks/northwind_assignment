@@ -93,7 +93,7 @@ number: the 12 control figures are computed without a model, and `tests/unit/llm
 | Golden test against the hand calculation | Passing; the hand calculation is AI-written and not yet human-reviewed |
 | Continuous integration workflow | Present; not yet seen green on Linux |
 | Orchestration with pause and resume (LangGraph and a plain runner with identical outputs), `whatif`, `impact`, review queue, API | Built, tested |
-| AI reviewers, reasoning layer, model ledger (replay), model switch | Built, tested on recorded answers. The AI only advises: its recall on labelled faults is low, so the rules are the detector. The run needs no model |
+| AI reviewers, reasoning layer, model ledger (replay), model switch | Built, tested on recorded answers. The AI only advises: it hits 4 of the 7 labelled faults where the rules find all 7, so the rules are the detector. The run needs no model |
 | Sign-off: files marked reviewed against their hash, Final or Draft written to `signoff.json` in the export | Built, tested. D06 and D07 can be acknowledged but have no engine override |
 | Review page: `app/main.py`, `routes*.py`, run registry under `.northwind/runs/`, `frontend/` (plain files, no build) | Built, tested with `TestClient`; walked once in a browser |
 | `docs/CODE_GUIDE.md` | Present and current |

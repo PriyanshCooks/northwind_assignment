@@ -17,8 +17,9 @@ The last one I found myself in review: after an input changed, the old output co
 files without importing the code, and I checked a 1.30 rate change by hand. The golden file was written by the AI and has
 only been re-derived by another AI session. Someone should review it before it is trusted.
 
-**What the AI layer is worth.** On a recorded run, the reasoning layer on the cloud model hit 1 of 7
-labelled defects. I did not tune prompts to raise that. The honest finding is that the rules are the detector and the
+**What the AI layer is worth.** On a recorded run, the reasoning layer on the cloud model hit 4 of 7
+labelled defects (the rules find all 7), and almost every claim it keeps is a suspicion no code can confirm. I did not tune
+prompts to raise that. The honest finding is that the rules are the detector and the
 model is a reader that explains and sometimes notices. The labels were written by the same AI tool as the rule baseline,
 so those scores are agreement with deterministic checks, not accuracy.
 

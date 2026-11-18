@@ -1,6 +1,7 @@
 """Citation grounding: a claim stands only if its citation exists and every number or text it quotes is in the evidence
 the model was given. Claims that stand are then split in two tiers. Verified: code can confirm the fact itself.
 Suspicion: the model thinks something is off and no rule proves it; it is shown, never counted, never gates."""
+import json
 import re
 from dataclasses import dataclass
 from typing import Literal
@@ -27,6 +28,25 @@ class Dropped:
     cite: str
     flag: str
     why: str
+
+
+def shown_text(value: object) -> str:
+    """What a model was shown, for checking what it quoted. The JSON form escapes quotes and backslashes, so a line
+    copied exactly from a JSON file is not found in it; the plain strings are added so that it is."""
+    strings: list[str] = []
+
+    def walk(item: object) -> None:
+        if isinstance(item, str):
+            strings.append(item)
+        elif isinstance(item, dict):
+            for part in item.values():
+                walk(part)
+        elif isinstance(item, list):
+            for part in item:
+                walk(part)
+
+    walk(value)
+    return json.dumps(value, ensure_ascii=False, default=str) + chr(10) + chr(10).join(strings)
 
 
 def numbers_outside(text: str, evidence_text: str) -> list[str]:

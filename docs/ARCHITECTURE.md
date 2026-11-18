@@ -87,9 +87,10 @@ after the current year the age is negative: the calculation reviewer sees it, an
 arithmetic. The investigator traces the age back to `fileA.txt:1` and never writes a corrected value.
 `tests/unit/agents/reasoning/test_brothers.py` runs all three checkpoints on it.
 
-**Measured result.** On gpt-4o-mini, recorded once with no prompt tuning, the layer hit 1 of 7 labelled defects. Calculation
-concerns fell from 26 to 4 after the contradiction and normal-side checks, and 9 of 21 trace steps survived grounding. So
-the rules are the detector and the layer is advice. The labels were written by the same AI tool as the rule baseline, so
+**Measured result.** On gpt-4o-mini, recorded once with no prompt tuning, the layer hit 4 of 7 labelled defects, where the
+rules find all 7. The reader kept 48 claims, 1 of them verified by code; the other 47 are suspicions, 38 of them on lines no
+label covers. Calculation concerns fell from 26 to 4 after the contradiction and normal-side checks, none verified, and 9 of
+21 trace steps survived grounding. So the rules are the detector and the layer is advice. The labels were written by the same AI tool as the rule baseline, so
 this is agreement with deterministic checks and not accuracy. The seeded-fault evaluation has not been run on a live model.
 
 ## 4. When something fails

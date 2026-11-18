@@ -1,12 +1,11 @@
 """Checkpoint 1: read every line of every input file, in chunks per file, and report lines that look wrong.
 The model gets the file's meaning and the lines; it answers with flags from a fixed menu. Code grounds each claim."""
-import json
 from dataclasses import dataclass, field
 from typing import Any
 
 from app.agents.reasoning.budget import UnitBudget
 from app.agents.reasoning.evidence import Evidence
-from app.agents.reasoning.grounding import Dropped, Grounded, ground_line_claims
+from app.agents.reasoning.grounding import Dropped, Grounded, ground_line_claims, shown_text
 from app.agents.reasoning.meanings import MEANINGS
 from app.agents.reasoning.schema import InputReading
 from app.llm.client import Mode, run_structured
@@ -48,7 +47,7 @@ def chunk_packets(evidence: Evidence, file: str) -> list[tuple[dict[str, Any], s
         packet = {"file": file, "meaning": MEANINGS.get(file, "an input file"),
                   "context_line_numbers_before": [n for n, _ in shown if n <= start],
                   "lines": [{"line": f"{file}:{n}", "text": text} for n, text in shown]}
-        out.append((packet, json.dumps(packet["lines"], ensure_ascii=False)))
+        out.append((packet, shown_text(packet["lines"])))
     return out
 
 

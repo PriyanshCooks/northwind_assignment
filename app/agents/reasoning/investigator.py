@@ -8,7 +8,7 @@ from typing import Any
 from app.agents.reasoning.budget import UnitBudget
 from app.agents.reasoning.calc_review import CalcReport
 from app.agents.reasoning.evidence import Evidence
-from app.agents.reasoning.grounding import Dropped, cite_exists, numbers_outside
+from app.agents.reasoning.grounding import Dropped, cite_exists, numbers_outside, shown_text
 from app.agents.reasoning.schema import Investigation
 from app.agents.reasoning.tools import ToolBox
 from app.llm.client import Mode
@@ -79,6 +79,6 @@ def investigate(
         except LlmUnavailable:
             report.unavailable.append(calc_id)
             continue
-        shown = json.dumps(packet)
+        shown = shown_text(packet)
         report.traces.append(ground_investigation(calc_id, answered.output, shown, answered.trail, evidence))
     return report
