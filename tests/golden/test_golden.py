@@ -1,4 +1,4 @@
-"""The Wave 1 gate: every control figure equals the hand calculation, or the difference is explained here."""
+"""The golden gate: every control figure equals the hand calculation, or the difference is explained here."""
 import json
 from decimal import Decimal
 from pathlib import Path

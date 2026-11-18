@@ -28,10 +28,6 @@ class Decisions(BaseModel):
         return value
 
 
-class Outputs(BaseModel):
-    files: list[str]
-
-
 class WhatIf(BaseModel):
     """Patches look like file:LINE.column=value, appends like file=csv row. The file must be one of the 15."""
 

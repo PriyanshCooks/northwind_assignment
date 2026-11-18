@@ -3,7 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Response
 
-from app.api_models import Outputs, WhatIf
+from app.api_models import WhatIf
 from app.routes import Reg
 from app.services import output_service as files
 from app.services import pipeline_service as pipeline
@@ -24,19 +24,6 @@ def get_results(run_id: str, reg: Reg) -> dict[str, Any]:
     out = reg.out_dir(run_id)
     items = results.issues(out)
     return {"figures": results.figures(out), "issues": items, "cards": pipeline.result_cards(reg, run_id, items)}
-
-
-@router.get("/runs/{run_id}/outputs")
-def get_outputs(run_id: str, reg: Reg) -> dict[str, Any]:
-    _finished(reg, run_id)
-    return {"available": results.available_outputs(reg.out_dir(run_id)), "chosen": reg.meta(run_id)["outputs"]}
-
-
-@router.put("/runs/{run_id}/outputs")
-def choose_outputs(run_id: str, body: Outputs, reg: Reg) -> dict[str, Any]:
-    _finished(reg, run_id)
-    results.build_zip(reg.out_dir(run_id), body.files)
-    return reg.update(run_id, outputs=body.files)
 
 
 @router.post("/runs/{run_id}/whatif")

@@ -5,7 +5,6 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation, getcontext
 getcontext().prec = 50
 
 CENT = Decimal("0.01")
-ZERO = Decimal("0")
 
 
 def to_decimal(value: object) -> Decimal:

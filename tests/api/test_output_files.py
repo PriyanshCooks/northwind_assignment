@@ -11,7 +11,7 @@ def test_the_list_has_one_entry_per_output_file_with_rows_and_hash(client: TestC
     run_id = finished_run(client)
     rows = client.get(f"/api/runs/{run_id}/output-files").json()
     names = [r["name"] for r in rows]
-    assert names == [o["name"] for o in client.get(f"/api/runs/{run_id}/outputs").json()["available"]]
+    assert names == [o["name"] for o in client.get(f"/api/runs/{run_id}/output-plan").json()["available"]]
     tb = next(r for r in rows if r["name"] == "consolidated_tb.csv")
     body = client.get(f"/api/runs/{run_id}/output-files/consolidated_tb.csv/download").content
     assert tb["sha256"] == hashlib.sha256(body).hexdigest() and tb["rows"] == body.decode().count("\n") - 1

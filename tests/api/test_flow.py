@@ -99,14 +99,14 @@ def test_results_carry_status_and_the_reason_for_a_null(client: TestClient) -> N
 def test_export_zip_holds_the_chosen_files_and_the_manifest(client: TestClient) -> None:
     run_id = finished_run(client)
     chosen = ["balance_sheet.json", "issues.json"]
-    assert client.put(f"/api/runs/{run_id}/outputs", json={"files": chosen}).status_code == 200
+    assert client.put(f"/api/runs/{run_id}/output-plan", json={"files": chosen}).status_code == 200
     names = zipfile.ZipFile(io.BytesIO(client.get(f"/api/runs/{run_id}/export").content)).namelist()
     assert sorted(names) == ["balance_sheet.json", "issues.json", "run_manifest.json", "signoff.json"]
 
 
 def test_choosing_a_file_outside_the_output_folder_is_refused(client: TestClient) -> None:
     run_id = finished_run(client)
-    assert client.put(f"/api/runs/{run_id}/outputs", json={"files": ["../run.json"]}).status_code == 422
+    assert client.put(f"/api/runs/{run_id}/output-plan", json={"files": ["../run.json"]}).status_code == 422
 
 
 def test_what_if_builds_a_new_run_and_leaves_the_old_one(client: TestClient) -> None:
@@ -152,7 +152,6 @@ def test_nothing_past_review_runs_while_an_item_is_undecided(client: TestClient)
     client.post(f"/api/runs/{run_id}/analyse")
     other = finished_run(client)
     calls = [client.post(f"/api/runs/{run_id}/build"), client.get(f"/api/runs/{run_id}/results"),
-             client.get(f"/api/runs/{run_id}/outputs"), client.put(f"/api/runs/{run_id}/outputs", json={"files": []}),
              client.get(f"/api/runs/{run_id}/export"), client.get(f"/api/runs/{run_id}/output-files"),
              client.get(f"/api/runs/{run_id}/compare/{other}")]
     for response in calls:

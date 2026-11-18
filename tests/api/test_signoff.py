@@ -47,7 +47,7 @@ def test_reviewing_the_files_clears_only_the_file_reason_for_a_draft(client: Tes
 
 def test_the_status_is_written_into_the_zip_and_the_manifest_is_untouched(client: TestClient) -> None:
     run_id = finished_run(client)
-    client.put(f"/api/runs/{run_id}/outputs", json={"files": ["balance_sheet.json"]})
+    client.put(f"/api/runs/{run_id}/output-plan", json={"files": ["balance_sheet.json"]})
     names, signoff = _zip_names_and_signoff(client, run_id)
     assert names == ["balance_sheet.json", "run_manifest.json", "signoff.json"]
     assert signoff["status"] == "Draft" and signoff["reasons"]

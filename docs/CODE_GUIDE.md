@@ -45,7 +45,7 @@ broken. It also tests its own checker on small snippets, so it cannot pass by ch
 ## What the three tests prove
 
 - `test_structure.py`: `app/` contains exactly the files in the structure plan (no missing, no extra), every folder is
-  a package, each agent folder has its four files. There are three agents: the journal reviewer, the mapping reviewer and the injection screen.
+  a package, each agent folder has its three files. There are three agents: the journal reviewer, the mapping reviewer and the injection screen.
 - `test_architecture.py`: the import rules above.
 - `test_bundle.py`: the 15 supplied data files hash to the values in `config/bundle_manifest.sha256`. In a fresh clone
   this checks the committed bytes, because `.gitattributes` stops git from changing line endings in the data folder.

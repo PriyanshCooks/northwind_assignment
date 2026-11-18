@@ -64,7 +64,7 @@ def test_analyse_needs_all_fifteen_files(client: TestClient) -> None:
 
 def test_steps_after_analyse_are_refused_until_the_run_is_done(client: TestClient) -> None:
     run_id = sample_run(client)
-    for path in ("results", "outputs", "export"):
+    for path in ("results", "output-plan", "export"):
         assert client.get(f"/api/runs/{run_id}/{path}").status_code == 409
     assert client.post(f"/api/runs/{run_id}/build").status_code == 409
     body = {"approver": "x", "decisions": {"mapping:UK:2310": "approve"}}

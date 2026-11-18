@@ -22,7 +22,7 @@ Assignment bundle ID **NWG-D0BC**.
 ├── app/                     the application
 │   ├── main.py  routes.py  api_models.py  cli.py  cli_review.py  config.py
 │   ├── agents/              every AI reader, none imports core
-│   │   ├── journal_reviewer/  mapping_reviewer/  injection_screen/   per-unit reviewers: llm_model.py  prompts.py  schema.py  tools.py
+│   │   ├── journal_reviewer/  mapping_reviewer/  injection_screen/   per-unit reviewers: llm_model.py  prompts.py  schema.py
 │   │   ├── review/          review units, evidence packets, grounding of those two reviewers' answers
 │   │   └── reasoning/       read-only reasoning checkpoints, claim grounding, injection guard
 │   ├── orchestrator/        the LangGraph workflow
