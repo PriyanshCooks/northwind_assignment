@@ -83,7 +83,7 @@ function aiBlock(ai) {
 }
 
 function drawer(explain, send, close) {
-  if (!explain) return h("aside", { class: "wb-drawer muted" }, h("p", {}, "Select a row to see why it is flagged, what the rule is and what the AI said."));
+  if (!explain) return h("aside", { class: "wb-drawer", hidden: true });
   return h("aside", { class: "wb-drawer", "aria-label": "Why this row" },
     h("div", { class: "row" }, h("h2", {}, `${explain.file}, line ${explain.line}`), h("button", { class: "plain", onclick: close }, "Close")),
     explain.findings.length ? explain.findings.map((f) => findingBlock(f, send)) :
@@ -120,18 +120,20 @@ async function reviewStep(run) {
     await load();
   };
   const pickRow = async (line) => { state.line = line; await load(true); };
+  document.onkeydown = (e) => { if (e.key === "Escape" && state.line != null && location.hash.includes("/review")) pickRow(null); };
   const send = async (key, action, reviewer, note) => {
     await api("POST", `/runs/${run.id}/inputs/${state.name}/decisions`, { key, action, reviewer, note });
     await load();
   };
   const draw = () => {
     const v = state.view;
+    holder.classList.toggle("has-drawer", state.explain != null);
     holder.replaceChildren(
       h("nav", { class: "wb-files", "aria-label": "Input files" }, h("p", { class: "muted small" }, "open / total problems per file"),
         state.files.map((f) => fileButton(f, state.name, pickFile))),
       h("section", { class: "wb-rows" },
         h("h2", {}, state.name), h("p", { class: "muted" }, `${v.total_rows} rows. Review status: ${v.review.status}. `,
-          `Each finding is labelled Rule or Rule + AI view; the AI reads journals and trial-balance mappings only.`),
+          `Click a row to see why it is flagged. The AI reads journals and trial-balance mappings only.`),
         v.file_findings.length ? h("div", { class: "callout warn" }, "Findings not tied to one row: ", v.file_findings.map((f) => `${f.code} ${f.headline}`).join("; ")) : null,
         rowTable(v, state.line, pickRow)),
       drawer(state.explain, send, () => pickRow(null)));

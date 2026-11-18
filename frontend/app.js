@@ -53,15 +53,16 @@ function drawStepper(run, step) {
   const runbar = document.getElementById("runbar");
   if (!run) { stepper.replaceChildren(); runbar.replaceChildren(h("span", {}, "Review a consolidation run step by step")); return; }
   const at = STEPS.findIndex(([k]) => k === step);
-  runbar.replaceChildren(h("strong", {}, run.name), h("span", { class: "tag" }, STATUS[run.blocked ? "blocked" : run.status] || run.status),
-    h("span", {}, `Step ${at + 1} of ${STEPS.length}: ${STEPS[at][1].slice(2)}`));
+  runbar.replaceChildren(h("strong", {}, run.name), h("code", {}, run.id),
+    h("span", { class: "stage" }, `Stage ${at + 1} of ${STEPS.length}: ${STEPS[at][1].slice(2)}`),
+    h("span", { class: "tag" }, STATUS[run.blocked ? "blocked" : run.status] || run.status));
   stepper.replaceChildren(...STEPS.map(([key, label], i) => {
     const state = stepState(run, key, step);
     const mark = state === "done" ? "\u2713" : state === "blocked" ? "!" : String(i + 1);
     return h(state === "locked" ? "span" : "a", { href: state === "locked" ? null : `#/run/${run.id}/${key}`, class: `item ${state}`,
       "aria-current": state === "current" ? "step" : null },
       h("span", { class: "dot", "aria-hidden": "true" }, mark),
-      h("span", {}, label.slice(2), h("span", { class: "state" }, STATE_TEXT[state])));
+      h("span", { title: STATE_TEXT[state] }, label.slice(2)));
   }));
 }
 
