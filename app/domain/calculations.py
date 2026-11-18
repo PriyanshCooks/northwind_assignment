@@ -20,3 +20,5 @@ class CalcRecord(Model):
     formula: str
     inputs: tuple[CalcInput, ...]
     result: Money
+    normal_side: Literal["debit", "credit"] | None = None  # rows only: the side the account normally carries
+    storage: str = ""  # how the amount is stored, so a credit-side number is not read as a loss

@@ -15,6 +15,7 @@ class Evidence:
     lineage: dict[str, str] = field(default_factory=dict)  # row id -> its source lines as text
     related: dict[str, str] = field(default_factory=dict)  # group account -> mapped local accounts as text
     results: dict[str, Decimal] = field(default_factory=dict)  # calc id -> its result
+    normal_sides: dict[str, str] = field(default_factory=dict)  # row calc id -> "debit" or "credit"
     # flag or concern -> the file:line or calc ids the rules already confirm
     confirmed: dict[str, frozenset[str]] = field(default_factory=dict)
 

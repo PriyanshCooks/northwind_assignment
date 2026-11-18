@@ -102,6 +102,7 @@ def build_evidence(run: Consolidation) -> Evidence:
         related=_related(run), confirmed=_confirmed(run), rate_gaps=_rate_gaps(run),
         rate_tolerance=to_decimal(run.ctx.assumptions["rate_neighbour_tolerance_pct"]),
         nature_agrees=_nature_agrees(run),
+        normal_sides={r.id: r.normal_side for r in records if r.normal_side},
     )
 
 

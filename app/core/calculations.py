@@ -20,9 +20,20 @@ def _refs(refs: list[SourceRef] | tuple[SourceRef, ...]) -> str:
     return "; ".join(dict.fromkeys(str(r) for r in refs)) or "no source row"
 
 
+ROW_STORAGE = ("balances are stored debit-positive: a debit balance is a positive number and a credit balance a "
+               "negative one, so a credit-nature account normally shows a negative number")
+FLIPPED = "a credit-side total, stored debit-positive, then sign-flipped so that a normal result is positive"
+
+
 def _record(rid: str, kind: Literal["row", "figure"], label: str, formula: str, inputs: list[Input],
-            result: Decimal) -> CalcRecord:
-    return CalcRecord(id=rid, kind=kind, label=label, formula=formula, result=result,
+            result: Decimal, run: "Consolidation | None" = None, storage: str = "") -> CalcRecord:
+    """A row record names its account's normal side from the chart, so the sign of its balance can be judged."""
+    side: Literal["debit", "credit"] | None = None
+    if kind == "row" and run is not None:
+        side = "debit" if run.ctx.inputs.coa[rid.removeprefix("row:")].normal_balance == "Debit" else "credit"
+        storage = ROW_STORAGE
+    return CalcRecord(id=rid, kind=kind, label=label, formula=formula, result=result, normal_side=side,
+                      storage=storage,
                       inputs=tuple(CalcInput(name=n, label=lb, value=v, source=s) for n, lb, v, s in inputs))
 
 
@@ -40,7 +51,7 @@ def _row_records(run: "Consolidation") -> list[CalcRecord]:
         terms = by_account.setdefault(p.account, [])
         label = f"{p.origin} {p.entity}: {p.note}" + (f" at {p.rate_ref}" if p.rate_ref else "")
         terms.append((f"p{len(terms) + 1}", label, p.amount, _refs(p.sources)))
-    return [_record(f"row:{a}", "row", f"balance of {a}", " + ".join(t[0] for t in terms), terms, v)
+    return [_record(f"row:{a}", "row", f"balance of {a}", " + ".join(t[0] for t in terms), terms, v, run)
             for a, terms in sorted(by_account.items()) if (v := run.balances.get(a, Decimal(0))) != 0]
 
 
@@ -51,18 +62,18 @@ def _equity_rows(run: "Consolidation") -> list[CalcRecord]:
     acq_refs = _refs(acq.refs)
     return [
         _record("row:3100", "row", "share capital, opening group equity", "-capital",
-                [("capital", "prior-year share capital", *pr["3100"])], -pr["3100"][0]),
+                [("capital", "prior-year share capital", *pr["3100"])], -pr["3100"][0], run),
         _record("row:3200", "row", "retained earnings, opening group equity", "-retained",
-                [("retained", "prior-year retained earnings", *pr["3200"])], -pr["3200"][0]),
+                [("retained", "prior-year retained earnings", *pr["3200"])], -pr["3200"][0], run),
         _record("row:3300", "row", "closing translation reserve", "-(opening + movement)",
                 [("opening", "prior-year reserve", *pr["3300"]),
                  ("movement", "reserve movement", res.movement_balance, "calc:fig:translation_reserve_movement")],
-                -res.closing),
+                -res.closing, run),
         _record("row:3400", "row", "NCI before this year's profit", "-(opening + at_acquisition + translation)",
                 [("opening", "prior-year NCI", *pr["3400"]),
                  ("at_acquisition", "NCI at completion", acq.nci_at_acquisition, acq_refs),
                  ("translation", "NCI translation difference", acq.nci_translation, acq_refs)],
-                -(pr["3400"][0] + acq.nci_at_acquisition + acq.nci_translation)),
+                -(pr["3400"][0] + acq.nci_at_acquisition + acq.nci_translation), run),
     ]
 
 
@@ -75,7 +86,7 @@ def _sum_figure(run: "Consolidation", key: str, label: str, accounts: list[str],
     terms = [(f"a{i + 1}", f"balance of {a}", run.balances[a], f"calc:row:{a}") for i, a in enumerate(accounts)]
     body = " + ".join(t[0] for t in terms) or "0"
     return _record(f"fig:{key}", "figure", label, f"-({body})" if negate else body, terms,
-                   _value(run.figures[key]))
+                   _value(run.figures[key]), storage=FLIPPED if negate else "")
 
 
 def _india_sources(run: "Consolidation", statement: str) -> str:

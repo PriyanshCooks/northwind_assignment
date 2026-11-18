@@ -26,9 +26,17 @@ def contradicted_line(flag: str, cite: str, line: str, quoted: list[str], eviden
     return None
 
 
+def _on_normal_side(result: Decimal, side: str) -> bool:
+    """Balances are stored debit-positive, so a credit-side account normally holds a negative number."""
+    return result >= 0 if side == "debit" else result <= 0
+
+
 def contradicted_calc(concern: str, calc_id: str, evidence: Evidence) -> str | None:
     """Why a calculation concern is false, or None when the code cannot say."""
     result: Decimal | None = evidence.results.get(calc_id)
     if concern == "sign_implausible" and calc_id in NONNEGATIVE and result is not None and result >= 0:
         return "contradicted: the result is not negative"
+    side = evidence.normal_sides.get(calc_id)
+    if concern == "sign_implausible" and side and result is not None and _on_normal_side(result, side):
+        return f"contradicted: the result is on the normal {side} side of its account"
     return None

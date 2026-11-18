@@ -265,6 +265,10 @@ D15 tolerance of its pair; a nature claim when the name and the group account it
 claim on a line that has a name; a sign claim on a non-negative figure whose result is not negative. A suspicion therefore
 means "the code could not tell", never "the code looked and disagreed".
 
+**Sign and the normal side.** Balances are stored debit-positive, so a credit-nature account (revenue, payables, equity)
+holds a negative number. Each row record carries `normal_side` from the chart and a `storage` sentence saying so; a sign
+concern on a row that sits on its normal side is dropped as contradicted. Only a balance against its normal side stays.
+
 **Tools** (`tools.py`): `read_lines`, `find_in_file`, `get_rule`, `get_calculation`, `get_lineage`, `get_related`.
 File tools take a file name from the run's own list, never a path. At most 5 calls per item, no repeated call, and
 every result is returned as `quoted_data` with a note that it is data. A test lists the tools and fails on any name,
