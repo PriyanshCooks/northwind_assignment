@@ -3,28 +3,30 @@ const head = (run, title) => [h("h1", {}, title), h("p", { class: "muted" }, run
 const go = (run, step) => { location.hash = `#/run/${run.id}/${step}`; };
 const button = (label, onclick, plain) => h("button", { onclick, class: plain ? "plain" : "" }, label);
 
-async function uploadStep(run) {
-  const rows = (files) => table(["File", "State", "Contract"], files.map((f) => [h("code", {}, f.name),
-    f.present && !f.error ? h("span", { class: "ok" }, `ok (${f.bytes} bytes)`) :
-      h("span", { class: "bad" }, f.present ? "rejected" : "missing"), f.error || ""]));
-  const input = h("input", { type: "file", multiple: true });
-  const upload = async () => {
-    const results = [];
-    for (const file of input.files) {
-      try {
-        const r = await api("PUT", `/runs/${run.id}/files/${encodeURIComponent(file.name)}`, undefined, await file.arrayBuffer());
-        if (!r.stored) results.push(`${file.name}: ${r.error}`);
-      } catch (e) { results.push(`${file.name}: ${e.message}`); }
-    }
-    await uploadStep(run);
-    results.forEach((t) => view.prepend(h("div", { class: "error" }, t)));
-  };
+// Upload: one file at a time. Each of the 15 expected files has its own chooser and its own mark: uploaded, rejected
+// with the contract's reason, or not uploaded. A file is stored only if it passes its contract.
+async function uploadStep(run, notes = {}) {
   const fresh = await api("GET", `/runs/${run.id}`);
   const ready = fresh.files.every((f) => f.present && !f.error);
+  const pick = (f) => h("input", { type: "file", "aria-label": `Choose ${f.name}`, onchange: async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const r = await api("PUT", `/runs/${run.id}/files/${encodeURIComponent(f.name)}`, undefined, await file.arrayBuffer());
+      notes[f.name] = r.stored ? null : r.error;
+    } catch (err) { notes[f.name] = err.message; }
+    await uploadStep(run, notes);
+  } });
+  const mark = (f) => notes[f.name] ? h("span", { class: "bad" }, "Rejected") :
+    f.present && !f.error ? h("span", { class: "ok" }, "Uploaded") : h("span", { class: "muted" }, "Not uploaded");
+  const rows = fresh.files.map((f) => [h("code", {}, f.name), mark(f), f.present ? `${f.bytes} bytes` : "",
+    notes[f.name] || f.error || "", pick(f)]);
+  const uploaded = fresh.files.filter((f) => f.present && !f.error).length;
   const next = () => go(run, "scan");
-  show(...head(run, "1 Upload"), h("div", { class: "callout" }, "Only the 15 expected file names are accepted, up to 1 MB each. " +
-    "A file that breaks its contract is refused and the reason is shown on its row."),
-    h("div", { class: "row" }, input, button("Upload", upload)), rows(fresh.files),
+  show(...head(run, "1 Upload"), h("div", { class: "callout" }, "Add the files one at a time: choose a file on its own row. Only the 15 " +
+    "expected names are accepted, up to 1 MB each, and a file that breaks its contract is refused with the reason shown."),
+    h("p", { role: "status" }, `${uploaded} of ${fresh.files.length} files uploaded.`),
+    table(["File", "Mark", "Size", "Contract", "Choose a file"], rows),
     h("div", { class: "row" }, h("button", { onclick: next, disabled: !ready }, "Next: scan the files")));
 }
 

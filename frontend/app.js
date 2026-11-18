@@ -69,22 +69,36 @@ function nextStep(run) {
   return { new: "upload", awaiting_review: "review", done: "results" }[run.status] || "review";
 }
 
+// Stage 0, Home: continue a run by its id, or create a new one. The list of runs stays below for a run you did not note down.
 async function runsList() {
   drawStepper(null);
   const showArchived = location.hash === "#/archived";
   const runs = await api("GET", showArchived ? "/runs?archived=true" : "/runs");
   const keep = (r, what) => async () => { try { await api("POST", `/runs/${r.id}/${what}`); await route(); } catch (e) { fail(e); } };
-  const name = h("input", { placeholder: "run name", maxlength: 60 });
+  const problem = h("div", { class: "error", role: "alert", hidden: true });
+  const say = (text) => { problem.textContent = text; problem.hidden = !text; };
+  const runId = h("input", { placeholder: "r20261118-101500-ab12", size: 26, "aria-label": "Run id", autocomplete: "off" });
+  const open = async () => {
+    const id = runId.value.trim();
+    if (!id) return say("Enter a run id first.");
+    try { const run = await api("GET", `/runs/${encodeURIComponent(id)}`); say(""); location.hash = `#/run/${run.id}/${nextStep(run)}`; }
+    catch (e) { say(`No run with the id ${id} was found.`); }
+  };
+  const name = h("input", { placeholder: "run name", maxlength: 60, "aria-label": "Run name" });
   const sample = h("input", { type: "checkbox" });
   const create = async () => {
-    try {
-      const run = await api("POST", "/runs", { name: name.value, use_sample: sample.checked });
-      location.hash = `#/run/${run.id}/upload`;
-    } catch (e) { fail(e); }
+    try { const run = await api("POST", "/runs", { name: name.value, use_sample: sample.checked }); location.hash = `#/run/${run.id}/upload`; }
+    catch (e) { fail(e); }
   };
-  show(h("h1", {}, "Runs"),
-    h("div", { class: "row" }, name, h("label", {}, sample, " start with the supplied sample files"),
-      h("button", { onclick: create }, "New run")),
+  show(h("h1", {}, "Northwind consolidation review"),
+    h("div", { class: "home" },
+      h("section", { class: "card" }, h("h2", {}, "Continue a run"), h("p", { class: "muted" }, "Paste the id of a run you started before."),
+        h("div", { class: "row" }, runId, h("button", { onclick: open }, "Open run"))),
+      h("section", { class: "card" }, h("h2", {}, "Create a new run"),
+        h("div", { class: "row" }, name), h("label", {}, sample, " start with the supplied sample files"),
+        h("div", { class: "row" }, h("button", { onclick: create }, "Create new run")))),
+    problem,
+    h("h2", {}, showArchived ? "Archived runs" : "Recent runs"),
     runs.length ? table(["Name", "Id", "Status", "Created", "Based on", ""], runs.map((r) => [
       r.name, h("code", {}, r.id), h("span", { class: "tag" }, r.status), when(r.created), r.parent || "",
       h("span", { class: "row" }, h("a", { class: "btn plain", href: `#/run/${r.id}/${nextStep(r)}` },

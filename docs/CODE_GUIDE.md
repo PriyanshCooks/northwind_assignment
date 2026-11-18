@@ -220,6 +220,10 @@ For JE-006 the model said the entry is unbalanced and did not follow the memo; i
 - `app/orchestrator/nodes.py`: the analyse stage now logs one `file scanned` event per file (with its finding count) before the `findings` event. The log is not an output, so no output hash moves.
 - `app/services/scan_service.py`: `GET /api/runs/{id}/scan` reads the newest log of the run: a file with an event is scanned, one without is waiting, one not uploaded is missing; the scan is finished when the `findings` event exists. The Scan page starts the analysis and polls this every 300 ms, so the bar shows what the log holds.
 
+### home and upload (item 3)
+- Home (`#/`): "Continue a run" takes a run id and opens the run at its next step (an unknown id says so); "Create a new run" takes a name and an optional sample start. The runs list stays below it.
+- Upload: each of the 15 files has its own chooser, so files go in one at a time. The mark comes from the server: Uploaded (stored and valid), Rejected (the contract's reason is shown and nothing is stored) or Not uploaded. Next stays disabled until all 15 are in.
+
 ### the seven steps
 Runs list (new, open, resume) then 1 Upload, 2 Review (approve or reject calls the resume path), 3 Choose outputs, 4 Build (the stages the run logged, then the 20 gates), 5 Results (figures with status, issue cards, what-if, compare), 6 Output files (one file at a time), 7 Export (zip). A what-if patches a copy of the run's data (`file:LINE.column=value`, file must be one of the 15) and builds a new run beside the old one.
 

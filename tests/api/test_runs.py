@@ -87,3 +87,16 @@ def test_archiving_hides_a_run_and_restoring_brings_it_back(client: TestClient) 
     assert client.get(f"/api/runs/{run_id}").status_code == 200  # still on disk
     client.post(f"/api/runs/{run_id}/restore")
     assert run_id in [r["id"] for r in client.get("/api/runs").json()]
+
+
+def test_files_are_marked_one_at_a_time_as_they_are_uploaded(client: TestClient) -> None:
+    run_id = str(client.post("/api/runs", json={"name": "one by one"}).json()["id"])
+    body = (DEFAULT_DATA_DIR / "group_policies.md").read_bytes()
+    assert client.put(f"/api/runs/{run_id}/files/group_policies.md", content=body).json()["stored"] is True
+    files = {f["name"]: f for f in client.get(f"/api/runs/{run_id}").json()["files"]}
+    assert files["group_policies.md"]["present"] and files["group_policies.md"]["error"] is None
+    assert [n for n, f in files.items() if f["present"]] == ["group_policies.md"]
+    bad = client.put(f"/api/runs/{run_id}/files/fx_rates.csv", content=b"garbage").json()
+    assert bad["stored"] is False and bad["error"]
+    after = client.get(f"/api/runs/{run_id}").json()["files"]
+    assert not any(f["present"] for f in after if f["name"] == "fx_rates.csv")

@@ -35,6 +35,8 @@ main:focus { outline: none; }
 h1 { font-size: 24px; line-height: 1.25; margin: 0 0 4px; } h2 { font-size: 18px; margin: 28px 0 8px; }
 h3 { font-size: 16px; margin: 0 0 6px; }
 .lede { color: var(--muted); margin: 0 0 16px; }
+.home { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.home .card h2 { margin-top: 0; }
 progress { width: 100%; height: 0.9rem; }
 .foot { padding: 16px 24px; color: var(--muted); font-size: 13px; text-align: center; border-top: 1px solid var(--line); }
 table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 15px; }
