@@ -75,8 +75,8 @@ async function outputsStep(run) {
 async function buildStep(run) {
   const plan = await api("GET", `/runs/${run.id}/output-plan`);
   const names = plan.chosen || plan.available.map((o) => o.name);
-  const fileRows = (made) => table(["File", "Status", "Size"], names.map((n) => [h("code", {}, n),
-    h("span", { class: made[n] ? "ok" : "muted" }, made[n] ? "Generated" : "Building…"), made[n] ? `${made[n].toLocaleString("en-GB")} bytes` : ""]));
+  const fileRows = (made, missing = "Building…") => table(["File", "Status", "Size"], names.map((n) => [h("code", {}, n),
+    h("span", { class: made[n] ? "ok" : missing === "Building…" ? "muted" : "bad" }, made[n] ? "Generated" : missing), made[n] ? `${made[n].toLocaleString("en-GB")} bytes` : ""]));
   const progress = (made) => h("progress", { max: names.length, value: names.filter((n) => made[n]).length, "aria-label": "Files generated" });
   show(...head(run, "5 Generate"), progress({}), h("p", { role: "status" }, "Generating the output files…"), fileRows({}));
   const b = await api("POST", `/runs/${run.id}/generate`);
@@ -88,8 +88,9 @@ async function buildStep(run) {
       left.findings.map((f) => h("li", {}, h("a", { href: `#/run/${run.id}/review/${encodeURIComponent(f.file)}` }, `${f.file}:${f.line ?? ""}`),
         ` ${f.code} ${f.headline}`)))) : h("div", { class: "callout ok" }, "Nothing is unanswered. This output is not a Draft.");
   show(...head(run, "5 Generate"), progress(made), h("p", { role: "status" }, `${names.filter((n) => made[n]).length} of ${names.length} files generated.`),
-    fileRows(made), draft, h("div", { class: b.passed ? "callout ok" : "error" },
-    b.passed ? `All ${b.gates.length} gates passed.` : "A gate failed" + (b.blocked ? `: ${b.blocked}` : ".")),
+    fileRows(made, "Not produced"), draft, b.blocked ? h("div", { class: "error", role: "alert" },
+      h("strong", {}, "The run is blocked, so the statements were not produced. "), `Reason: ${b.blocked}. Correct the input and scan again.`)
+      : h("div", { class: b.passed ? "callout ok" : "error" }, b.passed ? `All ${b.gates.length} gates passed.` : "A gate failed."),
     h("h2", {}, "Stages this run logged"), stageList(b.stages), h("h2", {}, `Gates (${b.gates.length})`),
     table(["Gate", "Result", "Detail"], b.gates.map((g) => [g.name, h("span", { class: g.ok ? "ok" : "bad" }, g.ok ? "pass" : "FAIL"), tidy(g.detail)])),
     h("div", { class: "row" }, button("Next stage: review outputs", () => go(run, "files"))));
