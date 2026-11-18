@@ -231,6 +231,12 @@ For JE-006 the model said the entry is unbalanced and did not follow the memo; i
 - A file's badge counts open and stale findings out of all findings on it. Notes need no decision, so a file with only notes reads "Notes only", not "Reviewed".
 - Say in the live session: every number on this page is the engine's; the page records who looked and what they decided, and a click can never silently change money.
 
+### generate output (item 5)
+- `app/services/generate_service.py`: `POST /api/runs/{id}/generate` works as soon as the run is scanned. With every item answered it is the normal build. With items still waiting, it runs the same consolidate and export nodes without the human gate, so the files are what the engine produces with nothing applied that nobody signed off, and the output is a Draft. The run keeps its status (awaiting review); `generated_for` stores the input hash the Draft was made on, so results and files open for it, and close again if an input or the config changes.
+- `GET /api/runs/{id}/unanswered`: the engine items still waiting and the findings nobody has passed or overridden (notes need no decision). A held journal and its D06 or D07 finding are one problem and are counted once. Passing a finding clears it from this list; it does not move any figure. The Draft banner on the later pages and the Generate page read this list.
+- Test worth quoting: the Draft's twelve control figures equal the figures of a run whose held items were approved, because held journals stay out of the figures either way.
+- Not done (stage 3): Final or Draft written into the manifest and the sign-off log. The banner is on screen only.
+
 ### the seven steps
 Runs list (new, open, resume) then 1 Upload, 2 Review (approve or reject calls the resume path), 3 Choose outputs, 4 Build (the stages the run logged, then the 20 gates), 5 Results (figures with status, issue cards, what-if, compare), 6 Output files (one file at a time), 7 Export (zip). A what-if patches a copy of the run's data (`file:LINE.column=value`, file must be one of the 15) and builds a new run beside the old one.
 

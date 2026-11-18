@@ -105,20 +105,21 @@ function recordedReview(run) {
 async function reviewStep(run) {
   const state = { run, files: [], name: null, view: null, line: null, explain: null };
   const holder = h("div", { class: "wb" });
-  const next = h("button", { onclick: () => go(run, "outputs"), disabled: true }, "Next: choose outputs");
-  const load = async () => {
-    state.run = await api("GET", `/runs/${run.id}`);
-    state.files = await api("GET", `/runs/${run.id}/inputs`);
+  const bar = h("div", { class: "row topbar" });
+  const load = async (scroll = false) => {
+    [state.run, state.files, state.left] = await Promise.all([api("GET", `/runs/${run.id}`), api("GET", `/runs/${run.id}/inputs`),
+      api("GET", `/runs/${run.id}/unanswered`)]);
     state.view = await api("GET", `/runs/${run.id}/inputs/${state.name}/rows`);
     state.explain = state.line == null ? null : await api("GET", `/runs/${run.id}/inputs/${state.name}/rows/${state.line}/explain`);
     draw();
+    if (scroll && state.explain) holder.querySelector(".wb-drawer")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   };
   const pickFile = async (name) => {
     state.name = name; state.line = null;
     history.replaceState(null, "", `#/run/${run.id}/review/${encodeURIComponent(name)}`);
     await load();
   };
-  const pickRow = async (line) => { state.line = line; await load(); };
+  const pickRow = async (line) => { state.line = line; await load(true); };
   const send = async (key, action, reviewer, note) => {
     await api("POST", `/runs/${run.id}/inputs/${state.name}/decisions`, { key, action, reviewer, note });
     await load();
@@ -134,7 +135,11 @@ async function reviewStep(run) {
         v.file_findings.length ? h("div", { class: "callout warn" }, "Findings not tied to one row: ", v.file_findings.map((f) => `${f.code} ${f.headline}`).join("; ")) : null,
         rowTable(v, state.line, pickRow)),
       drawer(state.explain, send, () => pickRow(null)));
-    next.disabled = state.run.status !== "done";
+    const open = state.left.problems;
+    bar.replaceChildren(h("button", { onclick: () => go(run, "build") }, "Generate output"),
+      h("span", { class: open ? "bad" : "ok", role: "status" }, open ?
+        `${open} problem(s) still open. You can generate now: the output will be a Draft and they stay marked as problems.` :
+        "Nothing is open. The output will not be a Draft."));
   };
   const files = await api("GET", `/runs/${run.id}/inputs`);
   const wanted = decodeURIComponent(location.hash.split("/")[4] || "");
@@ -143,6 +148,6 @@ async function reviewStep(run) {
   state.name = first.name;
   show(...head(run, "3 Review inputs"),
     h("div", { class: "callout" }, "Pass acknowledges a finding and changes no figure. Override appears only where the engine has a mechanism. " +
-      "Anything left open stays marked as a problem."), holder, h("div", { class: "row" }, next), recordedReview(run));
+      "Anything left open stays marked as a problem."), bar, holder, recordedReview(run));
   await load();
 }

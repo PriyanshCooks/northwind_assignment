@@ -63,19 +63,25 @@ async function outputsStep(run) {
   const picked = new Set(out.chosen || out.available.map((o) => o.name));
   const boxes = out.available.map((o) => h("input", { type: "checkbox", checked: picked.has(o.name), disabled: o.required,
     onchange: (e) => (e.target.checked ? picked.add(o.name) : picked.delete(o.name)) }));
-  const save = async () => { try { await api("PUT", `/runs/${run.id}/outputs`, { files: [...picked] }); go(run, "build"); } catch (e) { fail(e); } };
-  show(...head(run, "3 Choose outputs"), h("p", { class: "muted" }, "The run manifest is always included."),
+  const save = async () => { try { await api("PUT", `/runs/${run.id}/outputs`, { files: [...picked] }); go(run, "results"); } catch (e) { fail(e); } };
+  show(...head(run, "5 Choose outputs"), h("p", { class: "muted" }, "The run manifest is always included."),
     table(["", "File", "Bytes"], out.available.map((o, i) => [boxes[i], h("code", {}, o.name), o.bytes])),
-    h("div", { class: "row" }, button("Save and build", save)));
+    h("div", { class: "row" }, button("Save and see the results", save)));
 }
 
 async function buildStep(run) {
-  const b = await api("POST", `/runs/${run.id}/build`);
-  show(...head(run, "4 Build"), h("div", { class: b.passed ? "callout ok" : "error" },
+  const b = await api("POST", `/runs/${run.id}/generate`);
+  const left = b.unanswered;
+  const draft = b.draft ? h("div", { class: "callout warn" }, h("strong", {}, "Draft. "),
+    `${left.problems} problem(s) are still unanswered, so this output is not final. They stay marked as problems:`,
+    h("ul", {}, left.engine_items.map((t) => h("li", {}, h("code", {}, t), " waits for a decision")),
+      left.findings.map((f) => h("li", {}, h("a", { href: `#/run/${run.id}/review/${encodeURIComponent(f.file)}` }, `${f.file}:${f.line ?? ""}`),
+        ` ${f.code} ${f.headline}`)))) : h("div", { class: "callout ok" }, "Nothing is unanswered. This output is not a Draft.");
+  show(...head(run, "4 Generate"), draft, h("div", { class: b.passed ? "callout ok" : "error" },
     b.passed ? `All ${b.gates.length} gates passed.` : "A gate failed" + (b.blocked ? `: ${b.blocked}` : ".")),
     h("h2", {}, "Stages this run logged"), stageList(b.stages), h("h2", {}, `Gates (${b.gates.length})`),
     table(["Gate", "Result", "Detail"], b.gates.map((g) => [g.name, h("span", { class: g.ok ? "ok" : "bad" }, g.ok ? "pass" : "FAIL"), tidy(g.detail)])),
-    h("div", { class: "row" }, button("Next: results", () => go(run, "results"))));
+    h("div", { class: "row" }, button("Next: choose outputs", () => go(run, "outputs"))));
 }
 
 async function resultsStep(run) {
@@ -102,7 +108,7 @@ async function resultsStep(run) {
         h("h2", {}, "Figures that differ"), table(["Figure", "Other run", "This run"], c.figures.map((x) => [x.key, figureValue({ value: x.other }), figureValue({ value: x.this })])));
     } catch (e) { fail(e); }
   };
-  show(...head(run, "5 Results"), h("h2", {}, "The 12 control figures"),
+  show(...head(run, "6 Results"), h("h2", {}, "The 12 control figures"),
     figuresTable(r.figures),
     h("h2", {}, `Issues (${r.issues.length})`), ...issueGroups(r.cards, {}, () => {}),
     h("h2", {}, "What if an input changes?"), h("p", { class: "muted" }, "Builds a new run from a changed cell (line 1 is the header); this run is left as it is."),
@@ -114,7 +120,7 @@ async function resultsStep(run) {
 async function exportStep(run) {
   const out = await api("GET", `/runs/${run.id}/outputs`);
   const names = out.chosen ? [...out.chosen, "run_manifest.json"] : out.available.map((o) => o.name);
-  show(...head(run, "7 Export"), h("p", {}, "A zip of the chosen files plus the run manifest:"),
+  show(...head(run, "8 Export"), h("p", {}, "A zip of the chosen files plus the run manifest:"),
     h("ul", {}, [...new Set(names)].map((n) => h("li", {}, h("code", {}, n)))),
     h("a", { class: "btn", href: `/api/runs/${run.id}/export` }, "Download zip"));
 }

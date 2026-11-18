@@ -14,7 +14,7 @@ from app.services.cards_service import build_cards, held_cards, waiting_cards
 from app.services.overrides_service import override_states, review_queue
 from app.services.registry_service import Registry
 from app.services.review_service import review_all
-from app.services.run_service import Consolidation, build_context, stage
+from app.services.run_service import Consolidation, build_context, input_hash, stage
 from app.services.upload_service import file_status
 
 
@@ -124,9 +124,18 @@ def review_view(registry: Registry, run_id: str) -> dict[str, Any]:
     }
 
 
-def require_done(registry: Registry, run_id: str) -> None:
-    """Nothing after the review may run while an item is undecided, so no figure can be shown as Determined on it."""
+def generated_now(registry: Registry, run_id: str) -> bool:
+    """A Draft was generated for exactly the inputs and config the run holds now (see generate_service)."""
     meta = registry.meta(run_id)
+    return meta.get("generated_for") == input_hash(registry.data_dir(run_id), registry.config_dir(run_id))
+
+
+def require_done(registry: Registry, run_id: str) -> None:
+    """Results need output. A run with an item undecided has output only if a Draft was generated on today's inputs,
+    and the Draft is labelled as such, so no figure is shown as Determined on an undecided item."""
+    meta = registry.meta(run_id)
+    if meta["open_items"] and generated_now(registry, run_id):
+        return
     if meta["open_items"]:
         raise NotReady("decide these items first: " + ", ".join(meta["open_items"]))
     if meta["status"] != "done":

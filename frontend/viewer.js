@@ -33,13 +33,13 @@ const FILE_LISTS = {};  // a finished run's files do not change while the page i
 
 async function filesStep(run) {
   const list = FILE_LISTS[run.id] ||= await api("GET", `/runs/${run.id}/output-files`);
-  if (!list.length) return show(...head(run, "6 Output files"), h("div", { class: "callout" }, "This run has no output files yet."));
+  if (!list.length) return show(...head(run, "7 Output files"), h("div", { class: "callout" }, "This run has no output files yet."));
   const wanted = decodeURIComponent(location.hash.split("/")[4] || "");
   const at = Math.max(0, list.findIndex((f) => f.name === wanted));
   const file = list[at];
   const open = (i) => () => { location.hash = `#/run/${run.id}/files/${encodeURIComponent(list[i].name)}`; };
   const [body, side] = await Promise.all([fileBody(run, file), affecting(run, file)]);  // both requests go out together
-  show(...head(run, "6 Output files"),
+  show(...head(run, "7 Output files"),
     h("div", { class: "row" }, button("Previous", open(at - 1), true), h("strong", {}, `File ${at + 1} of ${list.length}`),
       button("Next", open(at + 1), true)),
     h("div", { class: "row" }, h("select", { "aria-label": "Choose a file", onchange: (e) => open(Number(e.target.value))() },

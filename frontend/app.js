@@ -1,7 +1,7 @@
 // Review UI: hash router, API helper and the runs list. Everything from the server is put on the page with
 // text nodes (never as HTML), so uploaded text is shown as data and cannot run as script.
-const STEPS = [["upload", "1 Upload"], ["scan", "2 Scan"], ["review", "3 Review inputs"], ["outputs", "4 Choose outputs"],
-               ["build", "5 Build"], ["results", "6 Results"], ["files", "7 Output files"], ["export", "8 Export"]];
+const STEPS = [["upload", "1 Upload"], ["scan", "2 Scan"], ["review", "3 Review inputs"], ["build", "4 Generate"],
+               ["outputs", "5 Choose outputs"], ["results", "6 Results"], ["files", "7 Output files"], ["export", "8 Export"]];
 const view = document.getElementById("view");
 const stepper = document.getElementById("stepper");
 
@@ -38,13 +38,13 @@ const STATUS = { new: "Not analysed", awaiting_review: "Waiting for a decision",
 
 // One state per step, from what the run already holds: nothing here is a guess about work not done.
 function stepState(run, key, step) {
-  const finished = run.status === "done", analysed = run.status !== "new";
+  const finished = run.status === "done", analysed = run.status !== "new", output = finished || Boolean(run.built);
   if (key === step) return "current";
   if (run.blocked && key === "review") return "blocked";
-  const done = { upload: analysed, scan: analysed, review: finished, outputs: Boolean(run.outputs), build: Boolean(run.built), results: false, files: false, export: false }[key];
+  const done = { upload: analysed, scan: analysed, review: finished, outputs: Boolean(run.outputs), build: output, results: false, files: false, export: false }[key];
   if (done) return "done";
   if (key === "review" && run.status === "awaiting_review") return "blocked";
-  const locked = { scan: !analysed, review: !analysed, outputs: !finished, build: !finished, results: !finished, files: !finished, export: !finished }[key];
+  const locked = { scan: !analysed, review: !analysed, build: !analysed, outputs: !output, results: !output, files: !output, export: !output }[key];
   return locked ? "locked" : "todo";
 }
 const STATE_TEXT = { done: "Done", current: "Current", blocked: "Needs you", locked: "Not yet", todo: "Ready" };
@@ -110,14 +110,23 @@ async function runsList() {
 
 // A step that needs a finished run says why it cannot open yet and what to do, instead of showing an error.
 function holdBack(run, step) {
-  if (["upload", "scan", "review"].includes(step) || run.status === "done") return null;
+  if (["upload", "scan", "review"].includes(step) || run.status === "done" || run.built || (step === "build" && run.status !== "new")) return null;
   const to = (key, label) => h("a", { class: "btn", href: `#/run/${run.id}/${key}` }, label);
   if (run.blocked) return [h("h1", {}, "This run is blocked"), h("div", { class: "callout bad" }, run.blocked), to("review", "Open the review")];
   if (run.status === "awaiting_review") {
-    return [h("h1", {}, "This run is paused"), h("div", { class: "callout warn" }, `${run.open_items.length} item(s) wait for a decision. ` +
-      "Nothing after the review can run until each is approved or rejected and the decisions are submitted."), to("review", "Go to the review")];
+    return [h("h1", {}, "This run has no output yet"), h("div", { class: "callout warn" }, `${run.open_items.length} item(s) are still open. ` +
+      "Generate the output from the review: it will be a Draft and the open items stay marked as problems."), to("review", "Go to the review")];
   }
   return [h("h1", {}, "This run has not been analysed"), h("div", { class: "callout" }, "Upload the 15 files, or start from the sample, then analyse them."), to("upload", "Go to upload")];
+}
+
+// Anything still unanswered keeps the output a Draft, and the pages that show or export it say so at the top.
+async function draftBanner(run) {
+  const left = await api("GET", `/runs/${run.id}/unanswered`);
+  if (!left.draft) return;
+  const count = left.problems;
+  view.prepend(h("div", { class: "callout warn", role: "status" }, h("strong", {}, "Draft. "),
+    `${count} problem(s) are still unanswered, so this output is not final. `, h("a", { href: `#/run/${run.id}/review` }, "Go to the review")));
 }
 
 async function route() {
@@ -131,6 +140,7 @@ async function route() {
     if (waiting) return show(...waiting);
     show(h("p", { role: "status", class: "muted" }, "Loading…"));
     await STEP_VIEWS[chosen](run);
+    if (["outputs", "results", "files", "export"].includes(chosen)) await draftBanner(run);
   } catch (e) {
     show(h("div", { class: "error", role: "alert" }, String(e.message || e)),
       h("div", { class: "row" }, h("button", { onclick: route }, "Try again"), h("a", { class: "btn plain", href: "#/" }, "Back to runs")));

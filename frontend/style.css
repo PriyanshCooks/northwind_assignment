@@ -118,3 +118,5 @@ dl.cells dt { color: var(--muted); } dl.cells dd { margin: 0; }
 .wb-ai { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
 .wb-drawer .field { grid-template-columns: minmax(0, 1fr); gap: 0; }
 .wb-drawer .field dt { font-size: 13px; }
+.topbar { position: sticky; top: 0; z-index: 2; background: var(--card); padding: 8px 0; border-bottom: 1px solid var(--line); }
+.wb-drawer { scroll-margin-top: 72px; }

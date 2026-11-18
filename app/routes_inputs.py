@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.api_models import RowDecision
 from app.routes import Reg
+from app.services import generate_service as generate
 from app.services import inputs_service as inputs
 from app.services import review_actions_service as actions
 from app.services.scan_service import progress as scan_progress
@@ -15,6 +16,17 @@ router = APIRouter(prefix="/api")
 @router.get("/runs/{run_id}/scan")
 def scan(run_id: str, reg: Reg) -> dict[str, Any]:
     return scan_progress(reg, run_id)
+
+
+@router.post("/runs/{run_id}/generate")
+def generate_output(run_id: str, reg: Reg) -> dict[str, Any]:
+    """Always available once the run is scanned: a Draft while anything is unanswered, the normal build otherwise."""
+    return generate.generate(reg, run_id)
+
+
+@router.get("/runs/{run_id}/unanswered")
+def unanswered(run_id: str, reg: Reg) -> dict[str, Any]:
+    return generate.unanswered(reg, run_id)
 
 
 @router.get("/runs/{run_id}/inputs")

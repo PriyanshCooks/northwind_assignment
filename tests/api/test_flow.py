@@ -168,10 +168,10 @@ def test_a_blank_name_is_refused_and_changes_nothing(client: TestClient) -> None
     assert client.get(f"/api/runs/{run_id}").json()["status"] == "awaiting_review"
 
 
-def test_the_workbench_script_asks_for_a_name_and_keeps_next_disabled_until_done() -> None:
+def test_the_workbench_script_asks_for_a_name_and_never_disables_generate() -> None:
     script = (ROOT / "frontend" / "workbench.js").read_text(encoding="utf-8")
     assert "Enter your name before you decide" in script
-    assert 'next.disabled = state.run.status !== "done"' in script
+    assert 'h("button", { onclick: () => go(run, "build") }, "Generate output")' in script
 
 
 def test_every_money_value_on_the_api_is_a_two_decimal_string(client: TestClient) -> None:

@@ -40,7 +40,7 @@ APP_FILES = {
         "review_service.py", "registry_service.py", "upload_service.py", "pipeline_service.py", "results_service.py",
         "ai_service.py", "cards_service.py", "output_service.py", "reasoning_service.py", "rows_service.py",
         "rule_text.py", "inputs_service.py", "scan_service.py",
-        "decisions_service.py", "review_actions_service.py",
+        "decisions_service.py", "review_actions_service.py", "generate_service.py",
     ],
     "app/utils": ["env.py", "hashing.py", "logging.py", "money.py", "paths.py"],
 }
