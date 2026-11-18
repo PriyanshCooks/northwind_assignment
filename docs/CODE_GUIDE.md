@@ -265,6 +265,15 @@ D15 tolerance of its pair; a nature claim when the name and the group account it
 claim on a line that has a name; a sign claim on a non-negative figure whose result is not negative. A suspicion therefore
 means "the code could not tell", never "the code looked and disagreed".
 
+**Seeded-fault evaluation** (`tests/evals/seeded_faults.py`). Plants six faults in a copy of the data (closing rate x100,
+a journal amount typo, a map row moved from Revenue to Tax, a TB label that contradicts its map name, a journal year
+typo, a duplicated intercompany invoice), finds the changed lines by diffing, runs the reasoning layer on the copy and
+reports per fault hit or miss, plus false alarms (kept claims on lines no fault touched). A fault is hit when a kept
+reader claim names one of its lines, or a kept calculation concern is built from one. It also lists which rule findings
+point at each fault's lines (journal findings carry no line number, so that column understates the rules). No finding
+or verdict is put in a packet; a test checks the packet keys and text. `python -m tests.evals.seeded_faults --live`
+calls the configured model and writes `.northwind/seeded_faults/result.json`; the tests use fake models.
+
 **Citation forms** (`cite_exists`). A trace step may cite what the tools print: `file:line`, `file:first-last`, a
 calculation or row id with or without `calc:` or `lineage `, `account N`, `rule policy N`. An id no tool could have
 returned is dropped. Before this, `calc:row:1200` and `lineage row:1200` were dropped as nonexistent (69 of 99 steps).
