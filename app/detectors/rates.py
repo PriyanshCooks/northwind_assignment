@@ -39,7 +39,7 @@ def d08_required_rates(ctx: Context) -> list[Finding]:
     return found
 
 
-def _percent_apart(value: Decimal, reference: Decimal) -> Decimal:
+def percent_apart(value: Decimal, reference: Decimal) -> Decimal:
     return abs(value / reference - 1) * 100
 
 
@@ -55,7 +55,7 @@ def d15_rate_plausibility(ctx: Context) -> list[Finding]:
         if row.rate_type not in CHECKED_TYPES or not others:
             continue
         reference = median(others)
-        apart = _percent_apart(row.value, reference)
+        apart = percent_apart(row.value, reference)
         if apart > near:
             claim = (f"{row.base}/{row.quote} {row.rate_type} rate {row.value:f} ({row.ref}) is {apart:.1f}% from "
                      f"{reference:f}, the median of the {len(others)} other {row.base}/{row.quote} rates; the "
@@ -69,7 +69,7 @@ def d15_rate_plausibility(ctx: Context) -> list[Finding]:
             if not (line.txn_ccy and line.txn_amount and line.amount and closing):
                 continue
             implied = abs(to_decimal(line.txn_amount) / line.amount)
-            apart = _percent_apart(closing, implied)
+            apart = percent_apart(closing, implied)
             if apart > implied_tolerance:
                 claim = (f"{line.local_code} booked {line.txn_ccy} {line.txn_amount} as GBP {abs(line.amount):f}, "
                          f"which implies {implied:.4f} {line.txn_ccy} per GBP; the closing rate {closing:f} is "

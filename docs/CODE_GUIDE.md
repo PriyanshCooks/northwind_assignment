@@ -259,6 +259,12 @@ exist, or when a quoted text or any number in its reason is not in what the mode
 *verified* only when code can prove it (an impossible date, a line with no letters, a sign on a figure that must be
 positive, or a fact a detector already confirmed); otherwise it is a *suspicion*: shown, never counted, never gating.
 
+**Contradicted claims** (`contradiction.py`). Before a claim is kept as a suspicion, code tries to prove it false and drops it
+as "contradicted" if it can: a date claim when every date on the line is valid; a rate claim when the rate is inside the
+D15 tolerance of its pair; a nature claim when the name and the group account it maps to share a nature; a missing-name
+claim on a line that has a name; a sign claim on a non-negative figure whose result is not negative. A suspicion therefore
+means "the code could not tell", never "the code looked and disagreed".
+
 **Tools** (`tools.py`): `read_lines`, `find_in_file`, `get_rule`, `get_calculation`, `get_lineage`, `get_related`.
 File tools take a file name from the run's own list, never a path. At most 5 calls per item, no repeated call, and
 every result is returned as `quoted_data` with a note that it is data. A test lists the tools and fails on any name,

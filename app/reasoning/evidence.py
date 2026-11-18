@@ -20,3 +20,8 @@ class Evidence:
 
     def lines(self, file: str) -> list[str]:
         return (self.data_dir / file).read_text(encoding="utf-8").splitlines()
+    # file:line of an fx_rates row -> percent from the median of its pair's other rates (the D15 measure)
+    rate_gaps: dict[str, Decimal] = field(default_factory=dict)
+    rate_tolerance: Decimal = Decimal(10)  # A14
+    # file:line of a map row whose name reads as one nature and whose group account has that same nature
+    nature_agrees: frozenset[str] = frozenset()

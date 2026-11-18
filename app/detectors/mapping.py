@@ -36,6 +36,15 @@ def _problem(ctx: Context, mapped: MappedLine) -> Finding | None:
     return None
 
 
+def name_nature(name: str) -> tuple[str, str] | None:
+    """(how the name reads, the account type it should map to), or None when the name says nothing about nature."""
+    if LIABILITY_NAME.search(name):
+        return "a liability", "Liability"
+    if INCOME_NAME.search(name) and not NOT_INCOME.search(name):
+        return "income", "Revenue"
+    return None
+
+
 def _nature_problem(mapped: MappedLine, ctx: Context) -> Finding | None:
     """Policy 4: the account nature decides, not an exact name. A liability-like name mapped to a group account that is
     not a liability, or an income-like name mapped to one that is not revenue, is flagged and left as supplied."""
@@ -43,12 +52,10 @@ def _nature_problem(mapped: MappedLine, ctx: Context) -> Finding | None:
         return None  # a suspect or unmapped line already has its own finding
     line, account = mapped.line, ctx.inputs.coa[mapped.group_code]
     name = line.local_name.text
-    if LIABILITY_NAME.search(name):
-        reads_as, expected = "a liability", "Liability"
-    elif INCOME_NAME.search(name) and not NOT_INCOME.search(name):
-        reads_as, expected = "income", "Revenue"
-    else:
+    nature = name_nature(name)
+    if nature is None:
         return None
+    reads_as, expected = nature
     if account.account_type == expected:
         return None
     place = mapped.map_ref or line.ref

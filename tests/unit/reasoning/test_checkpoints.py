@@ -47,8 +47,8 @@ def test_policy_clauses_are_split_by_number() -> None:
     assert clauses == {"policy 1": "one", "policy 2": "two\n   - more", "policy 3": "three"}
 
 
-def test_a_sign_concern_on_a_positive_figure_is_only_a_suspicion(evidence: Evidence, tmp_path: Path) -> None:
-    model, _ = scripted(about("fig:total_assets", concern("fig:total_assets")))
+def test_a_concern_the_code_cannot_check_is_only_a_suspicion(evidence: Evidence, tmp_path: Path) -> None:
+    model, _ = scripted(about("fig:total_assets", concern("fig:total_assets", "magnitude_implausible")))
     report = review_calculations(CFG, Ledger(tmp_path / "a.jsonl"), evidence, "live", model)
     assert [(f.cite, f.tier) for f in report.findings] == [("fig:total_assets", "suspicion")]
 

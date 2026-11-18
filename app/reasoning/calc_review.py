@@ -8,12 +8,12 @@ from app.llm.client import Mode, run_structured
 from app.llm.factory import LlmConfig
 from app.llm.ledger import Ledger, LlmUnavailable
 from app.reasoning.budget import UnitBudget
+from app.reasoning.contradiction import NONNEGATIVE, contradicted_calc
 from app.reasoning.evidence import Evidence
 from app.reasoning.grounding import Dropped, Grounded, Tier, numbers_outside
 from app.reasoning.schema import CalcReview
 
 PROMPT_VERSION = "calc-reviewer-v1"
-NONNEGATIVE = frozenset({"fig:total_assets", "fig:group_revenue", "fig:goodwill_closing", "fig:nci_closing"})
 SYSTEM = (
     "You review one calculation from a consolidation. You get its formula, its inputs with the file:line each came "
     "from, and its result; the arithmetic has already been re-checked by code, so do not recalculate. Judge only "
@@ -68,6 +68,8 @@ def review_calculations(
             elif outside:
                 why = f"not in the evidence shown: {', '.join(outside)}"
                 report.dropped.append(Dropped(claim.cite, claim.concern, why))
+            elif (false := contradicted_calc(claim.concern, calc_id, evidence)) is not None:
+                report.dropped.append(Dropped(claim.cite, claim.concern, false))
             elif claim.concern not in seen:
                 seen.add(claim.concern)
                 tier: Tier = "verified" if confirms(claim.concern, calc_id, evidence) else "suspicion"

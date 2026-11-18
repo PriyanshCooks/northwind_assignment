@@ -5,13 +5,13 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from app.reasoning.contradiction import contradicted_line
 from app.reasoning.evidence import Evidence
 from app.reasoning.schema import LineClaim
+from app.reasoning.text_checks import WORD, invalid_date
 
 Tier = Literal["verified", "suspicion"]
 NUMBER = re.compile(r"\d[\d,.]*\d|\d")
-DATE = re.compile(r"(?<![\d.])(\d{1,4})[./-](\d{1,2})[./-](\d{1,4})(?![\d.])")
-WORD = re.compile(r"[A-Za-z]{2,}")
 
 
 @dataclass(frozen=True)
@@ -33,15 +33,6 @@ def numbers_outside(text: str, evidence_text: str) -> list[str]:
     """Numbers written in `text` that the evidence does not contain (compared without thousands separators)."""
     plain = evidence_text.replace(",", "")
     return [n for n in NUMBER.findall(text) if n.replace(",", "") not in plain]
-
-
-def invalid_date(line: str, last_year: int) -> bool:
-    """A date-shaped token that cannot be a date in this period: month or day out of range, or a year after it."""
-    for a, b, c in DATE.findall(line):
-        year, month, day = (int(a), int(b), int(c)) if len(a) == 4 else (int(c), int(b), int(a))
-        if not (1 <= month <= 12 and 1 <= day <= 31 and 1900 <= year <= last_year):
-            return True
-    return False
 
 
 def confirms(flag: str, cite: str, line: str, evidence: Evidence) -> bool:
@@ -75,6 +66,8 @@ def ground_line_claims(
             dropped.append(Dropped(claim.cite, claim.flag, "the cited line does not exist in this file"))
         elif outside:
             dropped.append(Dropped(claim.cite, claim.flag, f"not in the evidence shown: {', '.join(outside)}"))
+        elif (why := contradicted_line(claim.flag, claim.cite, line, claim.quoted, evidence)) is not None:
+            dropped.append(Dropped(claim.cite, claim.flag, why))
         elif (claim.cite, claim.flag) not in seen:
             seen.add((claim.cite, claim.flag))
             tier: Tier = "verified" if confirms(claim.flag, claim.cite, line, evidence) else "suspicion"
