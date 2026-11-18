@@ -35,8 +35,9 @@ figures to 0.01: `group_revenue`, `group_profit`, `profit_nci`, `nci_closing`, `
 (15 posted, 3 rejected, 2 held). I also set the GBP/USD closing rate to 1.30 and checked that goodwill, NCI, the
 intercompany difference and the 7300 line moved by the amounts I computed by hand, while revenue and `profit_nci` did not.
 
-The golden file `tests/golden/handcalc.json` was written by the AI tool. It has now been re-derived by a second AI
-session, not by a person, and its `review_status` says so.
+The golden file `tests/golden/handcalc.json` was written by the AI tool. It has been re-derived by a second AI
+session and read through by me, but I have not verified it independently of the AI work, so I treat it as
+provisional, and its `review_status` says so.
 
 ## The real model on deliberately broken data
 

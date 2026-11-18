@@ -1,4 +1,4 @@
-"""The golden file lists the 12 brief keys and is honest about being unreviewed."""
+"""The golden file lists the 12 brief keys and is honest about being provisional."""
 import json
 from pathlib import Path
 
