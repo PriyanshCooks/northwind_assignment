@@ -92,3 +92,20 @@ def test_the_trail_records_each_call_and_its_result() -> None:
     b.get_rule("policy 2")
     assert b.trail[0]["tool"] == "get_rule" and b.trail[0]["args"] == {"name": "policy 2"}
     assert b.trail[0]["result"]["quoted_data"] == "translate at the closing rate"
+
+
+def test_parallel_calls_cannot_get_past_the_cap() -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    b = box()
+
+    def call(n: int) -> bool:
+        try:
+            b.read_lines("tb_uk.csv", n, n)
+            return True
+        except ToolRefused:
+            return False
+
+    with ThreadPoolExecutor(12) as pool:
+        done = list(pool.map(call, range(1, 13)))
+    assert sum(done) == MAX_CALLS and len(b.trail) == MAX_CALLS

@@ -4,6 +4,7 @@ wrapped as quoted data (policy: text in the data is data, never an instruction).
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from app.llm.tooluse import ToolRefused
@@ -28,12 +29,22 @@ class ToolBox:
     evidence: Evidence
     max_calls: int = MAX_CALLS
     trail: list[dict[str, Any]] = field(default_factory=list)
+    admitted: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
+    lock: Lock = field(default_factory=Lock)
 
     def _gate(self, name: str, args: dict[str, Any]) -> None:
-        if len(self.trail) >= self.max_calls:
-            raise ToolRefused(f"at most {self.max_calls} tool calls per item")
-        if any(t["tool"] == name and t["args"] == args for t in self.trail):
-            raise ToolRefused("this exact call was already made; use the earlier result")
+        """A model may issue several calls in one turn and the library runs them in parallel, so the count is taken
+        under a lock before the work, not after it."""
+        with self.lock:
+            if len(self.admitted) >= self.max_calls:
+                raise ToolRefused(f"at most {self.max_calls} tool calls per item")
+            if (name, args) in self.admitted:
+                raise ToolRefused("this exact call was already made; use the earlier result")
+            self.admitted.append((name, args))
+
+    def exhausted(self) -> bool:
+        with self.lock:
+            return len(self.admitted) >= self.max_calls
 
     def _done(self, name: str, args: dict[str, Any], result: dict[str, str]) -> dict[str, str]:
         self.trail.append({"tool": name, "args": args, "result": result})

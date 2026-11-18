@@ -37,12 +37,12 @@ class CalcReview(BaseModel):
 
 class TraceStepClaim(BaseModel):
     cite: str = Field(description="a source file:line or a calculation id")
-    note: str = Field(max_length=300, description="what this step shows")
+    note: str = Field(max_length=200, description="what this step shows, in one short sentence")
     quoted: list[str] = Field(default_factory=list, max_length=6)
 
 
 class Investigation(BaseModel):
     """The chain from an output row back to the source lines. It reports; it never proposes a corrected value."""
 
-    chain: list[TraceStepClaim] = Field(default_factory=list, max_length=8)
+    chain: list[TraceStepClaim] = Field(default_factory=list, max_length=6)
     cause: str = Field(max_length=300, default="", description="which input looks wrong and what else it feeds")

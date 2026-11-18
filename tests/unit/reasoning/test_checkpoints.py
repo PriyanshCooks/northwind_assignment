@@ -87,7 +87,7 @@ def tool_model(calls: list[tuple[str, dict[str, Any]]], final: dict[str, Any]) -
     def respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         returned = [p for m in messages for p in m.parts if p.part_kind == "tool-return"]
         seen[:] = [str(p.content) for p in returned]  # type: ignore[attr-defined]
-        if len(returned) < len(calls):
+        if len(returned) < len(calls) and info.function_tools:  # a spent toolbox hides its tools
             name, args = calls[len(returned)]
             return ModelResponse(parts=[ToolCallPart(name, args)])
         return ModelResponse(parts=[TextPart(json.dumps(final))])
@@ -123,7 +123,7 @@ def test_a_sixth_tool_call_is_refused_and_the_run_still_ends(evidence: Evidence,
     calls = [("read_lines", {"file": "tb_uk.csv", "start": n, "end": n}) for n in range(1, 8)]
     model, seen = tool_model(calls, {"chain": [], "cause": ""})
     report = investigate(CFG, Ledger(tmp_path / "cp3.jsonl"), evidence, flagged(evidence, tmp_path), "live", model)
-    assert len(report.traces[0].trail) == 5 and any("refused" in s for s in seen)
+    assert len(report.traces[0].trail) == 5 and len(seen) == 5  # the tools are withdrawn, so the model answers
 
 
 def test_a_repeated_call_is_refused_but_not_recorded_twice(evidence: Evidence, tmp_path: Path) -> None:
@@ -161,4 +161,4 @@ def test_a_model_that_keeps_calling_tools_after_refusals_still_gets_to_answer(ev
     calls = [("read_lines", {"file": "tb_uk.csv", "start": n, "end": n}) for n in range(1, 11)]
     model, seen = tool_model(calls, {"chain": [], "cause": ""})
     report = investigate(CFG, Ledger(tmp_path / "cp3.jsonl"), evidence, flagged(evidence, tmp_path), "live", model)
-    assert len(report.traces[0].trail) == 5 and sum("refused" in s for s in seen) == 5
+    assert len(report.traces[0].trail) == 5 and len(seen) == 5

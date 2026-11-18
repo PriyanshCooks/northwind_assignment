@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Generic, Protocol, TypeVar, cast
 
 from pydantic import BaseModel, ValidationError
-from pydantic_ai import Agent, NativeOutput
+from pydantic_ai import Agent, NativeOutput, RunContext, Tool, ToolDefinition
 from pydantic_ai.exceptions import ModelAPIError, UnexpectedModelBehavior, UsageLimitExceeded
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
@@ -30,6 +30,8 @@ class ToolRefused(Exception):
 class Tools(Protocol):
     trail: list[dict[str, Any]]
 
+    def exhausted(self) -> bool: ...
+
     def tools(self) -> list[Callable[..., Any]]: ...
 
 
@@ -52,11 +54,22 @@ def _guarded(tool: Callable[..., Any]) -> Callable[..., Any]:
     return call
 
 
+def _hidden_when_spent(toolbox: Tools) -> Callable[[RunContext[None], ToolDefinition], ToolDefinition | None]:
+    """Once the budget is used the tools are left out of the next request, so the model has to answer. A refusal
+    message alone did not stop gpt-4o-mini from asking again until the library cap ended the run."""
+
+    def prepare(ctx: RunContext[None], tool_def: ToolDefinition) -> ToolDefinition | None:
+        return None if toolbox.exhausted() else tool_def
+
+    return prepare
+
+
 def run_with_tools(
     cfg: LlmConfig, ledger: Ledger, *, agent: str, system_prompt: str, prompt_version: str, packet: dict[str, Any],
     schema: type[T], toolbox: Tools, mode: Mode = "replay", model: Model | None = None,
 ) -> Answered[T]:
     settings = model_settings(cfg)
+    settings["max_tokens"] = 3 * int(settings["max_tokens"])  # a chain of steps does not fit the reviewers' 400 tokens
     names = [t.__name__ for t in toolbox.tools()]
     key = call_key(cfg.model, settings, prompt_version, schema, {"packet": packet, "tools": names})
     entry = ledger.get(key)
@@ -69,7 +82,7 @@ def run_with_tools(
     quiet_environment()
     runner: Agent[None, T] = Agent(
         model or build_model(cfg), output_type=NativeOutput(schema), system_prompt=system_prompt, retries=1,
-        tools=[_guarded(t) for t in toolbox.tools()],
+        tools=[Tool(_guarded(t), takes_ctx=False, prepare=_hidden_when_spent(toolbox)) for t in toolbox.tools()],
         model_settings=cast(ModelSettings, {**settings, "timeout": cfg.request_timeout_s}),
     )
     record: dict[str, Any] = {"key": key, "agent": agent, "model": cfg.model, "settings": settings,

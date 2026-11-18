@@ -134,6 +134,8 @@ def _reasoning(args: argparse.Namespace) -> int:
     print(f"calculation reviewer: {len(report.calcs.findings)} concerns, {len(report.calcs.dropped)} dropped, "
           f"{len(report.calcs.unavailable)} unanswered; investigations: {len(report.traces.traces)}")
     print(f"{len(ledger.new_keys)} units sent to {cfg.model} this run")
+    if args.cost:
+        _print_cost(ledger, cfg.model)
     return 0
 
 
@@ -152,7 +154,7 @@ def _print_cost(ledger: Ledger, model: str) -> None:
 
 def _smoke(args: argparse.Namespace) -> int:
     """One live unit per reasoning checkpoint: the cheapest way to see a provider accept the schema and the tools."""
-    args.reasoning, args.live, args.smoke, args.max_units = True, True, True, None
+    args.reasoning, args.live, args.smoke, args.max_units, args.cost = True, True, True, None, False
     return _reasoning(args)
 
 
