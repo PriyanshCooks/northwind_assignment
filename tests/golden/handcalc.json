@@ -1,6 +1,6 @@
 {
   "source": "HANDCALC_v0.md, reproduced by handcalc_v0.py on 2026-11-17",
-  "review_status": "provisional: written by the AI assistant and not yet reviewed by a human (assumptions A1 to A7)",
+  "review_status": "provisional: written by the AI assistant; the figures were re-derived from the raw files by a second AI session (revenue, profit, NCI, goodwill, intercompany, assets, equity, reserve) and match, but no human has reviewed it (assumptions A1 to A7)",
   "tolerance": "0.01",
   "figures": {
     "group_revenue": {"value": "28301607.81", "status": "determined"},

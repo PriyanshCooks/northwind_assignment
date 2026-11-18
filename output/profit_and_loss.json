@@ -1,0 +1,60 @@
+{
+  "currency": "GBP",
+  "period": "2024-01-01 to 2024-12-31",
+  "revenue": [
+    {
+      "account": "4100",
+      "name": "Revenue",
+      "amount_gbp": 28301607.81
+    }
+  ],
+  "total_revenue": 28301607.81,
+  "expenses": [
+    {
+      "account": "5100",
+      "name": "Cost of sales",
+      "amount_gbp": 15216592.61
+    },
+    {
+      "account": "6100",
+      "name": "Staff costs",
+      "amount_gbp": 5377709.98
+    },
+    {
+      "account": "6200",
+      "name": "Rent and occupancy",
+      "amount_gbp": 789466.86
+    },
+    {
+      "account": "6400",
+      "name": "Depreciation",
+      "amount_gbp": 1010034.30
+    },
+    {
+      "account": "6500",
+      "name": "Other operating expenses",
+      "amount_gbp": 1776713.25
+    },
+    {
+      "account": "7100",
+      "name": "Finance costs",
+      "amount_gbp": 300580.07
+    },
+    {
+      "account": "7300",
+      "name": "Foreign exchange gains and losses",
+      "amount_gbp": 9991.67
+    },
+    {
+      "account": "8100",
+      "name": "Income tax expense",
+      "amount_gbp": 1051738.12
+    }
+  ],
+  "total_expenses": 25532826.86,
+  "profit_for_the_year": 2768780.95,
+  "attributable_to": {
+    "owners_of_the_parent": 2707922.89,
+    "non_controlling_interest": 60858.06
+  }
+}

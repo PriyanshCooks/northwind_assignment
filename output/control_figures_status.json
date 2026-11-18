@@ -1,0 +1,59 @@
+{
+  "figures": {
+    "group_revenue": {
+      "status": "determined"
+    },
+    "group_profit": {
+      "status": "provisional",
+      "open_items": [
+        "UK 1210 SGD 40000.00 carried at its booked 23010.00: no closing rate"
+      ]
+    },
+    "profit_owners": {
+      "status": "provisional",
+      "open_items": [
+        "UK 1210 SGD 40000.00 carried at its booked 23010.00: no closing rate"
+      ]
+    },
+    "profit_nci": {
+      "status": "determined"
+    },
+    "nci_closing": {
+      "status": "determined"
+    },
+    "goodwill_closing": {
+      "status": "determined"
+    },
+    "translation_reserve_movement": {
+      "status": "determined"
+    },
+    "total_assets": {
+      "status": "provisional",
+      "open_items": [
+        "UK 1210 SGD 40000.00 carried at its booked 23010.00: no closing rate"
+      ]
+    },
+    "total_equity": {
+      "status": "provisional",
+      "open_items": [
+        "UK 1210 SGD 40000.00 carried at its booked 23010.00: no closing rate"
+      ]
+    },
+    "intercompany_difference": {
+      "status": "determined"
+    },
+    "sgd_bank_gbp": {
+      "status": "unknown",
+      "reason": "fx_rates.csv has no GBP/SGD closing rate, so the SGD 40,000 bank balance cannot be restated; it is carried at its booked GBP value inside total assets"
+    },
+    "journals": {
+      "status": "determined"
+    }
+  },
+  "intercompany_causes": {
+    "in_transit": 8108.54,
+    "revaluation": 11957.88
+  },
+  "checks_passed": true,
+  "blocked": null
+}

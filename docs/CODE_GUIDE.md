@@ -1,7 +1,7 @@
 # Code guide
 
-A plain-English guide to the repository. It describes what exists now; each wave adds to it.
-Current state: **Wave 0 done** (structure, tooling, guard tests). No consolidation logic yet.
+A plain-English guide to the repository. It describes what exists now.
+Current state: the engine, the orchestration, the AI review and reasoning layers and the review UI are built.
 
 ## Run and test
 
@@ -20,10 +20,10 @@ python run.py consolidate         # exit 0 done, 2 input rejected, 4 paused at t
 | Folder | Role |
 |---|---|
 | `Northwind_TakeHome_v2/` | The supplied brief and data. Never edited. |
-| `app/` | The application. Every file is a docstring-only shell until its wave. |
+| `app/` | The application. |
 | `config/` | Hand-edited TOML settings, and `bundle_manifest.sha256`, the SHA-256 of each supplied data file. |
-| `tests/` | `test_structure`, `test_architecture` and `test_bundle` today; unit, golden, perturbation, property, red-team and eval folders later. |
-| `ledger/`, `output/`, `transcripts/` | Recorded AI calls, generated results and AI session records. Empty for now. |
+| `tests/` | Structure, architecture and bundle tests, then unit, API, golden, perturbation, property, red-team and eval folders. |
+| `ledger/`, `output/`, `transcripts/` | Recorded AI calls, a reviewed sample run, and AI session records. |
 
 ## How `app/` is divided
 

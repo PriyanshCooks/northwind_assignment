@@ -1,0 +1,96 @@
+{
+  "currency": "GBP",
+  "as_of": "2024-12-31",
+  "assets": [
+    {
+      "account": "1100",
+      "name": "Cash and cash equivalents",
+      "amount_gbp": 7810225.90
+    },
+    {
+      "account": "1200",
+      "name": "Trade receivables",
+      "amount_gbp": 6665436.66
+    },
+    {
+      "account": "1300",
+      "name": "Inventory",
+      "amount_gbp": 3218502.18
+    },
+    {
+      "account": "1400",
+      "name": "Prepayments",
+      "amount_gbp": 497942.01
+    },
+    {
+      "account": "1500",
+      "name": "Property, plant and equipment - cost",
+      "amount_gbp": 13174020.23
+    },
+    {
+      "account": "1510",
+      "name": "Property, plant and equipment - accumulated depreciation",
+      "amount_gbp": -4166669.11
+    },
+    {
+      "account": "1700",
+      "name": "Goodwill",
+      "amount_gbp": 1375815.07
+    }
+  ],
+  "total_assets": 28575272.95,
+  "liabilities": [
+    {
+      "account": "2100",
+      "name": "Trade payables",
+      "amount_gbp": 4104779.23
+    },
+    {
+      "account": "2200",
+      "name": "Accruals",
+      "amount_gbp": 961534.40
+    },
+    {
+      "account": "2300",
+      "name": "Deferred income",
+      "amount_gbp": 483272.15
+    },
+    {
+      "account": "2400",
+      "name": "Income tax payable",
+      "amount_gbp": 770007.16
+    },
+    {
+      "account": "2500",
+      "name": "Borrowings",
+      "amount_gbp": 3911844.93
+    }
+  ],
+  "total_liabilities": 10231437.86,
+  "equity": [
+    {
+      "account": "3100",
+      "name": "Share capital",
+      "amount_gbp": 1250000.00
+    },
+    {
+      "account": "3200",
+      "name": "Retained earnings",
+      "amount_gbp": 15312670.82
+    },
+    {
+      "account": "3300",
+      "name": "Translation reserve",
+      "amount_gbp": 456056.74
+    },
+    {
+      "account": "3400",
+      "name": "Non-controlling interest",
+      "amount_gbp": 1325107.53
+    }
+  ],
+  "total_equity": 18343835.08,
+  "provisional": [
+    "UK 1210 SGD 40000.00 carried at its booked 23010.00: no closing rate"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "input_hashes": {
+    "acquisition_note.md": "4f22f310c58a4403c99c1de91b482f568181d5277e4c476205f7a6a9f9a90b0e",
+    "adjustments.json": "79425ab26afef47ae65fa980530b32d4b1625d28f5fff2de25da4884753ab2a0",
+    "entities.csv": "c474d8bb1cd95ce975cbb2c8dae7bea76954dd8ff204efc0f7bfbdec8f335743",
+    "fx_rates.csv": "6711b1c39e80abc7aa7d92db52005c737bbc4bf77855936df2984be4a30f7323",
+    "group_coa.csv": "9484fd2f378a52c6575c321b81027928fa947feb2f1ba4c783add224e29e41ed",
+    "group_policies.md": "00888e755e03b2b275bb9b77b5e71916a26b2a23cfda4dffd1dbd47447cc05d4",
+    "in_pl_monthly.csv": "a41458d3e4110bb0c020c6b87255142b7f6557d34a552257f78ac0b83d69f114",
+    "intercompany.csv": "75da721ad652a0c90ee52cefe023ac0098c49185b6242a6debc5c42cc3e23b5a",
+    "map_in.csv": "8f7a34717d0b9970835e98d5464aa6d3b2b7eaa1f3208dc16863b55dce44cc09",
+    "map_uk.csv": "a51daff86d60e7592b806940c9ccfb77e677da61e3fdabc45608cbebbc8073bf",
+    "prior_year_group.csv": "270478b6ab91eed0bc0be672cde548f860efaef53afd45f88453a686ef2d7be9",
+    "subledger_controls.csv": "24bc88bc66e750fcc683e03a3d56cfa74765d8704bc4161c681cc9fa8613e2f9",
+    "tb_in.csv": "b2c7a041efcf202c7fb8b7d80a7c0d5b56d552f8edd8c6ec8c055f64be4d4bd3",
+    "tb_uk.csv": "335b077fee8729f6911b88d9464b2ee756fd4a6fe902e012a9036e94a733dd9e",
+    "tb_us.csv": "e1b3ed76c35aaeb81d36644e22f0a7c4d2a80be8b29f8fbf452f1e80440e7fc6"
+  },
+  "policy_sha256": "69756af38922fce50ad25a64bcacb557776e1afcf2c8cdd675dcad1ccd3087f1",
+  "assumptions_sha256": "2cf91f10e9991def37e67ec50ab6e68358579929a1bb1255418dab8b7ece8684",
+  "overrides_sha256": "7a2d2a1de1a3beb8d376e164713ca83e3c86407a0bbbb19dd08a55ca79d18e55",
+  "code_sha256": "73c76989a1d1e781fd075aa9fabd5dae2643b096942a22279c18d9ae817eb345",
+  "ledger_sha256": null,
+  "output_hashes": {
+    "balance_sheet.json": "fb52adae82418eec837f93bfd5d501b3621815d90fae4f5e9a8de505f8c3574b",
+    "changes_in_equity.json": "8314f98cdceabe57477c9a14a886d1b331b80c9cbff6a8b6a4c8c9d639726257",
+    "consolidated_tb.csv": "f2be525c0844e73b6a604e668c3c8d9e6b9bda47fa739d671a28bf07fea603ae",
+    "control_figures_pb.json": "d78c677e19a14bb9ed297432dfc8c54e6fd114263ee0f8766d7a89e41c657231",
+    "control_figures_status.json": "cf86269460a4ab030a8ee0e36f6089866a96017860c153cc8c0b8d4a2ef921d5",
+    "eliminations.csv": "7e51f0cfc76c828579a371442ce221ad98a37fc99983d6fd8e83bfe30d343598",
+    "issues.json": "849c89b4b0b39e0b53e92883202dbae5a0e76c1f33c7d006b629c7f93f923642",
+    "profit_and_loss.json": "9b48376574bbdac9beb0bffc5b5fc41749ef7a8212f8c7129aa9e7166785baf3"
+  }
+}

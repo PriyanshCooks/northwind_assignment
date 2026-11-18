@@ -1,0 +1,26 @@
+group_code,group_name,debit_gbp,credit_gbp,source_rows
+1100,Cash and cash equivalents,7810225.90,,tb_us.csv:2; tb_uk.csv:2; map_uk.csv:2; tb_uk.csv:3; map_uk.csv:3; tb_in.csv:2; map_in.csv:2
+1200,Trade receivables,6665436.66,,tb_us.csv:3; tb_uk.csv:4; map_uk.csv:4; tb_in.csv:3; map_in.csv:3; adjustments.json:211
+1300,Inventory,3218502.18,,tb_us.csv:5; tb_uk.csv:5; map_uk.csv:5; tb_in.csv:4; map_in.csv:4; adjustments.json:76
+1400,Prepayments,497942.01,,tb_us.csv:6; tb_uk.csv:6; map_uk.csv:6; tb_in.csv:7; map_in.csv:7; adjustments.json:57; adjustments.json:187
+1500,"Property, plant and equipment - cost",13174020.23,,tb_us.csv:7; tb_uk.csv:7; map_uk.csv:7; tb_in.csv:5; map_in.csv:5
+1510,"Property, plant and equipment - accumulated depreciation",,4166669.11,tb_us.csv:8; tb_uk.csv:8; map_uk.csv:8; tb_in.csv:6; map_in.csv:6; adjustments.json:38; adjustments.json:154; adjustments.json:382
+1700,Goodwill,1375815.07,,tb_us.csv:10; acquisition_note.md:3; acquisition_note.md:4; acquisition_note.md:5; acquisition_note.md:11; acquisition_note.md:12; acquisition_note.md:13; acquisition_note.md:14
+2100,Trade payables,,4104779.23,tb_us.csv:11; tb_uk.csv:9; map_uk.csv:9; tb_in.csv:8; map_in.csv:8
+2200,Accruals,,961534.40,tb_us.csv:12; tb_uk.csv:11; map_uk.csv:11; tb_in.csv:9; map_in.csv:9; adjustments.json:19; adjustments.json:95; adjustments.json:135; adjustments.json:230; adjustments.json:249; adjustments.json:268; adjustments.json:344
+2300,Deferred income,,483272.15,tb_us.csv:13; tb_uk.csv:12; map_uk.csv:12
+2400,Income tax payable,,770007.16,tb_us.csv:14; tb_uk.csv:13; map_uk.csv:13; tb_in.csv:10; map_in.csv:10
+2500,Borrowings,,3911844.93,tb_us.csv:15; tb_in.csv:11; map_in.csv:11
+4100,Revenue,,28301607.81,tb_us.csv:18; tb_uk.csv:16; map_uk.csv:16; in_pl_monthly.csv:5; in_pl_monthly.csv:6; in_pl_monthly.csv:7; in_pl_monthly.csv:8; in_pl_monthly.csv:9; in_pl_monthly.csv:10
+5100,Cost of sales,15216592.61,,tb_us.csv:20; tb_uk.csv:17; map_uk.csv:17; in_pl_monthly.csv:14; in_pl_monthly.csv:15; in_pl_monthly.csv:16; in_pl_monthly.csv:17; in_pl_monthly.csv:18; in_pl_monthly.csv:19; adjustments.json:71; adjustments.json:282
+6100,Staff costs,5377709.98,,tb_us.csv:21; tb_uk.csv:18; map_uk.csv:18; tb_uk.csv:19; in_pl_monthly.csv:23; in_pl_monthly.csv:24; in_pl_monthly.csv:25; in_pl_monthly.csv:26; in_pl_monthly.csv:27; in_pl_monthly.csv:28; adjustments.json:14; adjustments.json:244
+6200,Rent and occupancy,789466.86,,tb_us.csv:22; tb_uk.csv:20; map_uk.csv:19; in_pl_monthly.csv:32; in_pl_monthly.csv:33; in_pl_monthly.csv:34; in_pl_monthly.csv:35; in_pl_monthly.csv:36; in_pl_monthly.csv:37; adjustments.json:192
+6400,Depreciation,1010034.30,,tb_us.csv:23; tb_uk.csv:21; map_uk.csv:20; in_pl_monthly.csv:41; in_pl_monthly.csv:42; in_pl_monthly.csv:43; in_pl_monthly.csv:44; in_pl_monthly.csv:45; in_pl_monthly.csv:46; adjustments.json:33; adjustments.json:149; adjustments.json:377
+6500,Other operating expenses,1776713.25,,tb_us.csv:24; tb_uk.csv:23; map_uk.csv:22; in_pl_monthly.csv:50; in_pl_monthly.csv:51; in_pl_monthly.csv:52; in_pl_monthly.csv:53; in_pl_monthly.csv:54; in_pl_monthly.csv:55; adjustments.json:52; adjustments.json:130; adjustments.json:206; adjustments.json:225; adjustments.json:263; adjustments.json:287
+7100,Finance costs,300580.07,,tb_us.csv:25; in_pl_monthly.csv:59; in_pl_monthly.csv:60; in_pl_monthly.csv:61; in_pl_monthly.csv:62; in_pl_monthly.csv:63; in_pl_monthly.csv:64; adjustments.json:90; adjustments.json:339
+7300,Foreign exchange gains and losses,9991.67,,tb_uk.csv:10; tb_us.csv:19; tb_uk.csv:22; map_uk.csv:21; intercompany.csv:6
+8100,Income tax expense,1051738.12,,tb_us.csv:26; tb_uk.csv:24; map_uk.csv:24; in_pl_monthly.csv:68; in_pl_monthly.csv:69; in_pl_monthly.csv:70; in_pl_monthly.csv:71; in_pl_monthly.csv:72; in_pl_monthly.csv:73
+3100,Share capital,,1250000.00,prior_year_group.csv:2
+3200,Retained earnings,,12604747.93,prior_year_group.csv:3
+3300,Translation reserve,,456056.74,prior_year_group.csv:4
+3400,Non-controlling interest,,1264249.46,prior_year_group.csv:5; acquisition_note.md:3; acquisition_note.md:4; acquisition_note.md:5; acquisition_note.md:11; acquisition_note.md:12; acquisition_note.md:13; acquisition_note.md:14
