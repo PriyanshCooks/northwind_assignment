@@ -274,6 +274,11 @@ point at each fault's lines (journal findings carry no line number, so that colu
 or verdict is put in a packet; a test checks the packet keys and text. `python -m tests.evals.seeded_faults --live`
 calls the configured model and writes `.northwind/seeded_faults/result.json`; the tests use fake models.
 
+**Explain step** (`explain.py`). For a finding the rules already raised, the model writes why it matters (`cause`) and a
+trace to the source lines, with the same tools, caps and grounding as the investigator. It runs after detection, so the
+finding is its input by design; the detection packets (reader, calculation reviewer) still hold no verdict. A test checks
+the finding list is identical before and after. Not yet wired into the CLI, and not run live.
+
 **Citation forms** (`cite_exists`). A trace step may cite what the tools print: `file:line`, `file:first-last`, a
 calculation or row id with or without `calc:` or `lineage `, `account N`, `rule policy N`. An id no tool could have
 returned is dropped. Before this, `calc:row:1200` and `lineage row:1200` were dropped as nonexistent (69 of 99 steps).
