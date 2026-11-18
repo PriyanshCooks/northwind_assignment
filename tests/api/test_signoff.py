@@ -32,6 +32,16 @@ def test_a_plan_outside_the_nine_files_is_refused(client: TestClient) -> None:
     assert client.put(f"/api/runs/{run_id}/output-plan", json={"files": ["../run.json"]}).status_code == 422
 
 
+def test_a_plan_with_no_output_file_is_refused_and_leaves_the_earlier_choice(client: TestClient) -> None:
+    run_id = sample_run(client)
+    client.post(f"/api/runs/{run_id}/analyse")
+    client.put(f"/api/runs/{run_id}/output-plan", json={"files": ["issues.json"]})
+    for empty in ([], ["run_manifest.json"]):
+        reply = client.put(f"/api/runs/{run_id}/output-plan", json={"files": empty})
+        assert reply.status_code == 422 and "at least one" in reply.json()["detail"]
+    assert "issues.json" in client.get(f"/api/runs/{run_id}/output-plan").json()["chosen"]
+
+
 def test_reviewing_the_files_clears_only_the_file_reason_for_a_draft(client: TestClient) -> None:
     run_id = finished_run(client)
     client.put(f"/api/runs/{run_id}/output-plan", json={"files": ["balance_sheet.json"]})

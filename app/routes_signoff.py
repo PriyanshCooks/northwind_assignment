@@ -41,6 +41,8 @@ def set_plan(run_id: str, body: Plan, reg: Reg) -> dict[str, Any]:
     unknown = sorted(set(body.files) - allowed)
     if unknown:
         raise HTTPException(422, "not an output file: " + ", ".join(unknown))
+    if not set(body.files) - {results.ALWAYS}:
+        raise HTTPException(422, "choose at least one output file besides the run manifest")
     if reg.meta(run_id)["status"] == "new":
         raise HTTPException(409, "scan the files first: nothing has been analysed yet")
     order = [*OUTPUT_FILES, results.ALWAYS]
