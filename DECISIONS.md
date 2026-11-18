@@ -24,6 +24,15 @@ taken. The AI tool was Claude Code; it wrote most of the code and I decided what
   a person passes or overrides.
 - **Trade-off:** more states to explain, but no figure is ever invented.
 - **AI suggestion:** none recorded; the rule "never invent a value" was set in the operating instructions I gave it.
+- **The three questions I emailed.** Each method gap below was put to the company, with the stated assumption applied
+  until a reply changes it (one line in `config/assumptions.toml`, then the run re-executes):
+  - Q1 (A1, A1b): the 20 journals are not already in the trial balances, so valid ones are posted on top, and JE-018
+    and JE-020 do not overlap `in_pl_monthly.csv`. If they do overlap, India July to December profit rises by
+    4,950,000 INR (about 45,921.86 GBP).
+  - Q2 (A2): the investment in Northwind UK is eliminated in full against UK equity, with no UK goodwill.
+  - Q3 (A3): the 20% non-controlling interest takes its share of India's translation difference; the goodwill
+    retranslation difference stays entirely with the parent. A different split moves NCI and the translation reserve,
+    not total equity.
 
 ## 3. The UK 2310 deferred income line is an override signed by a person
 
