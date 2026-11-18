@@ -79,3 +79,27 @@ def test_final_when_nothing_is_open_and_every_file_is_reviewed(
     assert done["status"] == "Final" and done["reasons"] == []
     _, signoff = _zip_names_and_signoff(client, run_id)
     assert signoff["status"] == "Final"
+
+
+def test_a_row_mark_is_kept_per_file_hash_and_does_not_review_the_file(client: TestClient) -> None:
+    run_id = finished_run(client)
+    body = {"file": "balance_sheet.json", "reviewer": "Dana", "row": "1:0"}
+    done = client.post(f"/api/runs/{run_id}/signoff", json=body).json()
+    one = next(f for f in done["files"] if f["name"] == "balance_sheet.json")
+    assert one["rows_reviewed"] == ["1:0"] and one["state"] == "open"
+    bad = {"file": "balance_sheet.json", "reviewer": "Dana", "row": "../x"}
+    assert client.post(f"/api/runs/{run_id}/signoff", json=bad).status_code == 422
+
+
+def test_a_real_final_needs_every_finding_passed_and_every_file_reviewed(client: TestClient) -> None:
+    run_id = finished_run(client)
+    left = client.get(f"/api/runs/{run_id}/unanswered").json()
+    for item in left["findings"]:
+        body = {"key": item["key"], "action": "pass", "reviewer": "Dana", "note": "looked"}
+        assert client.post(f"/api/runs/{run_id}/inputs/{item['file']}/decisions", json=body).status_code == 200
+    for f in client.get(f"/api/runs/{run_id}/signoff").json()["files"]:
+        client.post(f"/api/runs/{run_id}/signoff", json={"file": f["name"], "reviewer": "Dana"})
+    done = client.get(f"/api/runs/{run_id}/signoff").json()
+    assert done["status"] == "Final" and done["reasons"] == [] and done["problems"] == 0
+    _, signoff = _zip_names_and_signoff(client, run_id)
+    assert signoff["status"] == "Final"

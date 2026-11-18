@@ -18,6 +18,7 @@ TARGET = re.compile(r"^[A-Za-z0-9_.-]{1,60}$")
 class Mark(BaseModel):
     file: str
     reviewer: str
+    row: str | None = None  # a row mark, bound to the file's hash; none means the whole file
 
 
 class Plan(BaseModel):
@@ -56,7 +57,7 @@ def get_signoff(run_id: str, reg: Reg) -> dict[str, Any]:
 def mark_reviewed(run_id: str, body: Mark, reg: Reg) -> dict[str, Any]:
     pipeline.require_done(reg, run_id)
     try:
-        return signoff_service.mark(reg, run_id, body.file, body.reviewer)
+        return signoff_service.mark(reg, run_id, body.file, body.reviewer, body.row)
     except ValueError as error:
         raise HTTPException(422, str(error)) from error
 
