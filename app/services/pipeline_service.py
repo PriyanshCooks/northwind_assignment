@@ -91,7 +91,7 @@ def _advice(registry: Registry, run_id: str) -> list[dict[str, Any]]:
     return rows
 
 
-def _memos(run: Consolidation) -> dict[str, dict[str, Any]]:
+def journal_memos(run: Consolidation) -> dict[str, dict[str, Any]]:
     """Text addressed to tools (D12), tied to the journal starting last at or before its line."""
     starts = sorted((j.ref.line, j.id) for j in run.ctx.inputs.journals)
     found = {}
@@ -114,7 +114,8 @@ def review_view(registry: Registry, run_id: str) -> dict[str, Any]:
     ai = ai_service.review_units(registry, run_id)
     units = ai["units"]
     return {
-        "ai": ai, "findings": findings, "cards": build_cards(findings, units, dispositions, open_items, _memos(run)),
+        "ai": ai, "findings": findings,
+        "cards": build_cards(findings, units, dispositions, open_items, journal_memos(run)),
         "dispositions": dispositions,
         "waiting": waiting_cards(states, open_items) + held_cards(dispositions, open_items),
         "queue": review_queue(run.findings, states),
@@ -153,7 +154,8 @@ def result_cards(registry: Registry, run_id: str, items: list[dict[str, Any]]) -
     if key not in _CARDS:
         run = stage(build_context(registry.data_dir(run_id), registry.config_dir(run_id)))
         units = ai_service.review_units(registry, run_id)["units"]
-        _CARDS[key] = build_cards(items, units, [d.model_dump(mode="json") for d in run.dispositions], [], _memos(run))
+        dispositions = [d.model_dump(mode="json") for d in run.dispositions]
+        _CARDS[key] = build_cards(items, units, dispositions, [], journal_memos(run))
     return _CARDS[key]
 
 

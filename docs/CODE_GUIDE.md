@@ -210,6 +210,12 @@ For JE-006 the model said the entry is unbalanced and did not follow the memo; i
 - `app/services/results_service.py`: reads `control_figures_pb.json` and `control_figures_status.json` (a null shows its reason), builds the zip (only names in the run's own output folder, plus `run_manifest.json`), and compares two runs with `diff_inputs` and `impact`.
 - `app/routes.py`, `app/routes_results.py`, `app/api_models.py`, `app/main.py`: thin endpoints, strict request models, handlers that turn `UnknownRun` into 404, `NotReady` into 409 and bad input into 422.
 
+### the input workbench (item 1: rows and explain)
+- `app/services/rows_service.py`: a source file as labelled rows. A CSV record, a journal in `adjustments.json` (at the line of its `"id"`, the line the journal findings cite) or a non-blank line of a markdown file is one row. A finding belongs to the last row starting at or before its cited line.
+- `app/services/inputs_service.py`: `rows_view` puts each finding on its row; `explain_row` adds the rule in plain words, the policy clause, the evidence cells and the recorded AI view. The AI view is attached to a finding only for D02 to D07 and D12, because the reviewers read journals and trial-balance mappings only; a row of a mapping file or a journal also states what the AI looked at when no rule found anything.
+- `app/services/rule_text.py`: one sentence and one policy reference per detector, and which reviewer actions the workbench offers on it.
+- Endpoints: `GET /api/runs/{id}/inputs/{file}/rows` and `GET /api/runs/{id}/inputs/{file}/rows/{line}/explain`. No model is called.
+
 ### the seven steps
 Runs list (new, open, resume) then 1 Upload, 2 Review (approve or reject calls the resume path), 3 Choose outputs, 4 Build (the stages the run logged, then the 20 gates), 5 Results (figures with status, issue cards, what-if, compare), 6 Output files (one file at a time), 7 Export (zip). A what-if patches a copy of the run's data (`file:LINE.column=value`, file must be one of the 15) and builds a new run beside the old one.
 

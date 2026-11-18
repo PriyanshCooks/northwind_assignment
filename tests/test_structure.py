@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 APP_FILES = {
-    "app": ["main.py", "routes.py", "routes_results.py", "api_models.py", "cli.py", "config.py"],
+    "app": ["main.py", "routes.py", "routes_results.py", "routes_inputs.py", "api_models.py", "cli.py", "config.py"],
     "app/agents": [],
     "app/reasoning": ["evidence.py", "tools.py", "schema.py", "grounding.py", "contradiction.py", "text_checks.py",
                       "meanings.py", "reader.py", "budget.py", "calc_review.py", "investigator.py", "explain.py"],
@@ -38,7 +38,8 @@ APP_FILES = {
     "app/services": [
         "run_service.py", "trace_service.py", "whatif_service.py", "overrides_service.py", "env_service.py",
         "review_service.py", "registry_service.py", "upload_service.py", "pipeline_service.py", "results_service.py",
-        "ai_service.py", "cards_service.py", "output_service.py", "reasoning_service.py",
+        "ai_service.py", "cards_service.py", "output_service.py", "reasoning_service.py", "rows_service.py",
+        "rule_text.py", "inputs_service.py",
     ],
     "app/utils": ["env.py", "hashing.py", "logging.py", "money.py", "paths.py"],
 }

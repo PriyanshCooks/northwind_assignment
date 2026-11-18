@@ -66,6 +66,11 @@ def _ai(unit: dict[str, Any] | None, about_text: bool = False) -> dict[str, str]
     return {"state": "no_claim", "text": "The AI reviewed this item and did not flag it."}
 
 
+def ai_view(unit: dict[str, Any] | None) -> dict[str, str]:
+    """What the recorded AI review said about one unit, in words; None means the AI never looked at it."""
+    return _ai(unit)
+
+
 def _figure(item: dict[str, Any]) -> str | None:
     found = FIGURE_CLAIM.match(item["claim"]) if item["code"] == "FIG" else None
     return found[1] if found and found[1] in FIGURE_NAMES else None
