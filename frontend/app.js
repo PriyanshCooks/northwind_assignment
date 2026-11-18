@@ -1,7 +1,8 @@
 // Review UI: hash router, API helper and the runs list. Everything from the server is put on the page with
 // text nodes (never as HTML), so uploaded text is shown as data and cannot run as script.
-const STEPS = [["upload", "1 Upload"], ["scan", "2 Scan"], ["review", "3 Review inputs"], ["build", "4 Generate"],
-               ["outputs", "5 Choose outputs"], ["results", "6 Results"], ["files", "7 Output files"], ["export", "8 Export"]];
+const STEPS = [["upload", "1 Upload"], ["scan", "2 Scan"], ["review", "3 Review inputs"], ["outputs", "4 Choose outputs"],
+               ["build", "5 Generate"], ["files", "6 Review outputs"], ["export", "7 Done"]];
+const EXTRA = { results: "Results, what-if and compare" };  // reachable from Done, not a stage of its own
 const view = document.getElementById("view");
 const stepper = document.getElementById("stepper");
 
@@ -41,10 +42,10 @@ function stepState(run, key, step) {
   const finished = run.status === "done", analysed = run.status !== "new", output = finished || Boolean(run.built);
   if (key === step) return "current";
   if (run.blocked && key === "review") return "blocked";
-  const done = { upload: analysed, scan: analysed, review: finished, outputs: Boolean(run.outputs), build: output, results: false, files: false, export: false }[key];
+  const done = { upload: analysed, scan: analysed, review: finished, outputs: Boolean(run.outputs), build: output, files: false, export: false }[key];
   if (done) return "done";
   if (key === "review" && run.status === "awaiting_review") return "blocked";
-  const locked = { scan: !analysed, review: !analysed, build: !analysed, outputs: !output, results: !output, files: !output, export: !output }[key];
+  const locked = { scan: !analysed, review: !analysed, outputs: !analysed, build: !analysed, files: !output, export: !output }[key];
   return locked ? "locked" : "todo";
 }
 const STATE_TEXT = { done: "Done", current: "Current", blocked: "Needs you", locked: "Not yet", todo: "Ready" };
@@ -54,7 +55,7 @@ function drawStepper(run, step) {
   if (!run) { stepper.replaceChildren(); runbar.replaceChildren(h("span", {}, "Review a consolidation run step by step")); return; }
   const at = STEPS.findIndex(([k]) => k === step);
   runbar.replaceChildren(h("strong", {}, run.name), h("code", {}, run.id),
-    h("span", { class: "stage" }, `Stage ${at + 1} of ${STEPS.length}: ${STEPS[at][1].slice(2)}`),
+    h("span", { class: "stage" }, at < 0 ? EXTRA[step] : `Stage ${at + 1} of ${STEPS.length}: ${STEPS[at][1].slice(2)}`),
     h("span", { class: "tag" }, STATUS[run.blocked ? "blocked" : run.status] || run.status));
   stepper.replaceChildren(...STEPS.map(([key, label], i) => {
     const state = stepState(run, key, step);
@@ -67,7 +68,7 @@ function drawStepper(run, step) {
 }
 
 function nextStep(run) {
-  return { new: "upload", awaiting_review: "review", done: "results" }[run.status] || "review";
+  return { new: "upload", awaiting_review: "review", done: "files" }[run.status] || "review";
 }
 
 // Stage 0, Home: continue a run by its id, or create a new one. The list of runs stays below for a run you did not note down.
@@ -111,7 +112,8 @@ async function runsList() {
 
 // A step that needs a finished run says why it cannot open yet and what to do, instead of showing an error.
 function holdBack(run, step) {
-  if (["upload", "scan", "review"].includes(step) || run.status === "done" || run.built || (step === "build" && run.status !== "new")) return null;
+  if (["upload", "scan", "review"].includes(step) || run.status === "done" || run.built) return null;
+  if (["outputs", "build"].includes(step) && run.status !== "new") return null;
   const to = (key, label) => h("a", { class: "btn", href: `#/run/${run.id}/${key}` }, label);
   if (run.blocked) return [h("h1", {}, "This run is blocked"), h("div", { class: "callout bad" }, run.blocked), to("review", "Open the review")];
   if (run.status === "awaiting_review") {
@@ -135,13 +137,13 @@ async function route() {
   try {
     if (kind !== "run") return await runsList();
     const run = await api("GET", `/runs/${id}`);
-    const chosen = STEPS.some(([k]) => k === step) ? step : nextStep(run);
+    const chosen = STEPS.some(([k]) => k === step) || step === "results" ? step : nextStep(run);
     drawStepper(run, chosen);
     const waiting = holdBack(run, chosen);
     if (waiting) return show(...waiting);
     show(h("p", { role: "status", class: "muted" }, "Loading…"));
     await STEP_VIEWS[chosen](run);
-    if (["outputs", "results", "files", "export"].includes(chosen)) await draftBanner(run);
+    if (["results", "files", "export"].includes(chosen)) await draftBanner(run);
   } catch (e) {
     show(h("div", { class: "error", role: "alert" }, String(e.message || e)),
       h("div", { class: "row" }, h("button", { onclick: route }, "Try again"), h("a", { class: "btn plain", href: "#/" }, "Back to runs")));

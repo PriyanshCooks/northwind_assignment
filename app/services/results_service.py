@@ -44,7 +44,7 @@ def available_outputs(out_dir: Path) -> list[dict[str, Any]]:
             for n in names if (out_dir / n).is_file()]
 
 
-def build_zip(out_dir: Path, chosen: list[str]) -> bytes:
+def build_zip(out_dir: Path, chosen: list[str], extra: dict[str, bytes] | None = None) -> bytes:
     """The chosen files plus the run manifest, which is always included. Only names that exist in the run's output
     folder are accepted, so a request cannot reach any other file."""
     allowed = {o["name"] for o in available_outputs(out_dir)}
@@ -55,6 +55,8 @@ def build_zip(out_dir: Path, chosen: list[str]) -> bytes:
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for name in sorted({*chosen, ALWAYS} & allowed):
             archive.write(out_dir / name, name)
+        for name, content in (extra or {}).items():
+            archive.writestr(name, content)
     return buffer.getvalue()
 
 

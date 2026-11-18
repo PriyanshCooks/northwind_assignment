@@ -8,6 +8,7 @@ from app.routes import Reg
 from app.services import output_service as files
 from app.services import pipeline_service as pipeline
 from app.services import results_service as results
+from app.services import signoff_service
 from app.services.whatif_service import Change, patched_copy
 
 router = APIRouter(prefix="/api")
@@ -62,7 +63,8 @@ def compare(run_id: str, other_id: str, reg: Reg) -> dict[str, Any]:
 def export(run_id: str, reg: Reg) -> Response:
     _finished(reg, run_id)
     chosen = reg.meta(run_id)["outputs"] or [o["name"] for o in results.available_outputs(reg.out_dir(run_id))]
-    return Response(results.build_zip(reg.out_dir(run_id), chosen), media_type="application/zip",
+    extra = {signoff_service.EXPORT_FILE: signoff_service.export_document(reg, run_id)}
+    return Response(results.build_zip(reg.out_dir(run_id), chosen, extra), media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{run_id}.zip"'})
 
 

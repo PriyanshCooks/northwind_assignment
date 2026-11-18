@@ -138,7 +138,7 @@ async function reviewStep(run) {
         rowTable(v, state.line, pickRow)),
       drawer(state.explain, send, () => pickRow(null)));
     const open = state.left.problems;
-    bar.replaceChildren(h("button", { onclick: () => go(run, "build") }, "Generate output"),
+    bar.replaceChildren(h("button", { onclick: () => go(run, "outputs") }, "Generate output"),
       h("span", { class: open ? "bad" : "ok", role: "status" }, open ?
         `${open} problem(s) still open. You can generate now: the output will be a Draft and they stay marked as problems.` :
         "Nothing is open. The output will not be a Draft."));

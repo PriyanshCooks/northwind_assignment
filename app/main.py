@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app import routes, routes_inputs, routes_results
+from app import routes, routes_inputs, routes_results, routes_signoff
 from app.parsers.contracts import ContractError
 from app.services.pipeline_service import NotReady
 from app.services.registry_service import Registry, UnknownRun
@@ -60,6 +60,7 @@ def create_app(runs_root: Path = RUNTIME_DIR / "runs", frontend: Path = ROOT / "
     app.include_router(routes.router)
     app.include_router(routes_results.router)
     app.include_router(routes_inputs.router)
+    app.include_router(routes_signoff.router)
     app.mount("/ui", StaticFiles(directory=frontend, html=True), name="ui")
 
     @app.get("/", include_in_schema=False)

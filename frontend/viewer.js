@@ -1,54 +1,107 @@
-// Output viewer: one generated file at a time, as tables or cards, with what affects it. Every value is shown as the file has it.
+// Review outputs: the generated files on the left with a reviewed mark, the selected file as a row list, and a drawer for the
+// clicked row with the calculation behind it. Every value is shown as the file has it; the page calculates nothing.
 const MONEY_COLUMN = /debit|credit|amount|gbp|balance|total/i;
+const KEY_COLUMN = /^(group_code|account|field)$/i;  // the cell that names a control figure or a group account
 const isNumber = (t) => /^-?\d+(\.\d+)?$/.test(t);
+const SIGN_WORD = { reviewed: "Reviewed", open: "Open", stale: "Changed since reviewed" };
 
-function sectionTable(s) {
+function targetOf(section, row) {
+  const i = section.columns.findIndex((c) => KEY_COLUMN.test(c));
+  return i < 0 ? null : row[i];
+}
+
+function sectionTable(s, si, picked, onpick) {
   const numeric = s.columns.map((c, i) => MONEY_COLUMN.test(c) && s.rows.some((r) => isNumber(r[i])));
   const cell = (v, i) => (numeric[i] && isNumber(v) ? h("td", { class: "num" }, money(v)) : h("td", { class: "lines" }, v));
-  return h("div", {}, s.title ? h("h3", {}, s.title) : null, h("div", { class: "scroll" }, h("table", {},
+  const row = (r, ri) => h("tr", { class: `wb-row ${picked === `${si}:${ri}` ? "selected" : ""}`, tabindex: "0",
+    onclick: () => onpick(si, ri), onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onpick(si, ri); } } },
+    r.map(cell));
+  return h("div", {}, s.title ? h("h3", {}, s.title) : null, h("div", { class: "scroll" }, h("table", { class: "wb-table" },
     h("thead", {}, h("tr", {}, s.columns.map((c, i) => h("th", { class: numeric[i] ? "num" : "" }, c)))),
-    h("tbody", {}, s.rows.map((r) => h("tr", {}, r.map(cell)))))));
+    h("tbody", {}, s.rows.map(row)))));
 }
 
-async function fileBody(run, file) {
-  if (file.name === "control_figures_pb.json") return figuresTable((await api("GET", `/runs/${run.id}/results`)).figures);
-  if (file.name === "issues.json") return h("div", {}, issueGroups((await api("GET", `/runs/${run.id}/results`)).cards, {}, () => {}));
-  const view = await api("GET", `/runs/${run.id}/output-files/${file.name}`);
-  return h("div", {}, view.sections.map(sectionTable), view.truncated ?
-    h("div", { class: "callout warn" }, `Showing the first ${view.sections.reduce((n, s) => n + s.rows.length, 0)} of ${view.total_rows} rows. Download the file for all of them.`) : null);
+function calcBlock(calc) {
+  if (!calc) return h("p", { class: "muted" }, "No calculation is recorded for this row: it is a label or a total the engine did not build from postings.");
+  return h("div", {}, h("h3", {}, calc.kind === "figure" ? "How the figure is built" : "Postings that make this account"),
+    h("ol", { class: "calc" }, calc.steps.map((s) => h("li", {}, h("span", { class: "lines" }, s.formula),
+      s.result ? h("strong", {}, ` = ${money(s.result)}`) : null,
+      s.sources.length ? h("div", { class: "muted small" }, "from ", s.sources.join(", ")) : null))));
 }
 
-async function affecting(run, file) {
-  if (file.name === "issues.json") return h("p", { class: "muted" }, "This file lists every issue of the run.");
-  const got = await api("GET", `/runs/${run.id}/output-files/${file.name}/issues`);
+function outputDrawer(state, close) {
+  if (!state.pick) return h("aside", { class: "wb-drawer", hidden: true });
+  const { section, row } = state.pick;
+  const target = targetOf(section, row);
+  return h("aside", { class: "wb-drawer", "aria-label": "Calculation behind this row" },
+    h("div", { class: "row" }, h("h2", {}, target ? `${state.name}: ${target}` : state.name), h("button", { class: "plain", onclick: close }, "Close")),
+    h("div", { class: "callout" }, "Checked by the 20 gates and the oracle, a second implementation of the same method. " +
+      "No AI agent reviews the generated figures."),
+    h("dl", { class: "cells" }, section.columns.map((c, i) => h("div", {}, h("dt", {}, c), h("dd", { class: "lines" }, row[i] || "(empty)")))),
+    target ? calcBlock(state.calc) : null);
+}
+
+function fileBadge(f, current, onpick) {
+  return h("button", { class: `wb-file ${f.name === current ? "current" : ""}`, "aria-current": f.name === current ? "true" : null,
+    onclick: () => onpick(f.name) }, h("span", { class: "wb-name" }, f.name),
+    h("span", { class: `badge ${f.state === "reviewed" ? "reviewed" : "open"}` }, f.state === "reviewed" ? "✓" : "!"),
+    h("span", { class: "muted small" }, SIGN_WORD[f.state] + (f.reviewed_by ? ` by ${f.reviewed_by}` : "")));
+}
+
+function affectingBlock(got) {
   const none = (text) => h("p", { class: "muted" }, text);
-  return h("div", {}, h("h3", {}, `Traced to this file (${got.affecting.length})`),
+  return h("details", {}, h("summary", {}, `Issues traced to this file (${got.affecting.length}) and run-wide (${got.run_wide.length})`),
     got.affecting.length ? issueGroups(got.affecting, {}, () => {}) : none("No issue traces to this file through its source rows."),
-    h("h3", {}, `Run-wide (${got.run_wide.length})`),
-    h("p", { class: "muted small" }, "These could not be traced to this file, so they are listed for the whole run and not guessed onto it."),
-    got.run_wide.length ? issueGroups(got.run_wide, {}, () => {}) : none("None."));
+    got.run_wide.length ? issueGroups(got.run_wide, {}, () => {}) : null);
 }
-
-const FILE_LISTS = {};  // a finished run's files do not change while the page is open, so the list is read once
 
 async function filesStep(run) {
-  const list = FILE_LISTS[run.id] ||= await api("GET", `/runs/${run.id}/output-files`);
-  if (!list.length) return show(...head(run, "7 Output files"), h("div", { class: "callout" }, "This run has no output files yet."));
+  const state = { name: null, view: null, sign: null, side: null, pick: null, calc: null };
+  const holder = h("div", { class: "wb" });
+  const bar = h("div", { class: "row topbar" });
+  const load = async () => {
+    state.sign = await api("GET", `/runs/${run.id}/signoff`);
+    state.view = await api("GET", `/runs/${run.id}/output-files/${encodeURIComponent(state.name)}`).catch((e) => ({ error: e.message }));
+    state.side = state.name === "issues.json" ? null : await api("GET", `/runs/${run.id}/output-files/${encodeURIComponent(state.name)}/issues`);
+    draw();
+  };
+  const pickFile = async (name) => { state.name = name; state.pick = null; history.replaceState(null, "", `#/run/${run.id}/files/${encodeURIComponent(name)}`); await load(); };
+  const pickRow = async (si, ri) => {
+    const section = state.view.sections[si], row = section.rows[ri];
+    state.pick = { key: `${si}:${ri}`, section, row };
+    const target = targetOf(section, row);
+    state.calc = target ? await api("GET", `/runs/${run.id}/calculation/${encodeURIComponent(target)}`).catch(() => null) : null;
+    draw();
+  };
+  const mark = async () => {
+    try { state.sign = await api("POST", `/runs/${run.id}/signoff`, { file: state.name, reviewer: reviewerName }); draw(); } catch (e) { fail(e); }
+  };
+  const draw = () => {
+    const me = state.sign.files.find((f) => f.name === state.name);
+    const name = h("input", { placeholder: "your name", maxlength: 60, "aria-label": "Your name", value: reviewerName, oninput: (e) => { reviewerName = e.target.value; } });
+    const v = state.view;
+    holder.classList.toggle("has-drawer", state.pick != null);
+    holder.replaceChildren(
+      h("nav", { class: "wb-files", "aria-label": "Output files" }, h("p", { class: "muted small" }, "files that will be exported"),
+        state.sign.files.map((f) => fileBadge(f, state.name, pickFile))),
+      h("section", { class: "wb-rows" }, h("h2", {}, state.name),
+        h("div", { class: "row" }, h("span", { class: me.state === "reviewed" ? "ok" : "bad" }, SIGN_WORD[me.state] + (me.reviewed_by ? ` by ${me.reviewed_by}` : "")),
+          me.state === "reviewed" ? null : [name, button("Mark reviewed", mark)]),
+        v.error ? h("div", { class: "callout warn" }, v.error) : [h("p", { class: "muted" }, `${v.total_rows} rows · sha256 `, h("code", {}, v.sha256), ". Click a row to see the calculation behind it."),
+          ...v.sections.map((s, si) => sectionTable(s, si, state.pick && state.pick.key, pickRow)),
+          v.truncated ? h("div", { class: "callout warn" }, `Showing the first rows of ${v.total_rows}. Download the file for all of them.`) : null,
+          h("p", {}, h("a", { class: "btn plain", href: `/api/runs/${run.id}/output-files/${encodeURIComponent(state.name)}/download`, download: state.name }, "Download this file"))],
+        state.side ? affectingBlock(state.side) : null),
+      outputDrawer(state, () => { state.pick = null; draw(); }));
+    const s = state.sign;
+    bar.replaceChildren(h("span", { class: `tag ${s.status === "Final" ? "determined" : "provisional"}` }, s.status),
+      h("span", { class: "muted", role: "status" }, s.reasons.length ? s.reasons.join(". ") + "." : "Every problem is answered and every file is reviewed."),
+      button("Next stage: done", () => go(run, "export")));
+  };
+  const first = (await api("GET", `/runs/${run.id}/signoff`)).files;
   const wanted = decodeURIComponent(location.hash.split("/")[4] || "");
-  const at = Math.max(0, list.findIndex((f) => f.name === wanted));
-  const file = list[at];
-  const open = (i) => () => { location.hash = `#/run/${run.id}/files/${encodeURIComponent(list[i].name)}`; };
-  const [body, side] = await Promise.all([fileBody(run, file), affecting(run, file)]);  // both requests go out together
-  show(...head(run, "7 Output files"),
-    h("div", { class: "row" }, button("Previous", open(at - 1), true), h("strong", {}, `File ${at + 1} of ${list.length}`),
-      button("Next", open(at + 1), true)),
-    h("div", { class: "row" }, h("select", { "aria-label": "Choose a file", onchange: (e) => open(Number(e.target.value))() },
-      list.map((f, i) => h("option", { value: i, selected: i === at }, f.name)))),
-    h("h2", {}, file.name),
-    h("p", { class: "muted" }, `${file.rows === null ? "rows not counted" : `${file.rows} rows`} · ${file.bytes.toLocaleString("en-GB")} bytes · sha256 `, h("code", {}, file.sha256)),
-    h("div", { class: "row" }, h("a", { class: "btn", href: `/api/runs/${run.id}/output-files/${file.name}/download`, download: file.name }, "Download")),
-    body, h("h2", {}, "Issues and AI notes affecting this file"), side);
-  const buttons = view.querySelectorAll("button.plain");
-  if (at === 0) buttons[0].disabled = true;
-  if (at === list.length - 1) buttons[1].disabled = true;
+  state.name = (first.find((f) => f.name === wanted) || first[0]).name;
+  show(...head(run, "6 Review outputs"), bar, holder);
+  document.onkeydown = (e) => { if (e.key === "Escape" && state.pick && location.hash.includes("/files")) { state.pick = null; draw(); } };
+  await load();
 }

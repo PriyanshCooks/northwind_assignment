@@ -58,15 +58,17 @@ async function scanStep(run) {
   next.disabled = false;
 }
 
+// Choose outputs comes before generating: the choice is stored and decides which files the review and the zip hold.
 async function outputsStep(run) {
-  const out = await api("GET", `/runs/${run.id}/outputs`);
-  const picked = new Set(out.chosen || out.available.map((o) => o.name));
-  const boxes = out.available.map((o) => h("input", { type: "checkbox", checked: picked.has(o.name), disabled: o.required,
-    onchange: (e) => (e.target.checked ? picked.add(o.name) : picked.delete(o.name)) }));
-  const save = async () => { try { await api("PUT", `/runs/${run.id}/outputs`, { files: [...picked] }); go(run, "results"); } catch (e) { fail(e); } };
-  show(...head(run, "5 Choose outputs"), h("p", { class: "muted" }, "The run manifest is always included."),
-    table(["", "File", "Bytes"], out.available.map((o, i) => [boxes[i], h("code", {}, o.name), o.bytes])),
-    h("div", { class: "row" }, button("Save and see the results", save)));
+  const plan = await api("GET", `/runs/${run.id}/output-plan`);
+  const picked = new Set(plan.chosen || plan.available.map((o) => o.name));
+  const boxes = plan.available.map((o) => h("input", { type: "checkbox", checked: picked.has(o.name) || o.required, disabled: o.required,
+    "aria-label": `Export ${o.name}`, onchange: (e) => (e.target.checked ? picked.add(o.name) : picked.delete(o.name)) }));
+  const save = async () => { try { await api("PUT", `/runs/${run.id}/output-plan`, { files: [...picked] }); go(run, "build"); } catch (e) { fail(e); } };
+  show(...head(run, "4 Choose outputs"), h("div", { class: "callout" }, "Tick the files to export. Every file is built; the choice decides what you review " +
+    "and what goes in the zip. The run manifest is always included. Open items keep the result a Draft."),
+    table(["", "File"], plan.available.map((o, i) => [boxes[i], h("code", {}, o.name)])),
+    h("div", { class: "row" }, button("Next stage: generate", save)));
 }
 
 async function buildStep(run) {
@@ -77,11 +79,11 @@ async function buildStep(run) {
     h("ul", {}, left.engine_items.map((t) => h("li", {}, h("code", {}, t), " waits for a decision")),
       left.findings.map((f) => h("li", {}, h("a", { href: `#/run/${run.id}/review/${encodeURIComponent(f.file)}` }, `${f.file}:${f.line ?? ""}`),
         ` ${f.code} ${f.headline}`)))) : h("div", { class: "callout ok" }, "Nothing is unanswered. This output is not a Draft.");
-  show(...head(run, "4 Generate"), draft, h("div", { class: b.passed ? "callout ok" : "error" },
+  show(...head(run, "5 Generate"), draft, h("div", { class: b.passed ? "callout ok" : "error" },
     b.passed ? `All ${b.gates.length} gates passed.` : "A gate failed" + (b.blocked ? `: ${b.blocked}` : ".")),
     h("h2", {}, "Stages this run logged"), stageList(b.stages), h("h2", {}, `Gates (${b.gates.length})`),
     table(["Gate", "Result", "Detail"], b.gates.map((g) => [g.name, h("span", { class: g.ok ? "ok" : "bad" }, g.ok ? "pass" : "FAIL"), tidy(g.detail)])),
-    h("div", { class: "row" }, button("Next: choose outputs", () => go(run, "outputs"))));
+    h("div", { class: "row" }, button("Next stage: review outputs", () => go(run, "files"))));
 }
 
 async function resultsStep(run) {
@@ -108,21 +110,26 @@ async function resultsStep(run) {
         h("h2", {}, "Figures that differ"), table(["Figure", "Other run", "This run"], c.figures.map((x) => [x.key, figureValue({ value: x.other }), figureValue({ value: x.this })])));
     } catch (e) { fail(e); }
   };
-  show(...head(run, "6 Results"), h("h2", {}, "The 12 control figures"),
+  show(...head(run, "Results"), h("h2", {}, "The 12 control figures"),
     figuresTable(r.figures),
     h("h2", {}, `Issues (${r.issues.length})`), ...issueGroups(r.cards, {}, () => {}),
     h("h2", {}, "What if an input changes?"), h("p", { class: "muted" }, "Builds a new run from a changed cell (line 1 is the header); this run is left as it is."),
     h("div", { class: "row" }, f.file, f.line, f.column, f.value, name, button("Build new run", build)),
     h("h2", {}, "Compare with another run"), h("div", { class: "row" }, other, button("Compare", compare, true)), holder,
-    h("div", { class: "row" }, button("Next: output files", () => go(run, "files"))));
+    h("div", { class: "row" }, button("Back to done", () => go(run, "export"))));
 }
 
+// Done: the sign-off status, why it is a Draft if it is one, and the zip. The status is also written into the zip.
 async function exportStep(run) {
-  const out = await api("GET", `/runs/${run.id}/outputs`);
-  const names = out.chosen ? [...out.chosen, "run_manifest.json"] : out.available.map((o) => o.name);
-  show(...head(run, "8 Export"), h("p", {}, "A zip of the chosen files plus the run manifest:"),
-    h("ul", {}, [...new Set(names)].map((n) => h("li", {}, h("code", {}, n)))),
-    h("a", { class: "btn", href: `/api/runs/${run.id}/export` }, "Download zip"));
+  const s = await api("GET", `/runs/${run.id}/signoff`);
+  const final = s.status === "Final";
+  show(...head(run, "7 Done"), h("div", { class: final ? "callout ok" : "callout warn", role: "status" }, h("strong", {}, `${s.status}. `),
+    final ? "Every problem is answered and every exported file is reviewed." : s.reasons.join(". ") + ". Go back to answer or review them, or download the Draft as it is."),
+    table(["File", "Review"], s.files.map((f) => [h("code", {}, f.name), f.state === "reviewed" ? `Reviewed by ${f.reviewed_by}` : f.state === "stale" ? "Changed since reviewed" : "Not reviewed"])),
+    h("div", { class: "row" }, h("a", { class: "btn", href: `/api/runs/${run.id}/export` }, `Download ${s.status} zip`),
+      h("a", { class: "btn plain", href: `#/run/${run.id}/files` }, "Back to review outputs"),
+      h("a", { class: "btn plain", href: `#/run/${run.id}/results` }, "Results, what-if and compare")),
+    h("p", { class: "muted small" }, "The zip holds the exported files, the run manifest and signoff.json with this status and who reviewed each file."));
 }
 
 const STEP_VIEWS = { upload: uploadStep, scan: scanStep, review: reviewStep, outputs: outputsStep, build: buildStep, results: resultsStep, files: filesStep, export: exportStep };

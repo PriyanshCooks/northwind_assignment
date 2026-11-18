@@ -331,3 +331,10 @@ one unit to each checkpoint.
 can name a decision. Hostile text in a journal memo or a map name changes no figure, disposition or rule finding (a
 tested fact), a hostile rate row is refused by validation before anything reads it, and a simulated model that obeys
 the text changes nothing. Figures and output hashes are identical with the layer off, on and replayed.
+
+## Review UI: the seven stages
+Upload, Scan, Review inputs, Choose outputs, Generate, Review outputs, Done. The stages sit in a top bar (no side rail).
+- Choose outputs comes before Generate: `PUT /runs/{id}/output-plan` stores the choice (the nine files are known up front). Every file is still built; the choice decides what is reviewed and what goes in the zip.
+- Review outputs (`frontend/viewer.js`): files on the left, rows in the middle, a drawer for the clicked row. The drawer shows the calculation behind a control figure or a group account, read from the run's evidence store by `GET /runs/{id}/calculation/{target}` (`calculation_service.py`). It says the figures are checked by the gates and the oracle, not by an AI agent.
+- Sign-off (`signoff_service.py`): a reviewer marks each exported file reviewed against its sha256 (a changed file goes stale). The export is Final only when no input problem is open and every exported file is reviewed, otherwise Draft. The status goes into `signoff.json` in the zip; `run_manifest.json` is not touched, so the byte-identical output check still holds.
+- Not built: a reviewed mark per output row (only per file), and live per-file generate progress (generation is one quick call; the page shows the stage log and gates afterwards).

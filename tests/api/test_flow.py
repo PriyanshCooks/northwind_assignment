@@ -101,7 +101,7 @@ def test_export_zip_holds_the_chosen_files_and_the_manifest(client: TestClient) 
     chosen = ["balance_sheet.json", "issues.json"]
     assert client.put(f"/api/runs/{run_id}/outputs", json={"files": chosen}).status_code == 200
     names = zipfile.ZipFile(io.BytesIO(client.get(f"/api/runs/{run_id}/export").content)).namelist()
-    assert sorted(names) == ["balance_sheet.json", "issues.json", "run_manifest.json"]
+    assert sorted(names) == ["balance_sheet.json", "issues.json", "run_manifest.json", "signoff.json"]
 
 
 def test_choosing_a_file_outside_the_output_folder_is_refused(client: TestClient) -> None:
@@ -171,7 +171,7 @@ def test_a_blank_name_is_refused_and_changes_nothing(client: TestClient) -> None
 def test_the_workbench_script_asks_for_a_name_and_never_disables_generate() -> None:
     script = (ROOT / "frontend" / "workbench.js").read_text(encoding="utf-8")
     assert "Enter your name before you decide" in script
-    assert 'h("button", { onclick: () => go(run, "build") }, "Generate output")' in script
+    assert 'h("button", { onclick: () => go(run, "outputs") }, "Generate output")' in script
 
 
 def test_every_money_value_on_the_api_is_a_two_decimal_string(client: TestClient) -> None:
