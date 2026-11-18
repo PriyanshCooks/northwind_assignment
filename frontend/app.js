@@ -42,7 +42,7 @@ function stepState(run, key, step) {
   const finished = run.status === "done", analysed = run.status !== "new", output = finished || Boolean(run.built);
   if (key === step) return "current";
   if (run.blocked && key === "review") return "blocked";
-  const done = { upload: analysed, scan: analysed, review: finished, outputs: Boolean(run.outputs), build: output, files: false, export: false }[key];
+  const done = { upload: analysed, scan: analysed, review: finished, outputs: Boolean(run.outputs), build: Boolean(run.built), files: false, export: false }[key];
   if (done) return "done";
   if (key === "review" && run.status === "awaiting_review") return "blocked";
   const locked = { scan: !analysed, review: !analysed, outputs: !analysed, build: !analysed, files: !output, export: !output }[key];
