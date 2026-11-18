@@ -30,6 +30,8 @@ class Change:
 class Diff:
     figures: dict[str, tuple[str, str]]
     accounts: dict[str, tuple[Decimal, Decimal]]
+    new_findings: tuple[str, ...] = ()
+    cleared_findings: tuple[str, ...] = ()
 
 
 def _lines(path: Path) -> list[str]:
@@ -98,7 +100,8 @@ def compare(before: Consolidation, after: Consolidation) -> Diff:
     accounts = {a: (before.balances.get(a, Decimal(0)), after.balances.get(a, Decimal(0)))
                 for a in sorted(set(before.balances) | set(after.balances))
                 if round2(before.balances.get(a, Decimal(0))) != round2(after.balances.get(a, Decimal(0)))}
-    return Diff(figures, accounts)
+    was, now = {f.key for f in before.findings}, {f.key for f in after.findings}
+    return Diff(figures, accounts, tuple(sorted(now - was)), tuple(sorted(was - now)))
 
 
 def whatif(data_dir: Path, change: Change, config_dir: Path = CONFIG_DIR) -> Diff:

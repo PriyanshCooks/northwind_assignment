@@ -31,7 +31,10 @@ The split exists to keep AI output away from numbers.
 
 - `core`, `parsers`, `detectors`, `verification`, `writers`, `domain` touch numbers. They import no AI, web or
   model code.
-- `agents` hold AI reviewers. They never import `core`, so a reviewer can read evidence but cannot calculate.
+- `agents` hold the two per-unit AI reviewers (journal, mapping); `review` builds their evidence packets and
+  grounds their answers; `reasoning` is the separate read-only layer with three checkpoints and an explain step
+  (it has its own grounding, because it checks claims about cited lines, not a verdict's risk flags). None of them
+  imports `core`, so a reviewer can read evidence but cannot calculate.
 - `llm` is the only place that imports a model library.
 - `db` is the only place that uses `sqlite3`.
 
@@ -41,7 +44,7 @@ broken. It also tests its own checker on small snippets, so it cannot pass by ch
 ## What the three tests prove
 
 - `test_structure.py`: `app/` contains exactly the files in the structure plan (no missing, no extra), every folder is
-  a package, each full agent folder has its four files, the stretch agents have only `__init__.py`.
+  a package, each agent folder has its four files. There are two agents, the journal and the mapping reviewer.
 - `test_architecture.py`: the import rules above.
 - `test_bundle.py`: the 15 supplied data files hash to the values in `config/bundle_manifest.sha256`. In a fresh clone
   this checks the committed bytes, because `.gitattributes` stops git from changing line endings in the data folder.
@@ -235,10 +238,10 @@ For JE-006 the model said the entry is unbalanced and did not follow the memo; i
 - `app/services/generate_service.py`: `POST /api/runs/{id}/generate` works as soon as the run is scanned. With every item answered it is the normal build. With items still waiting, it runs the same consolidate and export nodes without the human gate, so the files are what the engine produces with nothing applied that nobody signed off, and the output is a Draft. The run keeps its status (awaiting review); `generated_for` stores the input hash the Draft was made on, so results and files open for it, and close again if an input or the config changes.
 - `GET /api/runs/{id}/unanswered`: the engine items still waiting and the findings nobody has passed or overridden (notes need no decision). A held journal and its D06 or D07 finding are one problem and are counted once. Passing a finding clears it from this list; it does not move any figure. The Draft banner on the later pages and the Generate page read this list.
 - Test worth quoting: the Draft's twelve control figures equal the figures of a run whose held items were approved, because held journals stay out of the figures either way.
-- Not done (stage 3): Final or Draft written into the manifest and the sign-off log. The banner is on screen only.
+- Final or Draft is decided by sign-off (see "Review UI: the seven stages" below) and written into `signoff.json` in the zip.
 
-### the seven steps
-Runs list (new, open, resume) then 1 Upload, 2 Review (approve or reject calls the resume path), 3 Choose outputs, 4 Build (the stages the run logged, then the 20 gates), 5 Results (figures with status, issue cards, what-if, compare), 6 Output files (one file at a time), 7 Export (zip). A what-if patches a copy of the run's data (`file:LINE.column=value`, file must be one of the 15) and builds a new run beside the old one.
+### the seven stages
+The stages are the ones in "Review UI: the seven stages" at the end of this guide: upload, scan, review inputs, choose outputs, generate, review outputs, done. Results, what-if and compare are one page reached from Done. A what-if patches a copy of the run's data (`file:LINE.column=value`, file must be one of the 15) and builds a new run beside the old one.
 
 ### limits to state honestly
 One user, no login, no concurrency control: it is a local tool. What-if edits one cell; assumption overrides are not offered. `group_policies.md` is checked only for being readable; the policy binding is still enforced when the run starts. The gate detail text is shown tidied (Decimal reprs and long fractions shortened) in the page only.
@@ -333,6 +336,8 @@ tested fact), a hostile rate row is refused by validation before anything reads 
 the text changes nothing. Figures and output hashes are identical with the layer off, on and replayed.
 
 ## Review UI: the seven stages
+
+Changing an input after a run was analysed removes its output and sends it back to Scan (`pipeline_service.invalidate`), so nothing generated from old inputs can be reviewed or exported.
 Upload, Scan, Review inputs, Choose outputs, Generate, Review outputs, Done. The stages sit in a top bar (no side rail).
 - Choose outputs comes before Generate: `PUT /runs/{id}/output-plan` stores the choice (the nine files are known up front). Every file is still built; the choice decides what is reviewed and what goes in the zip.
 - Review outputs (`frontend/viewer.js`): files on the left, rows in the middle, a drawer for the clicked row. The drawer shows the calculation behind a control figure or a group account, read from the run's evidence store by `GET /runs/{id}/calculation/{target}` (`calculation_service.py`). It says the figures are checked by the gates and the oracle, not by an AI agent.

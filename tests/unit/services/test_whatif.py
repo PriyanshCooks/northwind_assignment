@@ -54,3 +54,8 @@ def test_diff_inputs_names_the_changed_file_and_line(tmp_path: Path) -> None:
     patched_copy(DEFAULT_DATA_DIR, tmp_path / "new", Change(patches=[f"fx_rates.csv:{CLOSING_ROW}.rate=1.30"]))
     assert diff_inputs(tmp_path / "old", tmp_path / "new") == ["fx_rates.csv: changed at line(s) 6"]
     assert diff_inputs(tmp_path / "old", tmp_path / "old") == []
+
+
+def test_a_typo_in_a_rate_shows_the_finding_it_raises() -> None:
+    diff = whatif(DEFAULT_DATA_DIR, Change(patches=[f"fx_rates.csv:{CLOSING_ROW}.rate=125.30"]))
+    assert any(key.startswith("D15") for key in diff.new_findings)

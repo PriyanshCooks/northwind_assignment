@@ -63,6 +63,10 @@ def _print_diff(diff: Diff) -> int:
         print("no control figure changes")
     for key, (before, after) in diff.figures.items():
         print(f"  {key}: {before} -> {after}")
+    if diff.new_findings:
+        print("new findings: " + ", ".join(diff.new_findings))
+    if diff.cleared_findings:
+        print("findings gone: " + ", ".join(diff.cleared_findings))
     if diff.accounts:
         print("accounts that moved: " + ", ".join(
             f"{a} {round2(b)} -> {round2(n)}" for a, (b, n) in diff.accounts.items()))

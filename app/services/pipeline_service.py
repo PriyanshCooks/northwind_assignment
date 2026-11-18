@@ -1,6 +1,7 @@
 """The steps behind the UI, each a thin call into an existing service: analyse and resume go through the same graph
 the command line uses, review advice is replayed from the ledger only, and the gates are the engine's own checks."""
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,16 @@ from app.services.upload_service import file_status
 
 class NotReady(Exception):
     """The step cannot run yet. The message says what is missing."""
+
+
+def invalidate(registry: Registry, run_id: str) -> None:
+    """An input changed after the run was analysed, so what it produced describes other inputs. Output is removed and
+    the run goes back to 'new': it must be scanned again before anything is reviewed, signed off or exported."""
+    if registry.meta(run_id)["status"] == "new":
+        return
+    registry.update(run_id, status="new", open_items=[], thread=None, blocked=None, checks_passed=None,
+                    built=False, generated_for=None, outputs=None, held_decisions={})
+    shutil.rmtree(registry.out_dir(run_id), ignore_errors=True)
 
 
 def _checkpoints(registry: Registry, run_id: str) -> Path:

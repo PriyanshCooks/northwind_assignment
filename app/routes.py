@@ -56,6 +56,7 @@ async def upload(run_id: str, name: str, request: Request, reg: Reg) -> dict[str
     error = validate_bytes(name, body)
     if error is None:
         (folder / name).write_bytes(body)
+        pipeline.invalidate(reg, run_id)
     return {"name": name, "stored": error is None, "error": error}
 
 

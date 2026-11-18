@@ -6,6 +6,7 @@ import zipfile
 import pytest
 from fastapi.testclient import TestClient
 
+from app.utils.paths import DEFAULT_DATA_DIR
 from tests.api.conftest import finished_run, sample_run
 
 
@@ -103,3 +104,15 @@ def test_a_real_final_needs_every_finding_passed_and_every_file_reviewed(client:
     assert done["status"] == "Final" and done["reasons"] == [] and done["problems"] == 0
     _, signoff = _zip_names_and_signoff(client, run_id)
     assert signoff["status"] == "Final"
+
+
+def test_a_changed_input_removes_the_output_and_sends_the_run_back_to_scan(client: TestClient) -> None:
+    run_id = finished_run(client)
+    assert client.post(f"/api/runs/{run_id}/build").status_code == 200
+    rates = (DEFAULT_DATA_DIR / "fx_rates.csv").read_bytes()
+    rates = rates.replace(b"GBP,USD,closing,1.2530", b"GBP,USD,closing,1.3000")
+    assert client.put(f"/api/runs/{run_id}/files/fx_rates.csv", content=rates).json()["stored"]
+    meta = client.get(f"/api/runs/{run_id}").json()
+    assert meta["status"] == "new" and not meta["built"] and meta["outputs"] is None
+    assert client.get(f"/api/runs/{run_id}/signoff").status_code == 409
+    assert client.get(f"/api/runs/{run_id}/export").status_code == 409

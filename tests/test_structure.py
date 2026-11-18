@@ -48,7 +48,6 @@ APP_FILES = {
 }
 AGENT_FILES = ["llm_model.py", "prompts.py", "schema.py", "tools.py"]
 FULL_AGENTS = ["mapping_reviewer", "journal_reviewer"]
-STRETCH_AGENTS = ["orientation_scanner", "post_run_reviewer", "policy_reader", "narrator"]
 TEST_FOLDERS = ["unit", "perturbation", "property", "redteam", "evals", "api"]
 UNIT_FOLDERS = [folder.removeprefix("app/") for folder in APP_FILES if folder != "app"]
 TOP_LEVEL = [
@@ -71,7 +70,6 @@ def expected_app_files() -> set[str]:
     expected |= {f"{folder}/{name}" for folder, names in APP_FILES.items() for name in names}
     for agent in FULL_AGENTS:
         expected |= {f"app/agents/{agent}/__init__.py"} | {f"app/agents/{agent}/{name}" for name in AGENT_FILES}
-    expected |= {f"app/agents/{agent}/__init__.py" for agent in STRETCH_AGENTS}
     return expected
 
 
@@ -85,12 +83,6 @@ def test_each_full_agent_has_its_four_files_and_nothing_else() -> None:
     for agent in FULL_AGENTS:
         names = {p.name for p in (ROOT / "app/agents" / agent).iterdir() if p.is_file()}
         assert names == {"__init__.py", *AGENT_FILES}, agent
-
-
-def test_stretch_agents_hold_only_an_init_file() -> None:
-    for agent in STRETCH_AGENTS:
-        names = {p.name for p in (ROOT / "app/agents" / agent).iterdir() if p.is_file()}
-        assert names == {"__init__.py"}, agent
 
 
 def test_every_app_and_test_folder_is_a_package() -> None:
