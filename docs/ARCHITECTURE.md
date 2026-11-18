@@ -69,7 +69,7 @@ Two kinds of reviewer run on recorded answers by default.
   reason. `risk` is computed in code, so a model cannot say "no risk" while flagging a category.
 - **Reasoning layer** (`app/agents/reasoning/`): three read-only checkpoints. A *reader* goes through every input line in chunks.
   A *calculation reviewer* looks at each calculation record (formula, inputs with `file:line`, result). An *investigator*
-  follows a concern back to its sources with six capped lookup tools. An *explain* step reads rule findings.
+  follows a concern back to its sources with six capped lookup tools. An *explain* step for rule findings is built and tested, but nothing in the CLI or the UI calls it yet.
 
 **Grounding.** A claim is dropped when its `file:line` or calculation id does not exist, or when a quoted text or number is
 not in what the model was shown. A claim that survives is *verified* only if code can prove it; otherwise it is a

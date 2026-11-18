@@ -17,18 +17,6 @@ CREATE TABLE IF NOT EXISTS findings (
     PRIMARY KEY (run_id, key)
 );
 
-CREATE TABLE IF NOT EXISTS facts (
-    key TEXT PRIMARY KEY,
-    evidence_sha256 TEXT NOT NULL,
-    body TEXT NOT NULL CHECK (json_valid(body))
-);
-
-CREATE TABLE IF NOT EXISTS llm_ledger (
-    key TEXT PRIMARY KEY,
-    model TEXT NOT NULL,
-    body TEXT NOT NULL CHECK (json_valid(body))
-);
-
 CREATE TABLE IF NOT EXISTS origin_rows (
     run_id TEXT NOT NULL,
     account TEXT NOT NULL,

@@ -39,7 +39,8 @@ def test_repeating_a_run_replaces_it() -> None:
 def test_malformed_json_cannot_be_stored() -> None:
     conn = connect(":memory:")
     with pytest.raises(sqlite3.IntegrityError):
-        conn.execute("INSERT INTO llm_ledger (key, model, body) VALUES ('k', 'm', 'not json')")
+        conn.execute(
+            "INSERT INTO findings (run_id, key, code, severity, body) VALUES ('r', 'k', 'D01', 'NOTE', 'not json')")
 
 
 def test_origin_rows_come_back_in_order_with_exact_amounts() -> None:

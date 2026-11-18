@@ -1,6 +1,6 @@
 # VALIDATION
 
-Nine mistakes the AI tool made, how each was caught and the commit that fixed it. Every hash was checked with
+Twelve mistakes the AI tool made, how each was caught and the commit that fixed it. Every hash was checked with
 `git cat-file -t` and is a commit in this repository.
 
 | # | What the AI got wrong | How it was caught | Fix | Commit |
@@ -15,6 +15,8 @@ Nine mistakes the AI tool made, how each was caught and the commit that fixed it
 | 8 | Wrote `NORTHWIND_MODEL` into `.env.example` and the docs, but no code read it | Writing the switch test: a grep found no reader | The model name now comes from the variable, and the ledger is named from the model | `8f7c001` |
 | 9 | `from openai import AsyncOpenAI` passed locally, where the extra package was installed, and failed `mypy` on CI, so pytest never ran | CI, reproduced in a clean dev-only environment | The client is loaded by name inside `build_model` | `bc433ab` |
 | 10 | Left the old output in place when an input file was re-uploaded after a run finished. A reviewer could then mark the old files reviewed and export them as Final | My own review of the finished code: I ran the case and the export said Final with the old goodwill | A changed input deletes the output and returns the run to Scan, with a test | `420cda9` |
+| 11 | Grounding compared a model's quoted text with the JSON-escaped form of what it was shown. A line copied exactly from a JSON file, such as a journal line with quote marks, was never found, so the claim was dropped as "not in the evidence shown". This hid real hits: the reasoning layer was reported as hitting 1 of 7 labelled faults, and the same recorded answers hit 4 of 7 | Reading the reasoning code in review, then a probe: an exact quote of an `adjustments.json` line was dropped. Re-scoring the recorded answers confirmed it (47 drops fell to 21) | Quotes are checked against the plain text as well as the JSON form, with a regression test; the documents carry the corrected result | `eb754a9` |
+| 12 | The tool-using model call retried a 429 or a 5xx at once, with no wait, while the plain call path and the documents say two waits (2 s, then 8 s). Also, a cut-off last line in the ledger file, left by a crash mid-write, stopped every later run | Reading the model client and the ledger in review | The tool path waits like the plain path; the ledger ignores a cut-off last line only; a test for each | `238c27a` |
 
 ## What was checked by hand
 
