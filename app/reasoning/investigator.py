@@ -12,7 +12,7 @@ from app.llm.tooluse import run_with_tools
 from app.reasoning.budget import UnitBudget
 from app.reasoning.calc_review import CalcReport
 from app.reasoning.evidence import Evidence
-from app.reasoning.grounding import Dropped, numbers_outside
+from app.reasoning.grounding import Dropped, cite_exists, numbers_outside
 from app.reasoning.schema import Investigation
 from app.reasoning.tools import ToolBox
 
@@ -42,13 +42,6 @@ class TraceReport:
     unavailable: list[str] = field(default_factory=list)
 
 
-def _cite_exists(cite: str, evidence: Evidence) -> bool:
-    if cite in evidence.calculations:
-        return True
-    name, _, number = cite.rpartition(":")
-    return name in evidence.files and number.isdigit() and 1 <= int(number) <= len(evidence.lines(name))
-
-
 def ground_investigation(
     calc_id: str, answer: Investigation, shown: str, trail: list[dict[str, Any]], evidence: Evidence,
 ) -> TraceResult:
@@ -56,7 +49,7 @@ def ground_investigation(
     chain, dropped = [], []
     for step in answer.chain:
         outside = [q for q in step.quoted if q not in seen] + numbers_outside(step.note, seen)
-        if not _cite_exists(step.cite, evidence):
+        if not cite_exists(step.cite, evidence):
             dropped.append(Dropped(step.cite, "trace", "the cited line or calculation does not exist"))
         elif outside:
             dropped.append(Dropped(step.cite, "trace", f"not in the evidence seen: {', '.join(outside)}"))

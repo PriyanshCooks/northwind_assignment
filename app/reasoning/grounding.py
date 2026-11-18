@@ -44,6 +44,24 @@ def confirms(flag: str, cite: str, line: str, evidence: Evidence) -> bool:
     return cite in evidence.confirmed.get(flag, frozenset())
 
 
+def cite_exists(cite: str, evidence: Evidence) -> bool:
+    """Every id form the tools return: file:line, file:first-last, a calculation or row id with or without a `calc:`
+    or `lineage ` prefix, `account N` and `rule policy N` (the sources the tools print on their results)."""
+    cite = cite.strip()
+    for prefix in ("calc:", "lineage ", "rule ", "account "):
+        bare = cite.removeprefix(prefix)
+        if bare != cite and (bare in evidence.calculations or bare in evidence.lineage or bare in evidence.rules
+                             or bare in evidence.related):
+            return True
+    if cite in evidence.calculations or cite in evidence.lineage or cite in evidence.rules or cite in evidence.related:
+        return True
+    name, _, span = cite.rpartition(":")
+    first, _, last = span.partition("-")
+    if name not in evidence.files or not first.isdigit() or not (last == "" or last.isdigit()):
+        return False
+    return 1 <= int(first) <= int(last or first) <= len(evidence.lines(name))
+
+
 def _cited_line(cite: str, file: str, evidence: Evidence) -> str | None:
     name, _, number = cite.rpartition(":")
     if name != file or not number.isdigit():

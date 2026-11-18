@@ -265,6 +265,10 @@ D15 tolerance of its pair; a nature claim when the name and the group account it
 claim on a line that has a name; a sign claim on a non-negative figure whose result is not negative. A suspicion therefore
 means "the code could not tell", never "the code looked and disagreed".
 
+**Citation forms** (`cite_exists`). A trace step may cite what the tools print: `file:line`, `file:first-last`, a
+calculation or row id with or without `calc:` or `lineage `, `account N`, `rule policy N`. An id no tool could have
+returned is dropped. Before this, `calc:row:1200` and `lineage row:1200` were dropped as nonexistent (69 of 99 steps).
+
 **Sign and the normal side.** Balances are stored debit-positive, so a credit-nature account (revenue, payables, equity)
 holds a negative number. Each row record carries `normal_side` from the chart and a `storage` sentence saying so; a sign
 concern on a row that sits on its normal side is dropped as contradicted. Only a balance against its normal side stays.
